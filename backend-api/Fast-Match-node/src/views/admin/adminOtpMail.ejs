@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OTP Verification</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f7fa; font-family: sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f4f7fa; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    <tr>
+                        <td style="padding: 40px; text-align: center;">
+                            <h2 style="color: #333333; margin-bottom: 20px;">Verification Code</h2>
+                            <p style="color: #555555; font-size: 16px;">Use the OTP below to reset your password:</p>
+                            <div style="background-color: #f0f4f8; padding: 20px; border-radius: 8px; margin: 25px 0; display: inline-block;">
+                                <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #7c3aed;"><%= otp %></span>
+                            </div>
+                            <p style="color: #999999; font-size: 13px;">Valid for 10 minutes. Do not share this code.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 20px; color: #94a3b8; font-size: 12px;">
+                            © <%= year %> FastMatch Team
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,35 @@
+const cp = require('child_process');
+
+const args = process.argv.slice(2);
+if (args[0] === 'config') {
+    const buf = cp.execSync('node ./node_modules/react-native/cli.js config');
+    let str = buf.toString('utf8');
+    // Strip null bytes if it's somehow UTF-16
+    str = str.replace(/\0/g, '');
+    // Find the first '{' to strip any warnings or reading env logs
+    const jsonStart = str.indexOf('{');
+    if (jsonStart !== -1) {
+        process.stdout.write(str.substring(jsonStart));
+    } else {
+        process.stdout.write(str);
+    }
+    if (args[0] === 'bundle') {
+        const outIdx = process.argv.indexOf('--bundle-output');
+        if (outIdx !== -1 && process.argv.length > outIdx + 1) {
+            const fs = require('fs');
+            const path = require('path');
+            const outPath = path.resolve(process.argv[outIdx + 1]);
+            fs.mkdirSync(path.dirname(outPath), { recursive: true });
+        }
+        const sourcemapIdx = process.argv.indexOf('--sourcemap-output');
+        if (sourcemapIdx !== -1 && process.argv.length > sourcemapIdx + 1) {
+            const fs = require('fs');
+            if (!fs.existsSync('C:\\temp')) {
+                fs.mkdirSync('C:\\temp', { recursive: true });
+            }
+            process.argv[sourcemapIdx + 1] = 'C:\\temp\\index.android.bundle.map';
+            console.log("Rewrote sourcemap output to C:\\temp\\index.android.bundle.map to avoid path limits");
+        }
+    }
+    require('./node_modules/react-native/cli.js');
+}

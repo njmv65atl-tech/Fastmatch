@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "205547608843",
+    "project_id": "fastmatch-29f8d",
+    "storage_bucket": "fastmatch-29f8d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205547608843:android:29d7757453064fa138e00e",
+        "android_client_info": {
+          "package_name": "com.fastmatch"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXePahBqgJCCUwvSkPXgkkWBaP3R_WWDA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

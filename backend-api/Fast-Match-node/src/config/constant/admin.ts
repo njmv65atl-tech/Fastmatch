@@ -1,0 +1,42 @@
+const admin = {
+    noAuth: 'Authorization token required.',
+    notAuthorized: 'You are not authorised to perform this task',
+    tokenExpire: 'Token Expired',
+    sessionExpire: 'Session Expired',
+    noAccount: 'No account registered with this username',
+    ownAccountBlock: 'Your account has been blocked by admin',
+    ownAccountDelete: 'Your account has been deleted by admin',
+    loggedInAnotherDevice: 'Your account has been logged into on another device.',
+    phoneAlreadyExist: 'This phone number already exist.',
+    phoneNotExist: 'This phone numbet not exist in DB.',
+    invalidOtp: "Invalid OTP, please enter the correct one.",
+    emailAlreadyExist: "This email address already exists",
+    invalidEmailOrPass: 'Please enter valid email address or password.',
+    forgotMailSent: 'Forgot password OTP has been sent to your registered email address.',
+    emailNotRegis: 'This email address not registered with us.',
+    forgotLinkExipre: 'Forgot link expired.',
+    otpVerified: 'OTP verified successfully.',
+    invlaidOTP: 'Please enter valid OTP.',
+    invalidOldPass: 'Please enter valid old password.',
+    samePassword: 'New password should differ from the previous one.',
+    passChanged: 'Password changed successfully.',
+    logout: 'Logged-out successfully.',
+    validOldPass: 'Please enter valid old password.',
+
+    register: 'User register successfully.',
+    sendOtp: "Otp has been send successfully.",
+    userNotExist: 'User not exist.',
+    invalidPassOrEmail: 'Please enter valid email or password.',
+    loggedIn: 'Logged-in successfully.',
+    passwordReset: 'Password reset successfully.',
+    profileUpdated: 'Profile updated successfully.',
+    getProfile: 'Profile detail fetched successfully.',
+    accountDeleted: 'Account deleted successfully.',
+
+    invalidFileUpload: "The file uploading is invalid.",
+    fileNotFound: 'File not found.',
+
+    validObjectId: 'Required valid object Id',
+}
+
+export default { admin }

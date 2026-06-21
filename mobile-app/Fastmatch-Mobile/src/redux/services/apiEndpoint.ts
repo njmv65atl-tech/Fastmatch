@@ -1,0 +1,34 @@
+//apiEndpoint.ts
+
+export const apiEndPoints = {
+  //auth
+  userSignIn: "user/signIn",
+  userSignUp: "user/signUp",
+  userSignOut : "user/logout",
+  verifySignUpOtp: "user/verify-signup-otp",
+  resendOtp: "user/resend-otp",
+
+  verifyOtp: "user/verify-otp",
+  completeProfile: "user/complete-profile",
+  forgotPassword: "user/forgot-password",
+  matchHistory: "match/history",
+  chatHistory: "chat/history",
+  conversationHistory: "chat/conversations",
+  videoCallReport : "report",
+  reportBlock : "report/report-block",
+  resetPassword : "user/reset-password",
+  clearChat : "chat/clear-history",
+  blockUser : "chat/block-user",
+  unblockUser : "chat/unblock-user",
+  blockCalls : "chat/block-calls",
+  unblockCalls : "chat/unblock-calls",
+  deleteMessages : "chat/delete-messages",
+  editMessage : "chat/edit-message",
+  rateMatch : "match/rate",
+  buyCoinsMock: "user/buy-coins-mock",
+  upgradePremiumMock: "user/upgrade-premium-mock",
+  sendFriendRequest: "user/send-friend-request",
+  acceptFriendRequest: "user/accept-friend-request",
+  myFriends: "user/my-friends",
+  friendRequests: "user/friend-requests",
+};
