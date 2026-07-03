@@ -26,6 +26,7 @@ export enum AppView {
   FRIENDS = "FRIENDS",
   DISCOVER = "DISCOVER",
   MY_GIFTS = "MY_GIFTS",
+  MONETIZATION = "MONETIZATION",
 }
 
 export enum UserRole {

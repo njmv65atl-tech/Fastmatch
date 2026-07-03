@@ -49,5 +49,6 @@ const ChatMessageSchema = new Schema<ChatMessageInterface>({
 ChatMessageSchema.index({ sender: 1, receiver: 1 });
 ChatMessageSchema.index({ receiver: 1, sender: 1 });
 ChatMessageSchema.index({ createdAt: -1 });
+ChatMessageSchema.index({ receiver: 1, isRead: 1 });
 
 export const ChatMessageModel = model<ChatMessageInterface>('ChatMessage', ChatMessageSchema);

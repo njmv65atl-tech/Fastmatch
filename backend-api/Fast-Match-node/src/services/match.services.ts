@@ -89,6 +89,9 @@ class MatchService {
         const match = await matchRepo.getMatchById(matchId);
         if (!match) throw new Error('Match not found.');
 
+        // Idempotency guard: skip if already completed
+        if (match.matchStatus === 'completed') return match;
+
         const now = new Date();
         const callDuration = match.callStartedAt
             ? Math.round((now.getTime() - new Date(match.callStartedAt).getTime()) / 1000)
@@ -122,13 +125,29 @@ class MatchService {
 
     // Set user online/offline
     async setUserOnlineStatus(userId: Types.ObjectId, isOnline: boolean, socketId: string | null = null) {
-        const user = await User.findById(userId).select('displayName isOnline');
+        const user = await User.findById(userId).select('displayName isOnline lastOnlineNotificationAt');
         const wasOffline = user && !user.isOnline;
 
-        await userRepo.updateUser(userId, { isOnline, socketId });
-
-        // If user just came online, notify their match partners
+        // Check if we should notify partners (prevent spam)
+        let shouldNotify = false;
         if (isOnline && wasOffline) {
+            const now = new Date();
+            const lastNotif = user?.lastOnlineNotificationAt;
+            // Only send if never sent or sent > 15 minutes ago
+            if (!lastNotif || (now.getTime() - new Date(lastNotif).getTime() > 15 * 60 * 1000)) {
+                shouldNotify = true;
+            }
+        }
+
+        const updateData: any = { isOnline, socketId };
+        if (shouldNotify) {
+            updateData.lastOnlineNotificationAt = new Date();
+        }
+
+        await userRepo.updateUser(userId, updateData);
+
+        // If user just came online and hasn't spammed recently, notify their match partners
+        if (shouldNotify && user) {
             this.notifyPartnersOnline(userId, user.displayName);
         }
     }

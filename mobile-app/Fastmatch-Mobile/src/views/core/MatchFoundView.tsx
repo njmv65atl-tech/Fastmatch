@@ -34,16 +34,24 @@ interface CoreProps {
   setView: (view: AppView, params?: any) => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   preference?: 'everyone' | 'male' | 'female';
+  showRatingModal?: boolean;
+  lastMatchId?: string;
+  lastPartnerName?: string;
 }
 
-export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'everyone' }) => {
+export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'everyone', showRatingModal, lastMatchId, lastPartnerName }) => {
   React.useEffect(() => {
     console.log("ℹ️ [MatchFoundView] Component mounted/updated with preference:", preference);
   }, [preference]);
 
+  const [ratingModalVisible, setRatingModalVisible] = useState(!!showRatingModal);
+  const [givenRating, setGivenRating] = useState(0);
+
   const [data, setPick] = useState<any>(null);
   const [hasMatch, setHasMatch] = useState(false);
   const [matchName, setMatchName] = useState("");
+  const [matchRole, setMatchRole] = useState("");
+  const [matchIsPremium, setMatchIsPremium] = useState(false);
   const [matchUri, setMatchUri] = useState("");
   const dispatch = useDispatch();
   const [timeLeft, setTimeLeft] = useState(10);
@@ -135,6 +143,11 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
       }, 1000);
     };
 
+    if (ratingModalVisible) {
+       // Wait for user to rate before searching
+       return;
+    }
+
     if (socket.connected) startSearching();
     else socket.once("connect", startSearching);
 
@@ -167,6 +180,8 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
       remoteUserRef.current = user;
       matchIdRef.current = mid;
       setMatchName(name);
+      setMatchRole(user?.role || "");
+      setMatchIsPremium(user?.isPremium === "premium");
       setMatchUri(pic);
       setRating(avgRating);
       setRatingCount(rCount);
@@ -344,10 +359,60 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
-        </MobileContainer>
-      </View>
-    );
-  }
+          {/* Rating Modal for post-call */}
+      <Modal visible={ratingModalVisible} transparent={true} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: colors.surface, padding: 24, borderRadius: 20, width: '85%', alignItems: 'center' }}>
+            <Text style={{ color: colors.white, fontSize: 22, fontWeight: 'bold', marginBottom: 10 }}>Rate Your Call</Text>
+            <Text style={{ color: colors.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 20 }}>
+              How was your conversation with {lastPartnerName || 'your partner'}?
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 30 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setGivenRating(star)} style={{ padding: 5 }}>
+                  <Star size={40} color={givenRating >= star ? colors.gold : colors.surfaceAlt} fill={givenRating >= star ? colors.gold : "transparent"} />
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity 
+              style={[styles.actionBtn, { width: '100%', backgroundColor: givenRating > 0 ? colors.primary : colors.surfaceAlt }]}
+              disabled={givenRating === 0}
+              onPress={async () => {
+                if (givenRating > 0 && lastMatchId) {
+                  try {
+                    await fetch('/api/v1/match/rate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${socket.auth?.token?.split(' ')[1]}` },
+                      body: JSON.stringify({ matchId: lastMatchId, rating: givenRating })
+                    });
+                  } catch(e) {}
+                }
+                setRatingModalVisible(false);
+                // Trigger searching after modal closes
+                if (socket.connected) {
+                  socket.emit("find-match", { preference });
+                }
+              }}
+            >
+              <Text style={{ color: colors.white, fontWeight: 'bold' }}>Submit Rating</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={{ marginTop: 15 }}
+              onPress={() => {
+                setRatingModalVisible(false);
+                if (socket.connected) {
+                  socket.emit("find-match", { preference });
+                }
+              }}
+            >
+              <Text style={{ color: colors.textMuted }}>Skip</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </MobileContainer>
+  );
+};
 
   return (
     <View style={{ flex: 1, marginBottom: 10 }}>
@@ -375,7 +440,14 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
             <View style={styles.matchAvatarWrap}>
               <Image source={{ uri: matchUri }} style={styles.matchAvatar} />
             </View>
-            <Text style={styles.matchName}>{matchName}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 32 }}>
+              <Text style={[styles.matchName, { marginTop: 0 }]}>{matchName}</Text>
+              {matchIsPremium && (
+                <View style={{ backgroundColor: "#FFD700", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 }}>
+                  <Text style={{ color: "#000", fontWeight: "bold", fontSize: 12 }}>VIP</Text>
+                </View>
+              )}
+            </View>
 
             <View style={styles.onlineBadge}>
               <View style={styles.onlineDotWrap}>

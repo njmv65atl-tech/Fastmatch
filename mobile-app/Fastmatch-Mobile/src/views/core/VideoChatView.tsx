@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Animated,
 } from "react-native";
 import { Shield, PhoneOff } from "lucide-react-native";
 
@@ -620,6 +621,9 @@ export const VideoChatView: React.FC<CoreProps> = ({
   const [incomingGift, setIncomingGift]             = useState<any>(null);
   const [myGifts, setMyGifts]                       = useState<any[]>([]);
   const [giftTab, setGiftTab]                       = useState<'store' | 'inventory'>('store');
+  const [openedGift, setOpenedGift]                 = useState<boolean>(false);
+  const giftScale = useRef(new Animated.Value(0)).current;
+  const giftOpacity = useRef(new Animated.Value(1)).current;
   const [reportVisible, setReportVisible]           = useState(false);
   const [userReport]                                = useUserReportMutation();
   const [isBlurred, setIsBlurred]                   = useState(true);
@@ -640,37 +644,6 @@ export const VideoChatView: React.FC<CoreProps> = ({
   }, [call, isJoining]);
 
 
-
-  // 60-second Auto-Snapshot for Moderation
-  useEffect(() => {
-    let snapshotInterval: ReturnType<typeof setInterval>;
-    if (call && !isJoining && remoteUserId) {
-      snapshotInterval = setInterval(() => {
-        console.log("[Moderation] Taking auto-snapshot...");
-        // Mocking a base64 dummy string since we can't easily capture Native WebRTC stream
-        const mockBase64 = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCABQAFADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAH/xAAVEQEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8An8AABQAAAAAFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//Z"; 
-        fetch(`${API_BASE_URL}user/moderate-frame`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({ imageBase64: mockBase64 })
-        })
-        .then(res => res.json())
-        .then((res: any) => {
-            console.log("[Moderation] Frame check result:", res);
-            if (res.action === 'block') {
-               socket.emit('blockUser', { targetId: remoteUserId });
-               handleEndCall();
-               ShowAlertMessage("Call ended due to explicit content policy violation.", popTypes.error);
-            }
-        })
-        .catch((err: any) => console.log("[Moderation] Frame check error:", err));
-      }, 60000); // every 60 seconds
-    }
-    return () => clearInterval(snapshotInterval);
-  }, [call, isJoining, remoteUserId, token]);
 
   const formatDuration = (secs: number) => {
     const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -934,13 +907,21 @@ export const VideoChatView: React.FC<CoreProps> = ({
     }
 
     console.log("[VideoChatView] Navigating to AppView.MATCH_FOUND to search again");
-    setView(AppView.MATCH_FOUND, { preference });
+    setView(AppView.MATCH_FOUND, { 
+      preference,
+      showRatingModal: true,
+      lastMatchId: matchId,
+      lastPartnerName: matchData?.user2?.displayName || matchData?.user1?.displayName || "your partner"
+    });
   }, [matchId, setView, preference]);
 
   useEffect(() => {
-    if (user.role !== 'PREMIUM' && callDuration >= 120) {
+    // Enforce 120s limit for Free users
+    const isAnyPremium = user.isPremium === 'premium' || matchData?.isPremium === 'premium';
+    if (!isAnyPremium && callDuration >= 120) {
+      console.log("[VideoChatView] Free limit reached, ending call.");
+      ShowAlertMessage("Free call limit reached. Upgrade to Premium for unlimited calls!", popTypes.warning);
       handleEndCall();
-      ShowAlertMessage("Time limit reached. Upgrade to Premium!", popTypes.error);
     }
   }, [callDuration, user.role, handleEndCall]);
 
@@ -966,7 +947,10 @@ export const VideoChatView: React.FC<CoreProps> = ({
     const onGiftReceived = (data: any) => {
       console.log("[VideoChatView] 🎁 Gift received:", data);
       setIncomingGift(data);
-      setTimeout(() => setIncomingGift(null), 5000); // Hide after 5s
+      setOpenedGift(false);
+      giftScale.setValue(0);
+      giftOpacity.setValue(1);
+      setTimeout(() => setIncomingGift(null), 15000); // Hide after 15s if not tapped
       fetchMyGifts(); // Fetch new gifts to update inventory
     };
 
@@ -1125,7 +1109,8 @@ export const VideoChatView: React.FC<CoreProps> = ({
   // ─── Call UI ────────────────────────────────────
 
   const CallTimer = () => {
-    if (user.role === 'PREMIUM') return null;
+    const isAnyPremium = user.isPremium === 'premium' || matchData?.isPremium === 'premium';
+    if (isAnyPremium) return null;
     const remaining = 120 - callDuration;
     if (remaining < 0) return null;
     
@@ -1160,6 +1145,23 @@ export const VideoChatView: React.FC<CoreProps> = ({
         <StreamCall call={call}>
           <View style={StyleSheet.absoluteFill}>
             <CallTimer />
+            <View style={styles.topBarOverlay}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>{participantName || 'Partner'}</Text>
+                {matchData?.isPremium === 'premium' && (
+                  <View style={styles.vipBadge}>
+                    <Text style={styles.vipText}>VIP</Text>
+                  </View>
+                )}
+              </View>
+              <TouchableOpacity style={styles.reportBlockBtn} onPress={() => {
+                socket.emit('blockUser', { targetId: remoteUserId });
+                handleEndCall();
+              }}>
+                <Shield size={14} color="#FFF" />
+                <Text style={styles.reportBlockText}>Report & Block</Text>
+              </TouchableOpacity>
+            </View>
             <CallContent
               onHangupCallHandler={handleEndCall}
               layout="grid"
@@ -1195,8 +1197,9 @@ export const VideoChatView: React.FC<CoreProps> = ({
                     <Text style={styles.reportIcon}>⚑</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={[styles.controlBtn, { backgroundColor: "#EF4444" }]} onPress={handleEndCall}>
-                    <PhoneOff size={24} color="#FFF" />
+                  <TouchableOpacity style={[styles.controlBtn, { backgroundColor: "#EF4444", width: 90, borderRadius: 26, flexDirection: 'row', gap: 6 }]} onPress={handleEndCall}>
+                    <PhoneOff size={20} color="#FFF" />
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 14 }}>End</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -1226,9 +1229,40 @@ export const VideoChatView: React.FC<CoreProps> = ({
       )}
 
       {incomingGift && (
-        <View style={styles.giftAnimationContainer}>
-          <Text style={styles.giftIconLarge}>🎁</Text>
-          <Text style={styles.giftText}>{incomingGift.senderName} sent you a {incomingGift.giftName}!</Text>
+        <View style={[styles.giftAnimationContainer, { padding: 0, backgroundColor: 'transparent' }]}>
+          {!openedGift ? (
+            <TouchableOpacity 
+              style={{ backgroundColor: 'rgba(0,0,0,0.8)', padding: 20, borderRadius: 20, alignItems: 'center' }}
+              onPress={() => {
+                setOpenedGift(true);
+                Animated.spring(giftScale, {
+                  toValue: 1,
+                  friction: 4,
+                  useNativeDriver: true
+                }).start();
+                
+                setTimeout(() => {
+                  Animated.timing(giftOpacity, {
+                    toValue: 0,
+                    duration: 1000,
+                    useNativeDriver: true
+                  }).start(() => {
+                    setIncomingGift(null);
+                  });
+                }, 3000);
+              }}
+            >
+              <Text style={styles.giftIconLarge}>🎁</Text>
+              <Text style={styles.giftText}>Tap to open gift from {incomingGift.senderName}!</Text>
+            </TouchableOpacity>
+          ) : (
+            <Animated.View style={{ backgroundColor: 'rgba(0,0,0,0.85)', padding: 30, borderRadius: 30, alignItems: 'center', transform: [{ scale: giftScale }], opacity: giftOpacity }}>
+               <Text style={{ fontSize: 90, marginBottom: 15 }}>{
+                  GIFTS.find(g => g.name === incomingGift.giftName)?.icon || '🎁'
+               }</Text>
+               <Text style={[styles.giftText, { fontSize: 20, color: '#FFD700', fontWeight: 'bold' }]}>{incomingGift.senderName} sent you a {incomingGift.giftName}!</Text>
+            </Animated.View>
+          )}
         </View>
       )}
 

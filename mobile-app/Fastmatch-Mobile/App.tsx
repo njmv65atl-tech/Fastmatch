@@ -47,6 +47,7 @@ import {
   ProfileScreen,
   DiscoverView,
   MyGiftsView,
+  MonetizationView,
 } from "./src/views/CoreViews";
 import { IMAGE_URL } from "./src/config/env";
 import { Provider, useDispatch, useSelector } from "react-redux";
@@ -480,6 +481,9 @@ const App: React.FC = () => {
       
       case AppView.WALLET:
         return <WalletView setView={setCurrentView} />;
+
+      case AppView.MONETIZATION:
+        return <MonetizationView setView={setCurrentView} />;
 
       case AppView.FRIENDS:
         return <FriendsView setView={setCurrentView} />;

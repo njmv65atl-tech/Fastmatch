@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { setHasUnread, setIncomingMatchRequest, clearIncomingMatchRequest } from "../redux/slices/globalSlice";
+import { authApi } from "../redux/services/auth";
 
 import UseInternetConnectivity from "./useInternetConnectivity";
 import { socket } from "./socket";
@@ -64,6 +65,18 @@ const SocketConnection = ({ setView }) => {
         ShowAlertMessage(err?.message || "Match request failed", popTypes.error);
       });
 
+      socket.on("friend-request-accepted", () => {
+        console.log("🔔 [Global] friend-request-accepted received");
+        dispatch(authApi.util.invalidateTags(["Friends"]));
+        ShowAlertMessage("Your friend request was accepted!", popTypes.success);
+      });
+
+      socket.on("limit_exhausted", (data) => {
+        console.log("🔔 [Global] limit_exhausted received");
+        dispatch(clearIncomingMatchRequest());
+        ShowAlertMessage(data?.message || "Limit exhausted", popTypes.error);
+      });
+
       socket.on("call-start", (data) => {
         console.log("🔔 [Global] call-start received:", data);
         dispatch(clearIncomingMatchRequest());
@@ -108,11 +121,14 @@ const SocketConnection = ({ setView }) => {
       socket.off("incoming-match-request");
       socket.off("incoming-match-canceled");
       socket.off("match-declined");
+      socket.off("match-error");
       socket.off("call-start");
+      socket.off("friend-request-accepted");
+      socket.off("limit_exhausted");
       socket.off("error");
       socket.disconnect();
     };
-  }, [token, isConnected]);
+  }, [token, isConnected, dispatch]);
 
   return null;
 };

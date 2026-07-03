@@ -6,7 +6,8 @@ import {
   ScrollView,
   Image,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
+  RefreshControl
 } from "react-native";
 import { ChevronLeft, UserCheck, UserPlus, Clock } from "lucide-react-native";
 import { colors } from "../../utils/colors";
@@ -117,7 +118,19 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.contentContainer}>
+      <ScrollView 
+        style={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={activeTab === 'friends' ? isLoadingFriends : isLoadingReqs}
+            onRefresh={() => {
+              if (activeTab === 'friends') refetchFriends();
+              else refetchReqs();
+            }}
+            tintColor={colors.primary}
+          />
+        }
+      >
         {activeTab === "friends" ? (
           isLoadingFriends ? (
             <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />

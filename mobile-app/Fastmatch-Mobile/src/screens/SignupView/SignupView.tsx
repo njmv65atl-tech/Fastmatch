@@ -25,6 +25,7 @@ import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import { Privacy } from "../../views/app/Privacy";
 import DeviceInfo from 'react-native-device-info'; // Add this import
 import { TermsOfService } from "../../views/app/TermsOfService";
+import { generateE2EKeyPair, getE2EKeys } from "../../helpers/e2e";
 
 interface AuthProps {
   setView: (view: AppView) => void;
@@ -119,23 +120,33 @@ export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
         platform: Platform.OS,
       };
 
-      managerApiCall(
-        userSignUp,
-        payload,
-        () => {
-          setUser((prev: any) => ({
-            ...prev,
-            fullName: 'dummy-full-name',
-            gender: fields.gender,
-            ...(validation?.type === "phone"
-              ? { phone: fields.emailOrPhone }
-              : { email: fields.emailOrPhone }),
-            loginType: validation?.type,
-          }));
-          setView(AppView.OTP);
-        },
-        () => {},
-      );
+      // Generate E2E Keys before signup
+      getE2EKeys().then(async ({ publicKey }) => {
+        if (!publicKey) {
+          const keys = await generateE2EKeyPair();
+          publicKey = keys?.publicKey || null;
+        }
+
+        const finalPayload = { ...payload, publicKey };
+
+        managerApiCall(
+          userSignUp,
+          finalPayload,
+          () => {
+            setUser((prev: any) => ({
+              ...prev,
+              fullName: 'dummy-full-name',
+              gender: fields.gender,
+              ...(validation?.type === "phone"
+                ? { phone: fields.emailOrPhone }
+                : { email: fields.emailOrPhone }),
+              loginType: validation?.type,
+            }));
+            setView(AppView.OTP);
+          },
+          () => {},
+        );
+      });
     }
   };
 

@@ -84,6 +84,14 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    removeFriend: builder.mutation({
+      query: (body) => ({
+        url: apiEndPoints.removeFriend,
+        method: "POST",
+        body,
+        headers: header1,
+      }),
+    }),
       
 
   }),
@@ -116,6 +124,7 @@ export const {
   useUpgradePremiumMockMutation,
   useSendFriendRequestMutation,
   useAcceptFriendRequestMutation,
+  useRemoveFriendMutation,
   useMyFriendsQuery,
   useFriendRequestsQuery,
 } = authApi;

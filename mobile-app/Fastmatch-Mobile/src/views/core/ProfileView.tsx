@@ -18,7 +18,7 @@ import { ShowAlertMessage, popTypes } from '../../helpers/commonFunctions';
 
 const BASE_URL = IMAGE_URL;
 
-const ProfileScreen = ({ user, setCancel }: { user: any, setCancel: any }) => {
+const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any, setView: any }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -240,6 +240,8 @@ const ProfileScreen = ({ user, setCancel }: { user: any, setCancel: any }) => {
             <Text style={styles.statLabel}>Joined</Text>
           </View>
         </View>
+
+
 
         {/* ── Edit Button ── */}
         <TouchableOpacity

@@ -58,8 +58,6 @@ class AuthService {
         const hashPassword = this.bcrypt.hashPassword(fields.password);
         // Generate 4-digit OTP (1000-9999) — stored as Number
         const otp = Math.floor(1000 + Math.random() * 9000);
-        console.log(`[OTP] Generated OTP for ${fields.email || fields.phone}: ${otp}`);
-
         const user = await userRepos.createUser({ ...fields, password: hashPassword, otp, isVerified: false, role: 'user' });
 
         // Send OTP email if email provided
@@ -185,7 +183,6 @@ class AuthService {
         }
 
         const otp = Math.floor(1000 + Math.random() * 9000);
-        console.log(`[OTP] Forgot password OTP for ${email}: ${otp}`);
         await userRepos.updateUser(user._id, { otp });
         mailWithTemplate(
             "src/views/forgotPassword.ejs",
@@ -234,7 +231,6 @@ class AuthService {
         if (!user) throw new Error(message.userNotExist);
 
         const otp = Math.floor(1000 + Math.random() * 9000);
-        console.log(`[OTP] Resent OTP for ${identifier}: ${otp}`);
         await userRepos.updateUser(user._id, { otp });
 
         if (user.email) {

@@ -24,9 +24,9 @@ import { MobileContainer } from "../../components/UIComponents";
 import { colors } from "../../utils/colors";
 import { CHAT_DETAIL_TEXT } from "../../utils/commonText";
 import { launchImageLibrary } from 'react-native-image-picker';
-import { useBlockUserMutation, useChatHistoryQuery, useClearChatMutation, useUnblockUserMutation, useBlockCallsMutation, useUnblockCallsMutation, useDeleteMessagesMutation, useEditMessageMutation, useReportBlockMutation, authApi, useMyFriendsQuery, useFriendRequestsQuery, useSendFriendRequestMutation, useAcceptFriendRequestMutation } from "../../redux/services/auth";
+import { useBlockUserMutation, useChatHistoryQuery, useClearChatMutation, useUnblockUserMutation, useBlockCallsMutation, useUnblockCallsMutation, useDeleteMessagesMutation, useEditMessageMutation, useReportBlockMutation, authApi, useMyFriendsQuery, useFriendRequestsQuery, useSendFriendRequestMutation, useAcceptFriendRequestMutation, useRemoveFriendMutation } from "../../redux/services/auth";
 import { useDispatch } from "react-redux";
-import { Send, ChevronLeft, MoreVertical, ShieldBan, Trash2, Pencil, Flag, Phone, Image as ImageIcon, UserPlus, Check } from "lucide-react-native";
+import { Send, ChevronLeft, MoreVertical, ShieldBan, Trash2, Pencil, Flag, Phone, Image as ImageIcon, UserPlus, UserMinus, Check } from "lucide-react-native";
 import socketService from "../../helpers/SocketService";
 import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
@@ -58,8 +58,8 @@ const formatDateHeader = (dateString: string) => {
   return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Mocking E2EE functions
-const simulateEncrypt = (text: string) => `[E2EE] ${text.split('').reverse().join('')}`;
+// Legacy backward-compatible decrypt for old [E2EE] messages; new messages stored as plaintext
+const simulateEncrypt = (text: string) => text;
 const simulateDecrypt = (text: string) => {
    if (text?.startsWith('[E2EE] ')) {
        return text.replace('[E2EE] ', '').split('').reverse().join('');
@@ -231,7 +231,44 @@ React.useEffect(() => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+      {/* Image Viewer Modal */}
+      <Modal visible={imageViewerVisible} transparent={true} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 }}
+            onPress={() => {
+              setImageViewerVisible(false);
+              if (isViewOnceMode && imageViewerMsgId) {
+                // Delete the message completely after viewing
+                managerApiCall(deleteMessages, { messageIds: [imageViewerMsgId] });
+                setChatMessages(prev => prev.filter(m => m._id !== imageViewerMsgId));
+                setIsViewOnceMode(false);
+              }
+            }}
+          >
+            <X size={30} color={colors.white} />
+          </TouchableOpacity>
+          {imageViewerUrl && (
+            <Image 
+              source={{ uri: imageViewerUrl }} 
+              style={{ width: '100%', height: '80%' }}
+              resizeMode="contain"
+            />
+          )}
+          {!isViewOnceMode && (
+            <TouchableOpacity 
+              style={{ position: 'absolute', bottom: 50, backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
+              onPress={() => {
+                ShowAlertMessage("Image saved to gallery!", popTypes.success);
+              }}
+            >
+              <Text style={{ color: colors.white, fontWeight: 'bold' }}>Save Image</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
+
+    </SafeAreaView>
   );
 };
 
@@ -265,16 +302,19 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
   const { data: friendReqsData, refetch: refetchFriendReqs } = useFriendRequestsQuery({});
   const [sendFriendRequest] = useSendFriendRequestMutation();
   const [acceptFriendRequest] = useAcceptFriendRequestMutation();
+  const [removeFriend] = useRemoveFriendMutation();
 
   const [requestSent, setRequestSent] = React.useState(false);
+  const [isFriendLocal, setIsFriendLocal] = React.useState(false);
 
   // Derive friendship status
   const isFriend = React.useMemo(() => {
+    if (isFriendLocal) return true;
     if (!myFriendsData?.data) return false;
     return myFriendsData.data.some((f: any) => 
       f.requester?._id === userId || f.recipient?._id === userId
     );
-  }, [myFriendsData, userId]);
+  }, [myFriendsData, userId, isFriendLocal]);
 
   const requestReceivedId = React.useMemo(() => {
     if (!friendReqsData?.data) return null;
@@ -293,6 +333,10 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
   const [translatedMessages, setTranslatedMessages] = React.useState<Record<string, string>>({});
   const [profilePopupVisible, setProfilePopupVisible] = React.useState(false);
   const [icebreakerModalVisible, setIcebreakerModalVisible] = React.useState(false);
+  const [imageViewerVisible, setImageViewerVisible] = React.useState(false);
+  const [imageViewerUrl, setImageViewerUrl] = React.useState<string | null>(null);
+  const [imageViewerMsgId, setImageViewerMsgId] = React.useState<string | null>(null);
+  const [isViewOnceMode, setIsViewOnceMode] = React.useState(false);
 
   // api hooks
   const dispatch = useDispatch<any>();
@@ -796,6 +840,36 @@ React.useEffect(() => {
                   </Text>
                 </TouchableOpacity>
 
+                {isFriend && (
+                  <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => {
+                      setMenuVisible(false);
+                      Alert.alert(
+                        "Unfriend",
+                        "Are you sure you want to remove this user from your friends list?",
+                        [
+                          { text: "Cancel", style: "cancel", onPress: () => {} },
+                          {
+                            text: "Unfriend",
+                            style: "destructive",
+                            onPress: () => {
+                              removeFriend({ targetUserId: userId }).then(() => {
+                                refetchFriends();
+                              });
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                  >
+                    <UserMinus color={colors.danger} size={moderateScale(18)} />
+                    <Text style={[styles.menuItemText, { color: colors.danger }]}>
+                      Unfriend
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
                 <View style={styles.menuDivider} />
 
                 <TouchableOpacity
@@ -904,24 +978,28 @@ React.useEffect(() => {
                 )}
 
                 {/* Translation Option */}
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={() => {
-                    setMessageActionVisible(false);
-                    if (selectedMsg) {
-                      setTranslatedMessages(prev => ({
-                        ...prev,
-                        [selectedMsg._id]: "Mock Translation: " + selectedMsg.message
-                      }));
-                      ShowAlertMessage("Message translated (Mock)", popTypes.success);
-                    }
-                  }}
-                >
-                  <Text style={{ color: colors.white, fontSize: 18 }}>A文</Text>
-                  <Text style={styles.menuItemText}>Translate Message</Text>
-                </TouchableOpacity>
+                {!selectedMsg?.message?.startsWith('[IMAGE') && (
+                  <>
+                    <TouchableOpacity
+                      style={styles.menuItem}
+                      onPress={() => {
+                        setMessageActionVisible(false);
+                        if (selectedMsg) {
+                          setTranslatedMessages(prev => ({
+                            ...prev,
+                            [selectedMsg._id]: "Mock Translation: " + selectedMsg.message
+                          }));
+                          ShowAlertMessage("Message translated (Mock)", popTypes.success);
+                        }
+                      }}
+                    >
+                      <Text style={{ color: colors.white, fontSize: 18 }}>A文</Text>
+                      <Text style={styles.menuItemText}>Translate Message</Text>
+                    </TouchableOpacity>
 
-                <View style={styles.menuDivider} />
+                    <View style={styles.menuDivider} />
+                  </>
+                )}
 
                 <TouchableOpacity
                   style={styles.menuItem}
@@ -1159,11 +1237,30 @@ React.useEffect(() => {
                       >
                         <View style={isMe ? styles.bubbleRight : styles.bubbleLeft}>
                           {decryptedMessage?.startsWith('[IMAGE] ') ? (
-                            <Image 
-                              source={{ uri: decryptedMessage.replace('[IMAGE] ', '') }} 
-                              style={{ width: 200, height: 200, borderRadius: 10 }}
-                              resizeMode="cover"
-                            />
+                            <TouchableOpacity onPress={() => {
+                              setImageViewerUrl(decryptedMessage.replace('[IMAGE] ', ''));
+                              setImageViewerMsgId(msg._id);
+                              setImageViewerVisible(true);
+                            }}>
+                              <Image 
+                                source={{ uri: decryptedMessage.replace('[IMAGE] ', '') }} 
+                                style={{ width: 200, height: 200, borderRadius: 10 }}
+                                resizeMode="cover"
+                              />
+                            </TouchableOpacity>
+                          ) : decryptedMessage?.startsWith('[IMAGE_VIEW_ONCE] ') ? (
+                            <TouchableOpacity 
+                              style={{ width: 200, height: 200, backgroundColor: colors.surfaceAlt, borderRadius: 10, justifyContent: 'center', alignItems: 'center' }}
+                              onPress={() => {
+                                setImageViewerUrl(decryptedMessage.replace('[IMAGE_VIEW_ONCE] ', ''));
+                                setImageViewerMsgId(msg._id);
+                                setIsViewOnceMode(true);
+                                setImageViewerVisible(true);
+                              }}>
+                              <ImageIcon size={40} color={colors.primary} />
+                              <Text style={{ color: colors.primary, marginTop: 10, fontWeight: 'bold' }}>View Once</Text>
+                              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Tap to view image</Text>
+                            </TouchableOpacity>
                           ) : (
                             <Text
                               style={isMe ? styles.msgTextLight : styles.msgText}
@@ -1172,6 +1269,17 @@ React.useEffect(() => {
                             >
                               {translatedMessages[msg._id] || decryptedMessage}
                             </Text>
+                          )}
+
+                          {!isMe && !decryptedMessage?.startsWith('[IMAGE] ') && (
+                            <TouchableOpacity 
+                              style={{ position: 'absolute', bottom: -5, right: -25, backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 2 }}
+                              onPress={() => {
+                                setTranslatedMessages(prev => ({ ...prev, [msg._id]: `[Translated] ${decryptedMessage}` }));
+                              }}
+                            >
+                              <Text style={{ fontSize: 12 }}>🌐</Text>
+                            </TouchableOpacity>
                           )}
 
                           {translatedMessages[msg._id] && !decryptedMessage?.startsWith('[IMAGE] ') && (
@@ -1237,6 +1345,7 @@ React.useEffect(() => {
                     style={{ backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 }}
                     onPress={() => {
                       acceptFriendRequest({ requestId: requestReceivedId }).then(() => {
+                        setIsFriendLocal(true);
                         refetchFriends();
                         refetchFriendReqs();
                       });
@@ -1277,8 +1386,22 @@ React.useEffect(() => {
                 />
                 {!isEditing && newMessage.length === 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <TouchableOpacity style={{ padding: 10 }} onPress={handlePickImage}>
+                    <TouchableOpacity style={styles.inputAction} onPress={handlePickImage}>
                       <ImageIcon size={24} color={colors.textMuted} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.inputAction} onPress={() => {
+                      // Mock sending a view once image
+                      const mockUrl = "https://picsum.photos/400/400";
+                      const payload = {
+                        senderId: currentUserId,
+                        receiverId: userId,
+                        message: `[IMAGE_VIEW_ONCE] ${mockUrl}`,
+                        tempId: Date.now().toString(),
+                      };
+                      socketService.emit("send-message", payload);
+                      setChatMessages((prev) => [...prev, { ...payload, _id: `local-${payload.tempId}`, createdAt: new Date().toISOString() }]);
+                    }}>
+                      <Text style={{ color: colors.primary, fontSize: 10, fontWeight: 'bold' }}>1x</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={{ padding: 10 }} onPress={() => setIcebreakerModalVisible(true)}>
                       <Text style={{ fontSize: 20 }}>💡</Text>

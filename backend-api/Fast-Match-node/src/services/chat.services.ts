@@ -227,9 +227,19 @@ class ChatService {
             ]
         };
 
-        return await ChatMessageModel.updateMany(query, {
+        const result = await ChatMessageModel.updateMany(query, {
             $addToSet: { deletedBy: new Types.ObjectId(requestingUserId) }
         });
+
+        // Also permanently delete the MatchHistory so it disappears from the inbox list completely
+        await MatchHistory.deleteMany({
+            $or: [
+                { user1: new Types.ObjectId(requestingUserId), user2: new Types.ObjectId(targetUserId) },
+                { user1: new Types.ObjectId(targetUserId), user2: new Types.ObjectId(requestingUserId) }
+            ]
+        });
+
+        return result;
     }
 
     /**

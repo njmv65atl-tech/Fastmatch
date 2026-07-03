@@ -11,6 +11,7 @@ import { User } from '@models/user';
 import { UserGift } from '@models/userGift';
 import { FriendModel } from '@models/friend';
 import { RekognitionClient, DetectModerationLabelsCommand } from "@aws-sdk/client-rekognition";
+import notificationServices from '@services/notification.services';
 
 const rekognition = new RekognitionClient({ region: process.env.AWS_REGION || "us-east-1" });
 
@@ -421,6 +422,19 @@ class UserController extends ResponseHandler {
             if (existing) return res.status(400).send(responseEncryptor(req, false, "Request already sent"));
 
             const request = await FriendModel.create({ requester: currentUserId, recipient: targetUserId });
+            
+            // Send notification to recipient
+            const currentUser = await User.findById(currentUserId).select('displayName');
+            if (currentUser) {
+                await notificationServices.sendNotification(
+                    new Types.ObjectId(targetUserId),
+                    'New Friend Request',
+                    `${currentUser.displayName} sent you a friend request.`,
+                    'friend_request',
+                    { requestId: request._id }
+                );
+            }
+
             return res.status(201).send(responseEncryptor(req, true, "Friend request sent", request));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
@@ -439,7 +453,10 @@ class UserController extends ResponseHandler {
                 { new: true }
             );
 
-            if (!request) return res.status(404).send(responseEncryptor(req, false, "Friend request not found or already accepted"));
+            if (!request) return res.status(404).send(responseEncryptor(req, false, "Request not found"));
+
+            // Emit socket event to the requester that the request was accepted
+            (req as any).io.to(request.requester.toString()).emit('friend-request-accepted', { recipientId: currentUserId });
 
             return res.status(200).send(responseEncryptor(req, true, "Friend request accepted", request));
         } catch (error: any) {

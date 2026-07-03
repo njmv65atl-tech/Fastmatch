@@ -71,6 +71,9 @@ export const UserSchema = new Schema<UserInterface>({
     language: stringType(false),
     totalRatingScore: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    lastOnlineNotificationAt: { type: Date, default: null },
+    dailyMatchCount: { type: Number, default: 0 },
+    dailyMatchDate: { type: Date, default: null },
     subscriptionPlan: {
         type: String,
         enum: ['monthly', 'yearly', null],
@@ -103,3 +106,5 @@ export const UserSchema = new Schema<UserInterface>({
 UserSchema.index({ email: 1 })
 UserSchema.index({ phone: 1 })
 UserSchema.index({ isOnline: 1 })
+UserSchema.index({ isBanned: 1 })
+UserSchema.index({ gender: 1 })

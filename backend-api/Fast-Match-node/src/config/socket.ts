@@ -184,8 +184,11 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
     for (const [userId] of onlineUsersMap.entries()) {
         if (userId === currentUser.userId) continue;
 
-        // Skip if user is in active call
-        if (activeCalls.has(userId)) continue;
+        // Skip if user is in active call (activeCalls keyed by matchId, not userId)
+        const isInCall = Array.from(activeCalls.values()).some(
+            (c) => c.user1Id === userId || c.user2Id === userId
+        );
+        if (isInCall) continue;
         // Skip if user is already being matched (isMatching flag in queue)
         const qEntry = matchmakingQueue.get(userId);
         if (qEntry && qEntry.isMatching) continue;
@@ -410,6 +413,24 @@ export const initializeSocket = (io: Server): Server => {
             const freshUser = await User.findById(userId).lean();
             if (!freshUser) return socket.emit('match-error', { message: 'User not found' });
 
+            // Enforce Daily Limit for Free Users
+            if (freshUser.isPremium !== 'premium') {
+                const now = new Date();
+                const lastDate = freshUser.dailyMatchDate ? new Date(freshUser.dailyMatchDate) : new Date(0);
+                const isSameDay = lastDate.getDate() === now.getDate() && lastDate.getMonth() === now.getMonth() && lastDate.getFullYear() === now.getFullYear();
+                
+                let currentCount = isSameDay ? (freshUser.dailyMatchCount || 0) : 0;
+                if (currentCount >= 10) {
+                    return socket.emit('limit_exhausted', { message: 'You have exhausted your 10 free daily matches. Please upgrade to premium for unlimited matching.' });
+                }
+
+                // Increment and update
+                await User.updateOne({ _id: userId }, { 
+                    dailyMatchCount: currentCount + 1,
+                    dailyMatchDate: now
+                });
+            }
+
             console.log(`[ find-match ] 📥 Raw Payload from ${freshUser.displayName}:`, JSON.stringify(data));
 
             const incomingPref = data?.preference || (data as any)?.genderPreference || (data as any)?.gender_preference;
@@ -500,6 +521,22 @@ export const initializeSocket = (io: Server): Server => {
 
                 if (!sender || !target) return socket.emit('match-error', { message: 'User not found' });
                 if ((sender.walletBalance || 0) < data.coinCost) return socket.emit('match-error', { message: 'Insufficient coins for Super Match' });
+
+                // Enforce Daily Limit for Free Users
+                if (sender.isPremium !== 'premium') {
+                    const now = new Date();
+                    const lastDate = sender.dailyMatchDate ? new Date(sender.dailyMatchDate) : new Date(0);
+                    const isSameDay = lastDate.getDate() === now.getDate() && lastDate.getMonth() === now.getMonth() && lastDate.getFullYear() === now.getFullYear();
+                    
+                    let currentCount = isSameDay ? (sender.dailyMatchCount || 0) : 0;
+                    if (currentCount >= 10) {
+                        return socket.emit('limit_exhausted', { message: 'You have exhausted your 10 free daily calls. Please upgrade to premium for unlimited matching.' });
+                    }
+
+                    sender.dailyMatchCount = currentCount + 1;
+                    sender.dailyMatchDate = now;
+                    await sender.save();
+                }
 
                 // Check blocks
                 const callBlock = await blockService.canCallUser(userId, data.targetUserId);
@@ -665,19 +702,21 @@ export const initializeSocket = (io: Server): Server => {
         });
 
         socket.on('match-cancel', async (data) => {
-            const v = activeVerifications.get(data.matchId);
-            if (v) {
-                v.presenceCheck.aborted = true; clearTimeout(v.timeout); activeVerifications.delete(data.matchId);
-                [v.s1, v.s2].forEach(s => { io.to(s).emit('match-error', { message: 'Partner cancelled.' }); io.to(s).emit('call-ended', { match: v.match, endedBy: userId }); });
-            }
-            const call = activeCalls.get(data.matchId);
-            if (call) {
-                const other = call.user1Id === userId ? call.user2Id : call.user1Id;
-                const otherSid = userSocketMap.get(other);
-                if (otherSid) io.to(otherSid).emit('call-ended', { message: 'Partner left.', endedBy: userId });
-                activeCalls.delete(data.matchId);
-            }
-            await handleStage1Cleanup(io, userId);
+            try {
+                const v = activeVerifications.get(data.matchId);
+                if (v) {
+                    v.presenceCheck.aborted = true; clearTimeout(v.timeout); activeVerifications.delete(data.matchId);
+                    [v.s1, v.s2].forEach(s => { io.to(s).emit('match-error', { message: 'Partner cancelled.' }); io.to(s).emit('call-ended', { match: v.match, endedBy: userId }); });
+                }
+                const call = activeCalls.get(data.matchId);
+                if (call) {
+                    const other = call.user1Id === userId ? call.user2Id : call.user1Id;
+                    const otherSid = userSocketMap.get(other);
+                    if (otherSid) io.to(otherSid).emit('call-ended', { message: 'Partner left.', endedBy: userId });
+                    activeCalls.delete(data.matchId);
+                }
+                await handleStage1Cleanup(io, userId);
+            } catch (e) { console.error("match-cancel error:", e); }
         });
 
         socket.on('end-call', async (data) => {
@@ -869,6 +908,17 @@ export const initializeSocket = (io: Server): Server => {
                     v.presenceCheck.aborted = true; clearTimeout(v.timeout); activeVerifications.delete(mid);
                     const other = v.u1Id === userId ? v.s2 : v.s1;
                     io.to(other).emit('match-error', { message: 'Partner left.' });
+                }
+            }
+            // Clean up any active call the user was in
+            for (const [mid, call] of activeCalls.entries()) {
+                if (call.user1Id === userId || call.user2Id === userId) {
+                    const otherId = call.user1Id === userId ? call.user2Id : call.user1Id;
+                    const otherSid = userSocketMap.get(otherId);
+                    if (otherSid) {
+                        io.to(otherSid).emit('call-ended', { match: null, endedBy: userId, message: 'Partner disconnected.' });
+                    }
+                    activeCalls.delete(mid);
                 }
             }
             userSocketMap.delete(userId);

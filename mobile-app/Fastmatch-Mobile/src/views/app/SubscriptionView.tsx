@@ -17,6 +17,7 @@ import { AppView } from "../../types";
 import { Check, Crown } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { fetchProducts, fetchSubscriptions, subscribeToProduct, type Product, type Subscription as IAPSubscription } from "../../utils/iap";
+import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 
 const { width, height } = Dimensions.get("window");
 
@@ -67,6 +68,7 @@ export const SubscriptionView: React.FC<{
   const handlePurchase = async () => {
     // Temporary bypass for testing
     onUpgrade(selectedPlan);
+    ShowAlertMessage("Premium Unlocked successfully!", popTypes.success);
     setView(AppView.HOME);
   };
 

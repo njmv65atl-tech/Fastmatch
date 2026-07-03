@@ -8,11 +8,12 @@ import {
   StyleSheet,
   RefreshControl,
   Dimensions,
+  Alert
 } from "react-native";
 import { MobileContainer, Header } from "../../components/UIComponents";
 import { AppView } from "../../types";
 import { colors } from "../../utils/colors";
-import { useConversationHistoryQuery } from "../../redux/services/auth";
+import { useConversationHistoryQuery, useClearChatMutation } from "../../redux/services/auth";
 import { IMG_URL } from "../../redux/services";
 import { socket } from "../../socket/socket";
 import { useDispatch } from "react-redux";
@@ -42,6 +43,7 @@ export const ChatInboxView: React.FC<{
   });
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [clearChat] = useClearChatMutation();
   
   // localUpdates stores real-time changes from the socket
   const [localUpdates, setLocalUpdates] = React.useState<{
@@ -163,6 +165,28 @@ export const ChatInboxView: React.FC<{
     onSelectUser(item._id, displayName, avatarUrl, unreadCount , item);
   };
 
+  const handleDeleteChat = (item: any) => {
+    Alert.alert(
+      "Delete Chat",
+      `Are you sure you want to delete your chat with ${item.displayName || item.fullName || "this user"}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearChat({ otherUserId: item._id }).unwrap();
+              refetch(); 
+            } catch (err) {
+              console.error("Failed to delete chat", err);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <MobileContainer>
       <Header title="Chats" />
@@ -193,6 +217,7 @@ export const ChatInboxView: React.FC<{
               onPress={() => {
                 console.log("the pressed user item is : ",item)
                 handleChatPress(item)}}
+              onLongPress={() => handleDeleteChat(item)}
               style={[styles.chatRow, count > 0 && styles.chatRowUnread]}
               activeOpacity={0.7}
             >

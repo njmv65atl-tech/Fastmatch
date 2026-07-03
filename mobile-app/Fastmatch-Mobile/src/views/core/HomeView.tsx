@@ -27,6 +27,8 @@ import LinearGradient from "react-native-linear-gradient";
 import { colors } from "../../utils/colors";
 import { fontFamily } from "../../assets/fonts/fontFamily";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
+import { DailyRewardModal } from "../../components/DailyRewardModal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 
@@ -47,11 +49,22 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
   const [showDailyReward, setShowDailyReward] = React.useState(false);
 
   React.useEffect(() => {
-    // Show mock daily reward once per session on mount
-    const timer = setTimeout(() => {
-      setShowDailyReward(true);
-    }, 1500);
-    return () => clearTimeout(timer);
+    const checkDailyReward = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const lastClaimDate = await AsyncStorage.getItem('lastDailyRewardDate');
+        if (lastClaimDate !== today) {
+          const timer = setTimeout(() => {
+            setShowDailyReward(true);
+          }, 1500);
+          await AsyncStorage.setItem('lastDailyRewardDate', today);
+          return () => clearTimeout(timer);
+        }
+      } catch (e) {
+        console.error("Failed to check daily reward", e);
+      }
+    };
+    checkDailyReward();
   }, []);
 
   const claimReward = () => {
@@ -144,7 +157,12 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               onPress={async () => {
                 const state = await NetInfo.fetch();
                 if (state.isConnected) {
-                  setView(AppView.DISCOVER);
+                  if (user?.isPremium === 'premium') {
+                    setView(AppView.DISCOVER);
+                  } else {
+                    ShowAlertMessage("Discover Matches is a premium feature. Please upgrade.", popTypes.info);
+                    setView(AppView.SUBSCRIPTION);
+                  }
                 } else {
                   ShowAlertMessage("Please check your internet connection", popTypes.error);
                 }
@@ -160,7 +178,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               </View>
             </TouchableOpacity>
           </View>
-          {(!user?.role || user?.role === UserRole.FREE ) && (
+          {user?.isPremium !== 'premium' && (
             <View style={styles.upgradeBorderWrapper}>
               <TouchableOpacity style={styles.upgradeCard} activeOpacity={0.9}>
                 <View style={styles.upgradeInfo}>
@@ -190,19 +208,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
           )}
         </ScrollView>
 
-        {/* Daily Reward Modal */}
-        <Modal visible={showDailyReward} transparent animationType="fade">
-          <View style={styles.modalOverlay}>
-            <View style={styles.rewardModalContainer}>
-              <Zap size={48} color={colors.gold} />
-              <Text style={styles.rewardTitle}>Daily Reward!</Text>
-              <Text style={styles.rewardSubtitle}>You earned 10 coins for logging in today.</Text>
-              <TouchableOpacity style={styles.claimButton} onPress={claimReward}>
-                <Text style={styles.claimButtonText}>Claim</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <DailyRewardModal visible={showDailyReward} onClaim={claimReward} />
 
       </MobileContainer>
     </View>
@@ -420,47 +426,5 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  rewardModalContainer: {
-    width: '80%',
-    backgroundColor: colors.white,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  rewardTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.black,
-    marginTop: 12,
-  },
-  rewardSubtitle: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginVertical: 12,
-  },
-  claimButton: {
-    backgroundColor: colors.gold,
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginTop: 8,
-  },
-  claimButtonText: {
-    color: colors.black,
-    fontWeight: 'bold',
-    fontSize: 16,
   }
 });

@@ -30,6 +30,7 @@ import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import { setGlobalUser } from "../../redux/slices/persistedSlice";
 import DeviceInfo from 'react-native-device-info'; // Add this import
 import messaging from '@react-native-firebase/messaging';
+import { generateE2EKeyPair, getE2EKeys } from "../../helpers/e2e";
 
 
 interface AuthProps {
@@ -90,6 +91,13 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
         }
       }
 
+      // E2E Keys
+      let { publicKey } = await getE2EKeys();
+      if (!publicKey) {
+        const keys = await generateE2EKeyPair();
+        publicKey = keys?.publicKey || null;
+      }
+
       // Create the payload including device information
       const loginPayload = {
         ...fields,
@@ -97,6 +105,7 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
         deviceName: deviceName, // From state
         platform: Platform.OS, // Good practice to include this too
         fcmToken: fcmToken || "", // Fallback to empty string if still null
+        publicKey: publicKey, // E2EE Public Key
       };
       
 

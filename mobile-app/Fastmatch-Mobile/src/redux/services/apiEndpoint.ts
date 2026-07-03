@@ -29,6 +29,7 @@ export const apiEndPoints = {
   upgradePremiumMock: "user/upgrade-premium-mock",
   sendFriendRequest: "user/send-friend-request",
   acceptFriendRequest: "user/accept-friend-request",
+  removeFriend: "user/remove-friend",
   myFriends: "user/my-friends",
   friendRequests: "user/friend-requests",
 };

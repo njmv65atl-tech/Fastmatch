@@ -1,8 +1,8 @@
 import axios from "axios";
 
-export const serverURL = import.meta.env.VITE_API_SERVER;
-const baseURL = `${serverURL}/api/v1/`;
-export const imageUrl = serverURL;
+export const serverURL = import.meta.env.VITE_API_SERVER || "";
+const baseURL = serverURL ? `${serverURL}/api/v1/` : `/api/v1/`;
+export const imageUrl = serverURL || "";
 
 
 export const APIKit = axios.create({
