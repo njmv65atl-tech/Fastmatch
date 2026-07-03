@@ -45,6 +45,7 @@ router.post('/upgrade-premium-mock', verifyToken, tryCatchMiddleware(UserControl
 router.post('/update-public-key', verifyToken, tryCatchMiddleware(UserController.updatePublicKey))
 router.post('/send-friend-request', verifyToken, tryCatchMiddleware(UserController.sendFriendRequest))
 router.post('/accept-friend-request', verifyToken, tryCatchMiddleware(UserController.acceptFriendRequest))
+router.post('/remove-friend', verifyToken, tryCatchMiddleware(UserController.removeFriend))
 router.get('/my-friends', verifyToken, tryCatchMiddleware(UserController.myFriends))
 router.get('/friend-requests', verifyToken, tryCatchMiddleware(UserController.friendRequests))
 router.post('/moderate-frame', verifyToken, tryCatchMiddleware(UserController.moderateFrame))

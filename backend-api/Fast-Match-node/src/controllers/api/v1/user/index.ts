@@ -46,6 +46,7 @@ class UserController extends ResponseHandler {
         this.acceptFriendRequest = this.acceptFriendRequest.bind(this);
         this.myFriends = this.myFriends.bind(this);
         this.friendRequests = this.friendRequests.bind(this);
+        this.removeFriend = this.removeFriend.bind(this);
         this.moderateFrame = this.moderateFrame.bind(this);
     }
 
@@ -469,6 +470,25 @@ class UserController extends ResponseHandler {
             }).populate('requester', 'displayName profilePicture isOnline isPremium publicKey');
 
             return res.status(200).send(responseEncryptor(req, true, "Friend requests fetched", requests));
+        } catch (error: any) {
+            return res.status(constants.errorCode)
+                .send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async removeFriend(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const { targetUserId } = req.body;
+            if (!targetUserId) throw new Error("targetUserId is required");
+
+            await FriendModel.findOneAndDelete({
+                $or: [
+                    { requester: currentUserId, recipient: targetUserId },
+                    { requester: targetUserId, recipient: currentUserId }
+                ]
+            });
+            return res.status(200).send(responseEncryptor(req, true, "Friend removed"));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
