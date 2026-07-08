@@ -30,6 +30,7 @@ jobs:
       - name: Build iOS App (Unsigned)
         working-directory: mobile-app/Fastmatch-Mobile
         run: |
+          set -o pipefail
           xcodebuild -workspace ios/FastMatch.xcworkspace \
             -scheme FastMatch \
             -configuration Release \
@@ -37,7 +38,14 @@ jobs:
             -derivedDataPath ios/build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" | tee build_log.txt
+
+      - name: Print xcodebuild log on failure
+        if: failure()
+        working-directory: mobile-app/Fastmatch-Mobile
+        run: |
+          echo "==== XCODEBUILD ERROR LOG ===="
+          tail -n 200 build_log.txt
             
       - name: Create IPA payload
         working-directory: mobile-app/Fastmatch-Mobile
