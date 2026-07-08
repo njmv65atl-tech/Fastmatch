@@ -45,7 +45,9 @@ jobs:
         working-directory: mobile-app/Fastmatch-Mobile
         run: |
           echo "==== XCODEBUILD ERROR LOG ===="
-          tail -n 200 build_log.txt
+          grep -i -A 15 -B 5 "error:" build_log.txt || true
+          echo "==== XCPRETTY LOG ===="
+          xcpretty < build_log.txt || true
             
       - name: Create IPA payload
         working-directory: mobile-app/Fastmatch-Mobile
