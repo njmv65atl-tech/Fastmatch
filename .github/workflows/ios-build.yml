@@ -19,7 +19,7 @@ jobs:
           
       - name: Install dependencies
         working-directory: mobile-app/Fastmatch-Mobile
-        run: npm install --legacy-peer-deps
+        run: npm install
         
       - name: Install CocoaPods
         working-directory: mobile-app/Fastmatch-Mobile/ios
