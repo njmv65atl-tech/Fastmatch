@@ -1,0 +1,53 @@
+name: iOS Unsigned Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build iOS App
+    runs-on: macos-14
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - name: Install dependencies
+        working-directory: mobile-app/Fastmatch-Mobile
+        run: npm install
+        
+      - name: Install CocoaPods
+        working-directory: mobile-app/Fastmatch-Mobile/ios
+        run: pod install
+        
+      - name: Build iOS App (Unsigned)
+        working-directory: mobile-app/Fastmatch-Mobile
+        run: |
+          xcodebuild -workspace ios/FastMatch.xcworkspace \
+            -scheme FastMatch \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            ENTITLEMENTS_REQUIRED=YES
+            
+      - name: Create IPA payload
+        working-directory: mobile-app/Fastmatch-Mobile
+        run: |
+          mkdir -p Payload
+          mv ios/build/Build/Products/Release-iphoneos/FastMatch.app Payload/
+          zip -r FastMatch.ipa Payload
+          
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FastMatch-iOS-App
+          path: mobile-app/Fastmatch-Mobile/FastMatch.ipa
+          retention-days: 7
