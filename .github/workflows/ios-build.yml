@@ -48,6 +48,12 @@ jobs:
           grep -i -A 15 -B 5 "error:" build_log.txt || true
           echo "==== XCPRETTY LOG ===="
           xcpretty < build_log.txt || true
+      - name: Upload Build Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xcode-Build-Log
+          path: mobile-app/Fastmatch-Mobile/build_log.txt
             
       - name: Create IPA payload
         working-directory: mobile-app/Fastmatch-Mobile
