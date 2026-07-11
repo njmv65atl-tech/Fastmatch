@@ -410,9 +410,10 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
           </View>
         </View>
       </Modal>
-    </MobileContainer>
-  );
-};
+        </MobileContainer>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, marginBottom: 10 }}>

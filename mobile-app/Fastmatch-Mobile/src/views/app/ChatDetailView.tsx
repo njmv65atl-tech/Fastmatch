@@ -26,7 +26,7 @@ import { CHAT_DETAIL_TEXT } from "../../utils/commonText";
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useBlockUserMutation, useChatHistoryQuery, useClearChatMutation, useUnblockUserMutation, useBlockCallsMutation, useUnblockCallsMutation, useDeleteMessagesMutation, useEditMessageMutation, useReportBlockMutation, authApi, useMyFriendsQuery, useFriendRequestsQuery, useSendFriendRequestMutation, useAcceptFriendRequestMutation, useRemoveFriendMutation } from "../../redux/services/auth";
 import { useDispatch } from "react-redux";
-import { Send, ChevronLeft, MoreVertical, ShieldBan, Trash2, Pencil, Flag, Phone, Image as ImageIcon, UserPlus, UserMinus, Check } from "lucide-react-native";
+import { Send, ChevronLeft, MoreVertical, ShieldBan, Trash2, Pencil, Flag, Phone, Image as ImageIcon, UserPlus, UserMinus, Check, X } from "lucide-react-native";
 import socketService from "../../helpers/SocketService";
 import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
@@ -231,44 +231,7 @@ React.useEffect(() => {
           </TouchableOpacity>
         </View>
       </View>
-      {/* Image Viewer Modal */}
-      <Modal visible={imageViewerVisible} transparent={true} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
-          <TouchableOpacity 
-            style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 }}
-            onPress={() => {
-              setImageViewerVisible(false);
-              if (isViewOnceMode && imageViewerMsgId) {
-                // Delete the message completely after viewing
-                managerApiCall(deleteMessages, { messageIds: [imageViewerMsgId] });
-                setChatMessages(prev => prev.filter(m => m._id !== imageViewerMsgId));
-                setIsViewOnceMode(false);
-              }
-            }}
-          >
-            <X size={30} color={colors.white} />
-          </TouchableOpacity>
-          {imageViewerUrl && (
-            <Image 
-              source={{ uri: imageViewerUrl }} 
-              style={{ width: '100%', height: '80%' }}
-              resizeMode="contain"
-            />
-          )}
-          {!isViewOnceMode && (
-            <TouchableOpacity 
-              style={{ position: 'absolute', bottom: 50, backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
-              onPress={() => {
-                ShowAlertMessage("Image saved to gallery!", popTypes.success);
-              }}
-            >
-              <Text style={{ color: colors.white, fontWeight: 'bold' }}>Save Image</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </Modal>
-
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -315,6 +278,22 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
       f.requester?._id === userId || f.recipient?._id === userId
     );
   }, [myFriendsData, userId, isFriendLocal]);
+
+  // Listen for friend-request-accepted event to update UI instantly for the sender
+  React.useEffect(() => {
+    const handleFriendAccepted = (data: any) => {
+      // If the recipient of our request accepted it, they are the one we are currently chatting with
+      if (data?.recipientId === userId || data?.requesterId === userId) {
+        setIsFriendLocal(true);
+      }
+    };
+    
+    // Using on/off specific handler so we don't accidentally remove global listeners
+    socketService.on("friend-request-accepted", handleFriendAccepted);
+    return () => {
+      socketService.off("friend-request-accepted");
+    };
+  }, [userId]);
 
   const requestReceivedId = React.useMemo(() => {
     if (!friendReqsData?.data) return null;
@@ -1428,6 +1407,43 @@ React.useEffect(() => {
           </View>
         </KeyboardAvoidingView>
       </View>
+
+      {/* Image Viewer Modal */}
+      <Modal visible={imageViewerVisible} transparent={true} animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 }}
+            onPress={() => {
+              setImageViewerVisible(false);
+              if (isViewOnceMode && imageViewerMsgId) {
+                // Delete the message completely after viewing
+                managerApiCall(deleteMessages, { messageIds: [imageViewerMsgId] });
+                setChatMessages(prev => prev.filter(m => m._id !== imageViewerMsgId));
+                setIsViewOnceMode(false);
+              }
+            }}
+          >
+            <X size={30} color={colors.white} />
+          </TouchableOpacity>
+          {imageViewerUrl && (
+            <Image 
+              source={{ uri: imageViewerUrl }} 
+              style={{ width: '100%', height: '80%' }}
+              resizeMode="contain"
+            />
+          )}
+          {!isViewOnceMode && (
+            <TouchableOpacity 
+              style={{ position: 'absolute', bottom: 50, backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
+              onPress={() => {
+                ShowAlertMessage("Image saved to gallery!", popTypes.success);
+              }}
+            >
+              <Text style={{ color: colors.white, fontWeight: 'bold' }}>Save Image</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
     </MobileContainer>
   );
 };
