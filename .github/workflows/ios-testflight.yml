@@ -47,3 +47,16 @@ jobs:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
         run: fastlane beta
+        
+      - name: Print xcodebuild log on failure
+        if: failure()
+        run: |
+          echo "==== XCODEBUILD ERROR LOG ===="
+          cat /Users/runner/Library/Logs/gym/*.log | grep -i -A 15 -B 5 "error:" | head -n 300 || true
+          
+      - name: Upload Build Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xcode-Build-Log
+          path: /Users/runner/Library/Logs/gym/

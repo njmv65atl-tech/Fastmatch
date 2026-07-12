@@ -22,17 +22,25 @@ platform :ios do
     )
     sigh(force: true)
     
-    # Disable automatic code signing in the project before building
-    disable_automatic_code_signing(path: "FastMatch.xcodeproj")
+    # Inject the profile into the Xcode project
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: "FastMatch.xcodeproj"
+    )
+    
+    update_project_provisioning(
+      xcodeproj: "FastMatch.xcodeproj",
+      profile: ENV["SIGH_PROFILE_PATH"],
+      target_filter: "FastMatch",
+      build_configuration: "Release"
+    )
 
-    # Build the app
+    # Build the app using Fastlane's smart defaults
     build_app(
       workspace: "FastMatch.xcworkspace",
       scheme: "FastMatch",
       export_method: "app-store",
-      clean: true,
-      skip_profile_detection: true,
-      xcargs: "CODE_SIGN_STYLE=Manual"
+      clean: true
     )
 
     # Upload to TestFlight
