@@ -14,7 +14,10 @@ platform :ios do
     setup_ci
 
     # Fetch certificates and profiles
-    cert
+    cert(
+      keychain_path: ENV["MATCH_KEYCHAIN_NAME"],
+      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"]
+    )
     sigh(force: true)
     
     # Disable automatic code signing in the project before building
