@@ -21,7 +21,9 @@ jobs:
           swift --version
           
       - name: Download iOS Platform (Xcode 16 requirement)
-        run: xcodebuild -downloadPlatform iOS
+        run: |
+          xcrun simctl list || true
+          xcodebuild -downloadPlatform iOS || true
           
       - name: Setup Node.js
         uses: actions/setup-node@v4
