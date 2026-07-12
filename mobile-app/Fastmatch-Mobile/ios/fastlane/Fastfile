@@ -14,8 +14,10 @@ platform :ios do
     setup_ci
 
     # Fetch certificates and profiles
+    keychain_path = File.expand_path("~/Library/Keychains/#{ENV['MATCH_KEYCHAIN_NAME']}-db")
+    
     cert(
-      keychain_path: ENV["MATCH_KEYCHAIN_NAME"],
+      keychain_path: keychain_path,
       keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"]
     )
     sigh(force: true)
