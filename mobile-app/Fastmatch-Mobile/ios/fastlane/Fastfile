@@ -39,6 +39,13 @@ platform :ios do
       build_configuration: "Release"
     )
 
+    # Automatically increment build number based on TestFlight
+    build_num = latest_testflight_build_number(app_identifier: "com.fastmatch")
+    increment_build_number(
+      build_number: build_num + 1,
+      xcodeproj: "FastMatch.xcodeproj"
+    )
+
     # Build the app using Fastlane's smart defaults
     build_app(
       workspace: "FastMatch.xcworkspace",
