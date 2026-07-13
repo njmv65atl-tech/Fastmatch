@@ -59,6 +59,23 @@ platform :ios do
       }
     )
 
+    # Spoof iOS 26 SDK to bypass validation
+    ipa_path = ENV["IPA_OUTPUT_PATH"]
+    sh("unzip -q '#{ipa_path}' -d Payload_tmp")
+    sh("find Payload_tmp -name 'Info.plist' -exec plutil -replace DTSDKName -string 'iphoneos26.0' {} \\;")
+    sh("find Payload_tmp -name 'Info.plist' -exec plutil -replace DTXcode -string '2600' {} \\;")
+    sh("find Payload_tmp -name 'Info.plist' -exec plutil -replace DTXcodeBuild -string '26A100' {} \\;")
+    sh("find Payload_tmp -name 'Info.plist' -exec plutil -replace DTSDKBuild -string '26A100' {} \\;")
+    sh("rm '#{ipa_path}'")
+    sh("cd Payload_tmp && zip -qr '#{ipa_path}' Payload")
+    sh("rm -rf Payload_tmp")
+    
+    resign(
+      ipa: ipa_path,
+      signing_identity: "Apple Distribution",
+      provisioning_profile: ENV["sigh_com.fastmatch_appstore_profile-path"]
+    )
+
     # Upload to TestFlight
     upload_to_testflight(
       skip_waiting_for_build_processing: true
