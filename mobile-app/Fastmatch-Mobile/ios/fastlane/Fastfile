@@ -16,11 +16,15 @@ platform :ios do
     # Fetch certificates and profiles
     keychain_path = File.expand_path("~/Library/Keychains/#{ENV['MATCH_KEYCHAIN_NAME']}-db")
     
-    cert(
-      keychain_path: keychain_path,
-      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"]
+    # Sync certificates and profiles using match
+    match(
+      type: "appstore",
+      git_url: ENV["MATCH_GIT_URL"],
+      app_identifier: "com.fastmatch",
+      keychain_name: ENV["MATCH_KEYCHAIN_NAME"],
+      keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"],
+      readonly: false
     )
-    sigh(force: true)
     
     # Inject the profile into the Xcode project
     update_code_signing_settings(
@@ -30,7 +34,7 @@ platform :ios do
     
     update_project_provisioning(
       xcodeproj: "FastMatch.xcodeproj",
-      profile: ENV["SIGH_PROFILE_PATH"],
+      profile: ENV["sigh_com.fastmatch_appstore_profile-path"],
       target_filter: "FastMatch",
       build_configuration: "Release"
     )
@@ -45,7 +49,7 @@ platform :ios do
         "CODE_SIGN_IDENTITY" => "Apple Distribution",
         "CODE_SIGN_IDENTITY[sdk=iphoneos*]" => "Apple Distribution",
         "CODE_SIGN_STYLE" => "Manual",
-        "PROVISIONING_PROFILE_SPECIFIER" => ENV['SIGH_NAME']
+        "PROVISIONING_PROFILE_SPECIFIER" => ENV["sigh_com.fastmatch_appstore_profile-name"]
       }
     )
 
