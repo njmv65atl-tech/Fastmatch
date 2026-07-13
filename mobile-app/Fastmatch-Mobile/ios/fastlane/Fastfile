@@ -47,7 +47,6 @@ platform :ios do
       clean: true,
       xcargs: {
         "CODE_SIGN_IDENTITY" => "Apple Distribution",
-        "CODE_SIGN_IDENTITY[sdk=iphoneos*]" => "Apple Distribution",
         "CODE_SIGN_STYLE" => "Manual",
         "PROVISIONING_PROFILE_SPECIFIER" => ENV["sigh_com.fastmatch_appstore_profile-name"]
       }
