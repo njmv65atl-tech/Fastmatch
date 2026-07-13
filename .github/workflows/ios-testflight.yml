@@ -54,7 +54,7 @@ jobs:
         if: failure()
         run: |
           echo "==== XCODEBUILD ERROR LOG ===="
-          cat /Users/runner/Library/Logs/gym/*.log | grep -i -A 15 -B 5 "error:" | head -n 300 || true
+          tail -n 200 /Users/runner/Library/Logs/gym/*.log || true
           
       - name: Upload Build Log
         if: failure()
