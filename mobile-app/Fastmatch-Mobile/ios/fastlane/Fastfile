@@ -72,7 +72,7 @@ platform :ios do
     
     resign(
       ipa: ipa_path,
-      signing_identity: "Apple Distribution",
+      signing_identity: ENV["sigh_com.fastmatch_appstore_certificate-name"],
       provisioning_profile: ENV["sigh_com.fastmatch_appstore_profile-path"]
     )
 
