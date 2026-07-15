@@ -77,6 +77,9 @@ platform :ios do
         sh("plutil -replace DTXcode -string '2660' '#{path}'")
         sh("plutil -replace DTXcodeBuild -string '17F113' '#{path}'")
         sh("plutil -replace DTSDKBuild -string '17F113' '#{path}'")
+        sh("plutil -replace DTPlatformBuild -string '17F113' '#{path}'")
+        sh("plutil -replace DTPlatformVersion -string '26.6' '#{path}'")
+        sh("plutil -replace BuildMachineOSBuild -string '24A335' '#{path}'")
         sh("plutil -replace MinimumOSVersion -string '#{min_os}' '#{path}'")
       else
         # Check if Mach-O
