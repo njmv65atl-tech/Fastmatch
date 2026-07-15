@@ -9,6 +9,7 @@ import { Types } from "mongoose";
 import { User } from '../models/user';
 import { Icebreaker } from '../models/icebreaker';
 import { Announcement } from '../models/announcement';
+import notificationServices from "./notification.services";
 
 const message = { ...authConstant.auth, ...adminConstant.admin };
 
@@ -209,7 +210,29 @@ class AdminService {
     }
 
     async createAnnouncement(data: any) {
-        return await Announcement.create(data);
+        const announcement = await Announcement.create(data);
+        
+        // Determine target audience
+        let query: any = { role: 'user', deletedAt: null };
+        if (data.targetAudience === 'premium') {
+            query.isPremium = 'premium';
+        } else if (data.targetAudience === 'free') {
+            query.isPremium = 'free';
+        }
+
+        // Fetch users and send push notifications asynchronously
+        const users = await User.find(query).select('_id');
+        users.forEach(user => {
+            notificationServices.sendNotification(
+                user._id,
+                data.title,
+                data.message,
+                'announcement',
+                { announcementId: announcement._id.toString() }
+            ).catch(err => console.error('FCM Error:', err));
+        });
+
+        return announcement;
     }
 
     async deleteAnnouncement(id: string) {
