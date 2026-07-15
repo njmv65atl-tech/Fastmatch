@@ -140,8 +140,8 @@ export const getAnnouncements = tryCatchMiddleware(async (req: Request, res: Res
     res.status(constants.successCode).json(responseEncryptor(req, true, 'Announcements fetched successfully', result));
 });
 
-export const createAnnouncement = tryCatchMiddleware(async (req: Request, res: Response) => {
-    const result = await adminServices.createAnnouncement(req.body);
+export const createAnnouncement = tryCatchMiddleware(async (req: any, res: Response) => {
+    const result = await adminServices.createAnnouncement({ ...req.body, createdBy: req.user._id });
     res.status(constants.successCode).json(responseEncryptor(req, true, 'Announcement created successfully', result));
 });
 
