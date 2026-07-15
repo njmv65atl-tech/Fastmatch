@@ -75,8 +75,8 @@ platform :ios do
       if path.end_with?("Info.plist")
         sh("plutil -replace DTSDKName -string 'iphoneos26.0' '#{path}'")
         sh("plutil -replace DTXcode -string '2600' '#{path}'")
-        sh("plutil -replace DTXcodeBuild -string '26A100' '#{path}'")
-        sh("plutil -replace DTSDKBuild -string '26A100' '#{path}'")
+        sh("plutil -replace DTXcodeBuild -string '26A342' '#{path}'")
+        sh("plutil -replace DTSDKBuild -string '26A342' '#{path}'")
         sh("plutil -replace MinimumOSVersion -string '#{min_os}' '#{path}'")
       else
         # Check if Mach-O
