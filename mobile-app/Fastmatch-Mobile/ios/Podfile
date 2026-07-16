@@ -59,7 +59,22 @@ target 'FastMatch' do
         config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = "YES"
         config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
         config.build_settings['WARNING_CFLAGS'] = '-Wno-everything'
+        
+        # Fix for Undefined symbol: __swift_FORCE_LOAD_$_swiftCompatibility56 on newer Xcode versions
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        config.build_settings['OTHER_LDFLAGS'] << '-Wl,-U,_swift_FORCE_LOAD_$_swiftCompatibility56'
       end
+    end
+    
+    # Also apply to main app target
+    installer.aggregate_targets.each do |target|
+      target.user_project.build_configurations.each do |config|
+        config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
+        if !config.build_settings['OTHER_LDFLAGS'].include?('-Wl,-U,_swift_FORCE_LOAD_$_swiftCompatibility56')
+          config.build_settings['OTHER_LDFLAGS'] << '-Wl,-U,_swift_FORCE_LOAD_$_swiftCompatibility56'
+        end
+      end
+      target.user_project.save
     end
   end
 end
