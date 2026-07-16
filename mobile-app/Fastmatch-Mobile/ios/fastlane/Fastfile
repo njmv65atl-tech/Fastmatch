@@ -91,7 +91,7 @@ platform :ios do
     end
 
     sh("rm '#{ipa_path}'")
-    sh("cd Payload_tmp && zip -qr '#{ipa_path}' Payload")
+    sh("cd Payload_tmp && zip -qr '#{ipa_path}' *")
     sh("rm -rf Payload_tmp")
     
     resign(
