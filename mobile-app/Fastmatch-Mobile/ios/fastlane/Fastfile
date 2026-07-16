@@ -58,41 +58,8 @@ platform :ios do
         "PROVISIONING_PROFILE_SPECIFIER" => ENV["sigh_com.fastmatch_appstore_profile-name"]
       }
     )
-
-    # Spoof iOS 26 SDK to bypass validation
+    
     ipa_path = ENV["IPA_OUTPUT_PATH"]
-    sh("unzip -q '#{ipa_path}' -d Payload_tmp")
-    
-    # Extract main app's MinimumOSVersion
-    main_plist = "Payload_tmp/Payload/FastMatch.app/Info.plist"
-    min_os = `plutil -extract MinimumOSVersion raw '#{main_plist}'`.strip
-    min_os = "15.0" if min_os.empty? || min_os.include?("Error")
-    
-    require 'find'
-    Find.find('Payload_tmp') do |path|
-      next unless File.file?(path)
-      
-      if path.end_with?("Info.plist")
-        sh("plutil -replace DTSDKName -string 'iphoneos26.5' '#{path}'")
-        sh("plutil -replace DTXcode -string '2660' '#{path}'")
-        sh("plutil -replace DTXcodeBuild -string '17F113' '#{path}'")
-        sh("plutil -replace DTSDKBuild -string '23F84' '#{path}'")
-        sh("plutil -replace DTPlatformBuild -string '23F84' '#{path}'")
-        sh("plutil -replace DTPlatformVersion -string '26.5' '#{path}'")
-        sh("plutil -replace BuildMachineOSBuild -string '24A335' '#{path}'")
-        sh("plutil -replace MinimumOSVersion -string '#{min_os}' '#{path}'")
-      else
-        # Check if Mach-O
-        if `file '#{path}'`.include?("Mach-O")
-          # Use vtool to spoof LC_BUILD_VERSION (platform 2 = iOS, minos, sdk 26.5)
-          sh("vtool -set-build-version 2 #{min_os} 26.5 -replace -output '#{path}' '#{path}' || true")
-        end
-      end
-    end
-
-    sh("rm '#{ipa_path}'")
-    sh("cd Payload_tmp && zip -qr '#{ipa_path}' *")
-    sh("rm -rf Payload_tmp")
     
     resign(
       ipa: ipa_path,
