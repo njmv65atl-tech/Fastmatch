@@ -236,6 +236,11 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {
             const timeoutPromise = new Promise<string>((_, reject) =>
               setTimeout(() => reject(new Error('FCM token timeout')), 3000)
             );
+            
+            if (Platform.OS === 'ios' && !messaging().isDeviceRegisteredForRemoteMessages) {
+              await messaging().registerDeviceForRemoteMessages();
+            }
+
             fcmToken = await Promise.race([
               messaging().getToken(),
               timeoutPromise

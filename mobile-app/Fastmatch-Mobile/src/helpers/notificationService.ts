@@ -32,6 +32,12 @@ export class NotificationService {
     try {
       let fcmToken = await DataManager.getFcmToken();
       if (!fcmToken) {
+        // REQUIRED FOR iOS: Register with APNs before fetching FCM token
+        if (Platform.OS === 'ios' && !messaging().isDeviceRegisteredForRemoteMessages) {
+          console.log('Registering device for remote messages on iOS...');
+          await messaging().registerDeviceForRemoteMessages();
+        }
+
         fcmToken = await messaging().getToken();
         if (fcmToken) {
           console.log('New FCM Token:', fcmToken);

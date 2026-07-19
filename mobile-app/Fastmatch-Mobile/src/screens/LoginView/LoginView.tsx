@@ -82,6 +82,9 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
       // If token not in storage, try to get it directly
       if (!fcmToken) {
         try {
+          if (Platform.OS === 'ios' && !messaging().isDeviceRegisteredForRemoteMessages) {
+            await messaging().registerDeviceForRemoteMessages();
+          }
           fcmToken = await messaging().getToken();
           if (fcmToken) {
             await DataManager.setFcmToken(fcmToken);
