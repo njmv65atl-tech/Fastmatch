@@ -228,23 +228,26 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {
       formData.append("location",location);
       formData.append("language", language);
 
-      // Add device info and FCM token
       const addDeviceInfo = async () => {
         let fcmToken = await DataManager.getFcmToken();
         if (!fcmToken) {
           try {
+            const fetchTokenTask = async () => {
+              if (Platform.OS === 'ios' && !messaging().isDeviceRegisteredForRemoteMessages) {
+                await messaging().registerDeviceForRemoteMessages();
+              }
+              return await messaging().getToken();
+            };
+
             const timeoutPromise = new Promise<string>((_, reject) =>
-              setTimeout(() => reject(new Error('FCM token timeout')), 3000)
+              setTimeout(() => reject(new Error('FCM token timeout')), 4000)
             );
             
-            if (Platform.OS === 'ios' && !messaging().isDeviceRegisteredForRemoteMessages) {
-              await messaging().registerDeviceForRemoteMessages();
-            }
-
             fcmToken = await Promise.race([
-              messaging().getToken(),
+              fetchTokenTask(),
               timeoutPromise
             ]);
+
             if (fcmToken) {
               await DataManager.setFcmToken(fcmToken);
             }

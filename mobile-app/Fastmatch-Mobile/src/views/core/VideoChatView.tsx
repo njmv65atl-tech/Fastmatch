@@ -776,8 +776,27 @@ export const VideoChatView: React.FC<CoreProps> = ({
 
         setPermissionsGranted(ok);
       } else {
-        console.log("[VideoChatView] iOS — permissions assumed granted");
-        setPermissionsGranted(true);
+        console.log("[VideoChatView] Requesting iOS permissions");
+        try {
+          const { request, PERMISSIONS, RESULTS } = require('react-native-permissions');
+          const cameraStatus = await request(PERMISSIONS.IOS.CAMERA);
+          const micStatus = await request(PERMISSIONS.IOS.MICROPHONE);
+          
+          const cameraOk = cameraStatus === RESULTS.GRANTED;
+          const micOk = micStatus === RESULTS.GRANTED;
+          
+          if (!cameraOk || !micOk) {
+            console.warn("[VideoChatView] ⚠️ Permission denied on iOS — camera:", cameraOk, "| mic:", micOk);
+            setError("Camera & Mic permissions required");
+            setPermissionsGranted(false);
+          } else {
+            console.log("[VideoChatView] ✅ All iOS permissions granted");
+            setPermissionsGranted(true);
+          }
+        } catch (err) {
+          console.error("Error requesting iOS permissions:", err);
+          setPermissionsGranted(true); // Fallback
+        }
       }
     };
 

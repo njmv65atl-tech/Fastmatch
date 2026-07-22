@@ -301,6 +301,12 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
     return req ? req._id : null;
   }, [friendReqsData, userId]);
 
+  const isRequestSentByMe = React.useMemo(() => {
+    if (requestSent) return true;
+    if (!friendReqsData?.data) return false;
+    return friendReqsData.data.some((r: any) => r.recipient?._id === userId && r.requester?._id === currentUserId);
+  }, [friendReqsData, userId, currentUserId, requestSent]);
+
   const [chatMessages, setChatMessages] = React.useState<any[]>([]);
   const [newMessage, setNewMessage] = React.useState("");
   const [refreshing, setRefreshing] = React.useState(false);
@@ -834,6 +840,7 @@ React.useEffect(() => {
                             style: "destructive",
                             onPress: () => {
                               removeFriend({ targetUserId: userId }).then(() => {
+                                setIsFriendLocal(false);
                                 refetchFriends();
                               });
                             },
@@ -1285,6 +1292,17 @@ React.useEffect(() => {
                                 minute: "2-digit",
                               })}
                             </Text>
+                            {isMe && (
+                              <View style={{ marginLeft: 4 }}>
+                                {msg.isRead ? (
+                                  <Text style={{ color: '#34B7F1', fontSize: 12, fontWeight: 'bold' }}>✓✓</Text>
+                                ) : msg._id.toString().startsWith('local-') ? (
+                                  <Text style={{ color: colors.white, opacity: 0.7, fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                                ) : (
+                                  <Text style={{ color: colors.white, opacity: 0.7, fontSize: 12, fontWeight: 'bold' }}>✓✓</Text>
+                                )}
+                              </View>
+                            )}
                           </View>
                         </View>
                       </Pressable>
@@ -1332,10 +1350,10 @@ React.useEffect(() => {
                   >
                     <Text style={{ color: colors.white, fontWeight: 'bold' }}>Accept Friend Request</Text>
                   </TouchableOpacity>
-                ) : requestSent ? (
+                ) : isRequestSentByMe ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                     <Check color={colors.success} size={16} />
-                    <Text style={{ color: colors.success, fontWeight: 'bold' }}>Request Pending...</Text>
+                    <Text style={{ color: colors.success, fontWeight: 'bold' }}>Request Sent</Text>
                   </View>
                 ) : (
                   <TouchableOpacity 
