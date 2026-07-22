@@ -141,7 +141,9 @@ export const getAnnouncements = tryCatchMiddleware(async (req: Request, res: Res
 });
 
 export const createAnnouncement = tryCatchMiddleware(async (req: any, res: Response) => {
-    const result = await adminServices.createAnnouncement({ ...req.body, createdBy: req.user._id });
+    const createdBy = req.user?._id || req.user?.id;
+    if (!createdBy) throw new Error("Admin user ID is missing from request");
+    const result = await adminServices.createAnnouncement({ ...req.body, createdBy });
     res.status(constants.successCode).json(responseEncryptor(req, true, 'Announcement created successfully', result));
 });
 

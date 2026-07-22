@@ -18,7 +18,7 @@ export const useCreateAnnouncement = () => {
       toast.success(res.message || "Announcement created successfully");
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message || "Failed to create announcement");
+      toast.error(error?.message || "Failed to create announcement");
     },
   });
 };
