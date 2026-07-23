@@ -32,4 +32,5 @@ export const apiEndPoints = {
   removeFriend: "user/remove-friend",
   myFriends: "user/my-friends",
   friendRequests: "user/friend-requests",
+  checkFriendStatus: "user/check-friend-status",
 };

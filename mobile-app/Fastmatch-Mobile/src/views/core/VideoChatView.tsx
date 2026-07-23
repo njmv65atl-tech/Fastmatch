@@ -1105,6 +1105,9 @@ export const VideoChatView: React.FC<CoreProps> = ({
     return (
       <View style={styles.centered}>
         <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={{ marginTop: 20, padding: 12, paddingHorizontal: 24, backgroundColor: colors.surfaceAlt, borderRadius: 10 }} onPress={cleanupAndClose}>
+          <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }

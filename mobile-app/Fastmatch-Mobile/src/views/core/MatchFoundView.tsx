@@ -375,7 +375,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
               ))}
             </View>
             <TouchableOpacity 
-              style={[styles.actionBtn, { width: '100%', backgroundColor: givenRating > 0 ? colors.primary : colors.surfaceAlt }]}
+              style={[styles.actionBtn, { flex: 0, width: '100%', backgroundColor: givenRating > 0 ? colors.primary : colors.surfaceAlt }]}
               disabled={givenRating === 0}
               onPress={async () => {
                 if (givenRating > 0 && lastMatchId) {

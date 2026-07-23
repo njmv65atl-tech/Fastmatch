@@ -24,7 +24,7 @@ import { MobileContainer } from "../../components/UIComponents";
 import { colors } from "../../utils/colors";
 import { CHAT_DETAIL_TEXT } from "../../utils/commonText";
 import { launchImageLibrary } from 'react-native-image-picker';
-import { useBlockUserMutation, useChatHistoryQuery, useClearChatMutation, useUnblockUserMutation, useBlockCallsMutation, useUnblockCallsMutation, useDeleteMessagesMutation, useEditMessageMutation, useReportBlockMutation, authApi, useMyFriendsQuery, useFriendRequestsQuery, useSendFriendRequestMutation, useAcceptFriendRequestMutation, useRemoveFriendMutation } from "../../redux/services/auth";
+import { useBlockUserMutation, useChatHistoryQuery, useClearChatMutation, useUnblockUserMutation, useBlockCallsMutation, useUnblockCallsMutation, useDeleteMessagesMutation, useEditMessageMutation, useReportBlockMutation, authApi, useMyFriendsQuery, useFriendRequestsQuery, useSendFriendRequestMutation, useAcceptFriendRequestMutation, useRemoveFriendMutation, useCheckFriendStatusQuery } from "../../redux/services/auth";
 import { useDispatch } from "react-redux";
 import { Send, ChevronLeft, MoreVertical, ShieldBan, Trash2, Pencil, Flag, Phone, Image as ImageIcon, UserPlus, UserMinus, Check, X } from "lucide-react-native";
 import socketService from "../../helpers/SocketService";
@@ -267,8 +267,17 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
   const [acceptFriendRequest] = useAcceptFriendRequestMutation();
   const [removeFriend] = useRemoveFriendMutation();
 
-  const [requestSent, setRequestSent] = React.useState(false);
+  const { data: friendStatusData } = useCheckFriendStatusQuery(userId, { skip: !userId, refetchOnMountOrArgChange: true });
+
+  const [requestSentLocal, setRequestSentLocal] = React.useState(false);
   const [isFriendLocal, setIsFriendLocal] = React.useState(false);
+
+  // Derive requestSent status
+  const requestSent = React.useMemo(() => {
+    if (requestSentLocal) return true;
+    if (friendStatusData?.data?.status === 'pending' && friendStatusData?.data?.requester === currentUserId) return true;
+    return false;
+  }, [friendStatusData, requestSentLocal, currentUserId]);
 
   // Derive friendship status
   const isFriend = React.useMemo(() => {
@@ -1360,7 +1369,12 @@ React.useEffect(() => {
                     style={{ backgroundColor: colors.surfaceAlt, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', gap: 5, alignItems: 'center' }}
                     onPress={() => {
                       sendFriendRequest({ targetUserId: userId }).then((res: any) => {
-                        if (res.data?.success) setRequestSent(true);
+                        if (res.data?.success) {
+                          setRequestSentLocal(true);
+                          ShowAlertMessage("Friend request sent", popTypes.success);
+                        } else {
+                          ShowAlertMessage("Failed to send request", popTypes.error);
+                        }
                       });
                     }}
                   >

@@ -431,7 +431,7 @@ class UserController extends ResponseHandler {
                     'New Friend Request',
                     `${currentUser.displayName} sent you a friend request.`,
                     'friend_request',
-                    { requestId: request._id }
+                    { requestId: request._id.toString() }
                 );
             }
 
@@ -457,6 +457,18 @@ class UserController extends ResponseHandler {
 
             // Emit socket event to the requester that the request was accepted
             (req as any).io.to(request.requester.toString()).emit('friend-request-accepted', { recipientId: currentUserId });
+
+            // Send notification to requester
+            const currentUser = await User.findById(currentUserId).select('displayName');
+            if (currentUser) {
+                await notificationServices.sendNotification(
+                    request.requester as Types.ObjectId,
+                    'Friend Request Accepted',
+                    `${currentUser.displayName} accepted your friend request.`,
+                    'friend_accepted',
+                    { recipientId: currentUserId.toString() }
+                );
+            }
 
             return res.status(200).send(responseEncryptor(req, true, "Friend request accepted", request));
         } catch (error: any) {
@@ -506,6 +518,25 @@ class UserController extends ResponseHandler {
                 ]
             });
             return res.status(200).send(responseEncryptor(req, true, "Friend removed"));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async checkFriendStatus(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const targetUserId = req.params.userId;
+            if (!targetUserId) throw new Error("targetUserId is required");
+
+            const friendship = await FriendModel.findOne({
+                $or: [
+                    { requester: currentUserId, recipient: targetUserId },
+                    { requester: targetUserId, recipient: currentUserId }
+                ]
+            });
+
+            return res.status(200).send(responseEncryptor(req, true, "Status fetched", friendship));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }

@@ -20,6 +20,7 @@ setup_permissions([
   'Camera',
   'MediaLibrary',
   'PhotoLibrary',
+  'Microphone',
 ])
 
 linkage = ENV['USE_FRAMEWORKS']

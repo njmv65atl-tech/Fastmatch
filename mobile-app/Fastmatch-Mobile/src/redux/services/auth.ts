@@ -92,8 +92,13 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
-      
-
+    checkFriendStatus: builder.query({
+      query: (userId) => ({
+        url: `${apiEndPoints.checkFriendStatus}/${userId}`,
+        method: "GET",
+        headers: header1,
+      }),
+    }),
   }),
 });
 
@@ -127,4 +132,5 @@ export const {
   useRemoveFriendMutation,
   useMyFriendsQuery,
   useFriendRequestsQuery,
+  useCheckFriendStatusQuery,
 } = authApi;

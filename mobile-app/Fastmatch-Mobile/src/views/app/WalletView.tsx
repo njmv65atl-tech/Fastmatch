@@ -68,12 +68,13 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
       
       <ScrollView contentContainerStyle={styles.container}>
         {/* Balance Card */}
-        <LinearGradient
-          colors={["#FDE047", "#F59E0B"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.balanceCard}
-        >
+        <View style={[styles.balanceCard, { backgroundColor: "#F59E0B", overflow: 'hidden' }]}>
+          <LinearGradient
+            colors={["#FDE047", "#F59E0B"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
           <View style={styles.balanceInner}>
             <Coins size={32} color="#451A03" />
             <View style={styles.balanceTextWrap}>
@@ -81,7 +82,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
               <Text style={styles.balanceAmount}>{user?.walletBalance || 0} Coins</Text>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         <Text style={styles.sectionTitle}>Get More Coins</Text>
         

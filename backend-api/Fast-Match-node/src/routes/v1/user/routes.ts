@@ -48,6 +48,7 @@ router.post('/accept-friend-request', verifyToken, tryCatchMiddleware(UserContro
 router.post('/remove-friend', verifyToken, tryCatchMiddleware(UserController.removeFriend))
 router.get('/my-friends', verifyToken, tryCatchMiddleware(UserController.myFriends))
 router.get('/friend-requests', verifyToken, tryCatchMiddleware(UserController.friendRequests))
+router.get('/check-friend-status/:userId', verifyToken, tryCatchMiddleware(UserController.checkFriendStatus))
 router.post('/moderate-frame', verifyToken, tryCatchMiddleware(UserController.moderateFrame))
 
 export default router;
