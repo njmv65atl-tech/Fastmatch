@@ -300,6 +300,14 @@ class UserController extends ResponseHandler {
                 { $inc: { walletBalance: amount } },
                 { new: true }
             ).select('-password -otps');
+
+            await Transaction.create({
+                userId: currentUserId,
+                type: 'purchase',
+                amount: amount,
+                status: 'completed',
+                description: `Purchased ${amount} coins`
+            });
             
             return res.status(200).send(responseEncryptor(req, true, "Coins added successfully", updatedUser));
         } catch (error: any) {

@@ -129,7 +129,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           onPress={() => setActiveTab("requests")}
         >
           <Text style={[styles.tabText, activeTab === "requests" && styles.activeTabText]}>
-            Requests {(requestsData?.data?.length || 0) > 0 && `(${requestsData.data.length})`}
+            Requests {(requestsData?.data?.length || 0) > 0 ? `(${requestsData.data.length})` : null}
           </Text>
         </TouchableOpacity>
       </View>
