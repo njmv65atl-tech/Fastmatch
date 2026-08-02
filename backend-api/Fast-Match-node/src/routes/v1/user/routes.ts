@@ -40,6 +40,7 @@ router.get('/gifts', verifyToken, tryCatchMiddleware(UserController.getUserGifts
 router.post('/gifts/convert', verifyToken, tryCatchMiddleware(UserController.convertGiftToCoins))
 router.post('/request-verification', verifyToken, tryCatchMiddleware(UserController.requestVerification))
 router.post('/buy-coins-mock', verifyToken, tryCatchMiddleware(UserController.buyCoinsMock))
+router.get('/wallet/history', verifyToken, tryCatchMiddleware(UserController.walletHistory))
 router.post('/claim-daily-reward', verifyToken, tryCatchMiddleware(UserController.claimDailyReward))
 router.post('/upgrade-premium-mock', verifyToken, tryCatchMiddleware(UserController.upgradePremiumMock))
 router.post('/update-public-key', verifyToken, tryCatchMiddleware(UserController.updatePublicKey))

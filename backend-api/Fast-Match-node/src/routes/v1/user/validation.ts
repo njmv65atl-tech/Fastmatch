@@ -54,6 +54,7 @@ export const signIn = yup.object({
 export const completeProfile = yup.object({
     body: yup.object({
         displayName: yup.string().optional(),
+        fullName: yup.string().optional(),
         age: yup.string().optional(),
         location: yup.string().optional(),
         interests: yup.mixed().optional(),

@@ -19,13 +19,16 @@ import {
   useAcceptFriendRequestMutation
 } from "../../redux/services/auth";
 import { AppView } from "../../types";
+import { useSelector } from "react-redux";
+import { RootState } from "../../redux/store";
 
 interface FriendsViewProps {
-  setView: (view: AppView) => void;
+  setView: (view: AppView, params?: any) => void;
 }
 
 export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
   const [activeTab, setActiveTab] = useState<"friends" | "requests">("friends");
+  const user = useSelector((state: RootState) => state.persisted.user);
 
   const { data: friendsData, isLoading: isLoadingFriends, refetch: refetchFriends } = useMyFriendsQuery({});
   const { data: requestsData, isLoading: isLoadingReqs, refetch: refetchReqs } = useFriendRequestsQuery({});
@@ -42,12 +45,25 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
   };
 
   const renderFriendItem = (item: any) => {
-    // Check if I am requester or recipient
-    const friendObj = item.requester?._id ? (item.requester.displayName ? item.requester : item.recipient) : item.recipient;
+    // Determine friend object by checking who the current user is
+    const currentUserId = user?.id || user?._id;
+    const friendObj = item.requester?._id === currentUserId ? item.recipient : item.requester;
     if (!friendObj) return null;
 
     return (
-      <View key={item._id} style={styles.userCard}>
+      <TouchableOpacity
+        key={item._id}
+        style={styles.userCard}
+        activeOpacity={0.7}
+        onPress={() => {
+          setView(AppView.CHAT_DETAIL, {
+            userId: friendObj._id,
+            chatUserName: friendObj.displayName || "Unknown",
+            chatUserAvatar: friendObj.profilePicture,
+            chatUser: friendObj
+          });
+        }}
+      >
         <Image
           source={{ uri: friendObj.profilePicture || "https://i.pravatar.cc/150" }}
           style={styles.avatar}
@@ -59,7 +75,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         <View style={styles.actionBtn}>
           <UserCheck color={colors.primary} size={20} />
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 

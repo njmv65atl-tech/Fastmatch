@@ -29,6 +29,9 @@ import { fontFamily } from "../../assets/fonts/fontFamily";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import { DailyRewardModal } from "../../components/DailyRewardModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useClaimDailyRewardMutation } from "../../redux/services/auth";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "../../redux/slices/persistedSlice";
 
 
 
@@ -47,29 +50,39 @@ interface CoreProps {
 export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
 
   const [showDailyReward, setShowDailyReward] = React.useState(false);
+  const [rewardMessage, setRewardMessage] = React.useState("You earned 10 coins for logging in today.");
+  const [claimDailyRewardMutation] = useClaimDailyRewardMutation();
+  const dispatch = useDispatch();
 
   React.useEffect(() => {
+    let isMounted = true;
     const checkDailyReward = async () => {
       try {
-        const today = new Date().toISOString().split('T')[0];
-        const lastClaimDate = await AsyncStorage.getItem('lastDailyRewardDate');
-        if (lastClaimDate !== today) {
-          const timer = setTimeout(() => {
-            setShowDailyReward(true);
-          }, 1500);
-          await AsyncStorage.setItem('lastDailyRewardDate', today);
-          return () => clearTimeout(timer);
+        const res = await claimDailyRewardMutation({}).unwrap();
+        if (res.status && isMounted) {
+          // Successfully claimed! Show popup with actual amount.
+          setRewardMessage(res.message || "You earned your daily coins!");
+          if (res.data) setUser(res.data);
+          
+          // Delay popup slightly so it doesn't jarringly appear before layout
+          setTimeout(() => {
+            if (isMounted) setShowDailyReward(true);
+          }, 1000);
         }
+        // If false, it means already claimed, so we do nothing.
       } catch (e) {
-        console.error("Failed to check daily reward", e);
+        console.log("Daily reward check skipped/failed", e);
       }
     };
-    checkDailyReward();
-  }, []);
+    if (user) {
+      checkDailyReward();
+    }
+    return () => { isMounted = false; };
+  }, [user]);
 
   const claimReward = () => {
+    // Already claimed in the background, just close the modal.
     setShowDailyReward(false);
-    ShowAlertMessage("10 Coins claimed!", popTypes.success);
   };
 
   return (

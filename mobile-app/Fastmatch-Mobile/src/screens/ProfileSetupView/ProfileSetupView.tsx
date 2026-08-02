@@ -53,6 +53,7 @@ interface AuthProps {
 export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {  
   const interests = PROFILE_SETUP_TEXT.interests;
   const [name, setName] = useState<string>("");
+  const [fullName, setFullName] = useState<string>("");
   const [age, setAge] = useState<string>("");
   const [location, setLocation] = useState<string>("");
   const [language, setLanguage] = useState<string>("English");
@@ -222,6 +223,7 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {
       };
       const formData = new FormData();
       formData.append("displayName", name);
+      formData.append("fullName", fullName);
       formData.append("interests", JSON.stringify(selected));
       formData.append("profilePicture", image as any);
       formData.append("age",age);
@@ -338,7 +340,7 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {
         {/* Display Name  */}
 
         <Input
-          label={PROFILE_SETUP_TEXT.displayNameLabel}
+          label={PROFILE_SETUP_TEXT.displayNameLabel || "Display Name"}
           placeholder="Enter display name"
           value={name}
           maxLength={12}
@@ -346,6 +348,17 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {
             setName(txt.trimStart());
           }}
           //defaultValue={PROFILE_SETUP_TEXT.displayNameDefault}
+        />
+
+        {/* Full Name  */}
+        <Input
+          label={"Full Name"}
+          placeholder="Enter full name"
+          value={fullName}
+          maxLength={30}
+          onChangeText={(txt) => {
+            setFullName(txt.trimStart());
+          }}
         />
 
         {/* ── Age ── */}

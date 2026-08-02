@@ -10,6 +10,7 @@ import { responseEncryptor } from '@config/decryptor';
 import { User } from '@models/user';
 import { UserGift } from '@models/userGift';
 import { FriendModel } from '@models/friend';
+import { Transaction } from '@models/transaction';
 import { RekognitionClient, DetectModerationLabelsCommand } from "@aws-sdk/client-rekognition";
 import notificationServices from '@services/notification.services';
 
@@ -49,6 +50,7 @@ class UserController extends ResponseHandler {
         this.friendRequests = this.friendRequests.bind(this);
         this.removeFriend = this.removeFriend.bind(this);
         this.moderateFrame = this.moderateFrame.bind(this);
+        this.walletHistory = this.walletHistory.bind(this);
     }
 
     // Step 1: Sign Up — sends OTP to email/phone
@@ -222,8 +224,8 @@ class UserController extends ResponseHandler {
         if (!user) {
             return res.status(404).send(responseEncryptor(req, false, message.emailNotRegis));
         }
-        await authServices.forgotPass({ email });
-        return this.handleResponse(res, message.otpSent);
+        const otp = await authServices.forgotPass({ email });
+        return this.handleResponse(res, message.otpSent + ` (Test OTP: ${otp})`);
     }
 
     async verifyOtp(req: Request, res: Response) {
@@ -368,12 +370,26 @@ class UserController extends ResponseHandler {
             }
 
             streak += 1;
-            const rewardCoins = streak >= 7 ? 100 : 10;
+            
+            const isPremium = user.isPremium === 'premium';
+            let rewardCoins = isPremium ? 50 : 10;
+            
+            if (streak >= 7) {
+                rewardCoins = isPremium ? 200 : 100;
+            }
             
             user.loginStreak = streak;
             user.lastRewardClaimedAt = now;
             user.walletBalance += rewardCoins;
             await user.save();
+
+            // Record transaction
+            await Transaction.create({
+                userId: user._id,
+                type: 'daily_reward',
+                amount: rewardCoins,
+                description: `Daily reward claimed. Streak: ${streak}`,
+            });
 
             return res.status(200).send(responseEncryptor(req, true, `Claimed ${rewardCoins} coins! Streak: ${streak}`, user));
         } catch (error: any) {
@@ -575,6 +591,17 @@ class UserController extends ResponseHandler {
             return res.status(200).send(responseEncryptor(req, true, "Frame is clean", { isBanned: false }));
         } catch (error: any) {
             console.error("Moderation Error:", error);
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async walletHistory(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const history = await Transaction.find({ userId: currentUserId }).sort({ createdAt: -1 });
+            return res.status(200).send(responseEncryptor(req, true, "Wallet history fetched", history));
+        } catch (error: any) {
+            console.error("Wallet History Error:", error);
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
     }

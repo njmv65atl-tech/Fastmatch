@@ -324,7 +324,7 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
   const [messageActionVisible, setMessageActionVisible] = React.useState(false);
   const [selectedMsg, setSelectedMsg] = React.useState<any>(null);
   const [reportVisible, setReportVisible] = React.useState(false);
-  const [translatedMessages, setTranslatedMessages] = React.useState<Record<string, string>>({});
+
   const [profilePopupVisible, setProfilePopupVisible] = React.useState(false);
   const [icebreakerModalVisible, setIcebreakerModalVisible] = React.useState(false);
   const [imageViewerVisible, setImageViewerVisible] = React.useState(false);
@@ -649,8 +649,10 @@ React.useEffect(() => {
     try {
       const result = await launchImageLibrary({
         mediaType: 'photo',
-        quality: 0.7,
-        includeBase64: true, // we need base64 to mock sending over socket
+        quality: 0.4,
+        maxWidth: 800,
+        maxHeight: 800,
+        includeBase64: true,
       });
 
       if (result.didCancel || result.errorCode || !result.assets) return;
@@ -972,29 +974,7 @@ React.useEffect(() => {
                   </>
                 )}
 
-                {/* Translation Option */}
-                {!selectedMsg?.message?.startsWith('[IMAGE') && (
-                  <>
-                    <TouchableOpacity
-                      style={styles.menuItem}
-                      onPress={() => {
-                        setMessageActionVisible(false);
-                        if (selectedMsg) {
-                          setTranslatedMessages(prev => ({
-                            ...prev,
-                            [selectedMsg._id]: "Mock Translation: " + selectedMsg.message
-                          }));
-                          ShowAlertMessage("Message translated (Mock)", popTypes.success);
-                        }
-                      }}
-                    >
-                      <Text style={{ color: colors.white, fontSize: 18 }}>A文</Text>
-                      <Text style={styles.menuItemText}>Translate Message</Text>
-                    </TouchableOpacity>
 
-                    <View style={styles.menuDivider} />
-                  </>
-                )}
 
                 <TouchableOpacity
                   style={styles.menuItem}
@@ -1086,9 +1066,28 @@ React.useEffect(() => {
               />
             </TouchableOpacity>
 
-            <Text style={styles.chatHeaderName} numberOfLines={1}>
-              {chatUserName || CHAT_DETAIL_TEXT.defaultName}
-            </Text>
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.chatHeaderName, { marginLeft: 0 }]} numberOfLines={1}>
+                {chatUserName || CHAT_DETAIL_TEXT.defaultName}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                {chatUser?.isOnline ? (
+                  <>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50', marginRight: 5 }} />
+                    <Text style={{ fontSize: 10, color: colors.white, opacity: 0.8 }}>Online</Text>
+                  </>
+                ) : (
+                  <Text style={{ fontSize: 10, color: colors.white, opacity: 0.6 }}>
+                    Last seen {chatUser?.lastActive ? (() => {
+                      const date = new Date(chatUser.lastActive);
+                      const today = new Date();
+                      const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+                      return isToday ? `today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    })() : 'recently'}
+                  </Text>
+                )}
+              </View>
+            </View>
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -1262,23 +1261,8 @@ React.useEffect(() => {
                               numberOfLines={isExpanded ? undefined : 5}
                               ellipsizeMode="tail"
                             >
-                              {translatedMessages[msg._id] || decryptedMessage}
+                              {decryptedMessage}
                             </Text>
-                          )}
-
-                          {!isMe && !decryptedMessage?.startsWith('[IMAGE] ') && (
-                            <TouchableOpacity 
-                              style={{ position: 'absolute', bottom: -5, right: -25, backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 2 }}
-                              onPress={() => {
-                                setTranslatedMessages(prev => ({ ...prev, [msg._id]: `[Translated] ${decryptedMessage}` }));
-                              }}
-                            >
-                              <Text style={{ fontSize: 12 }}>🌐</Text>
-                            </TouchableOpacity>
-                          )}
-
-                          {translatedMessages[msg._id] && !decryptedMessage?.startsWith('[IMAGE] ') && (
-                            <Text style={{ color: colors.success, fontSize: 10, marginTop: 4 }}>Translated</Text>
                           )}
 
                           {isLongMessage && !decryptedMessage?.startsWith('[IMAGE] ') && (
@@ -1400,17 +1384,44 @@ React.useEffect(() => {
                     <TouchableOpacity style={styles.inputAction} onPress={handlePickImage}>
                       <ImageIcon size={24} color={colors.textMuted} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.inputAction} onPress={() => {
-                      // Mock sending a view once image
-                      const mockUrl = "https://picsum.photos/400/400";
-                      const payload = {
-                        senderId: currentUserId,
-                        receiverId: userId,
-                        message: `[IMAGE_VIEW_ONCE] ${mockUrl}`,
-                        tempId: Date.now().toString(),
-                      };
-                      socketService.emit("send-message", payload);
-                      setChatMessages((prev) => [...prev, { ...payload, _id: `local-${payload.tempId}`, createdAt: new Date().toISOString() }]);
+                    <TouchableOpacity style={styles.inputAction} onPress={async () => {
+                      try {
+                        const { launchImageLibrary } = require('react-native-image-picker');
+                        const result = await launchImageLibrary({
+                          mediaType: 'photo',
+                          quality: 0.4,
+                          maxWidth: 800,
+                          maxHeight: 800,
+                          includeBase64: true,
+                        });
+
+                        if (result.didCancel || result.errorCode || !result.assets) return;
+
+                        const base64Img = `data:${result.assets[0].type};base64,${result.assets[0].base64}`;
+                        const payload = {
+                          receiverId: userId,
+                          senderId: currentUserId,
+                          message: `[IMAGE_VIEW_ONCE] ${base64Img}`,
+                        };
+
+                        socketService.emit("send-message", payload);
+                        setUnreadDividerIndex(null);
+
+                        setTimeout(() => refetch(), 800);
+
+                        setChatMessages((prev) => [
+                          ...prev,
+                          {
+                            _id: `local-${Date.now()}`,
+                            sender: currentUserId,
+                            receiver: userId,
+                            message: `[IMAGE_VIEW_ONCE] ${base64Img}`,
+                            createdAt: new Date().toISOString(),
+                          },
+                        ]);
+                      } catch (e) {
+                        console.error("View Once Image error:", e);
+                      }
                     }}>
                       <Text style={{ color: colors.primary, fontSize: 10, fontWeight: 'bold' }}>1x</Text>
                     </TouchableOpacity>
@@ -1514,8 +1525,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: moderateScale(16),
     fontWeight: "600",
-    marginLeft: scale(10),
-    flex: 1,
   },
   chatHeaderMenuBtn: {
     padding: scale(5),
@@ -1551,12 +1560,22 @@ const styles = StyleSheet.create({
     padding: moderateScale(12),
     borderRadius: moderateScale(18),
     borderBottomLeftRadius: moderateScale(4),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   bubbleRight: {
     backgroundColor: colors.primary,
     padding: moderateScale(12),
     borderRadius: moderateScale(18),
     borderBottomRightRadius: moderateScale(4),
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   msgText: { color: colors.white, fontSize: moderateScale(15), lineHeight: verticalScale(20) },
   msgTextLight: { color: colors.white, fontSize: moderateScale(15), lineHeight: verticalScale(20) },

@@ -1,0 +1,309 @@
+.app-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #000;
+}
+
+.otp-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 32px;
+  background-color: #121212;
+  border-radius: 40px;
+  border: 1px solid #222;
+  max-width: 420px;
+  width: 100%;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+
+
+/* Ensure content stays above the glow */
+.drag-handle,
+.otp-header,
+.otp-inputs,
+.otp-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.drag-handle {
+  width: 48px;
+  height: 4px;
+  background-color: #444;
+  border-radius: 2px;
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.otp-header {
+  text-align: center;
+  margin-bottom: 85px;
+  margin-top: 10px;
+  z-index: 20;
+}
+
+.otp-header h1 {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+  transition: all 0.3s ease;
+}
+
+.otp-header p {
+  font-size: 15px;
+  color: #7a7a7a;
+  line-height: 1.5;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  white-space: pre-line;
+  min-height: 45px;
+
+}
+
+
+.otp-inputs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 48px;
+  position: relative;
+  min-height: 64px;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.input-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background-color: #333;
+  overflow: hidden;
+  flex-shrink: 0;
+  will-change: transform, opacity, box-shadow;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  background-color: #f05133;
+  transform: scale(1.1);
+  box-shadow: 0 8px 24px rgba(240, 81, 51, 0.3);
+  z-index: 10;
+}
+
+
+.input-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: transparent;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+}
+
+
+.is-complete .input-wrapper::before {
+  opacity: 1;
+  background: conic-gradient(from 0deg,
+      transparent 0%,
+      transparent 55%,
+      rgba(240, 81, 51, 0.15) 70%,
+      #f05133 92%,
+      #ffb4a2 100%);
+  animation: rotate-gradient 1.25s linear 2, morph-border-green 0.5s ease-in-out 2.5s forwards;
+}
+
+@keyframes rotate-gradient {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes morph-border-green {
+  0% {
+    background: conic-gradient(from 0deg, #f05133 0%, #ff7a59 50%, #f05133 100%);
+  }
+
+  32% {
+    background: conic-gradient(from 0deg, #f05133 0%, #ff7a59 50%, #f05133 100%);
+  }
+
+
+  33% {
+    background: conic-gradient(from 0deg, #22c55e 0%, #16a34a 50%, #22c55e 100%);
+  }
+
+  100% {
+    background: conic-gradient(from 0deg, #22c55e 0%, #16a34a 50%, #22c55e 100%);
+  }
+}
+
+
+.otp-input {
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: calc(100% - 5px);
+  height: calc(100% - 5px);
+  background-color: #161616;
+  border: none;
+  border-radius: 13.5px;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 500;
+  text-align: center;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  z-index: 1;
+  transition: background-color 0.4s ease;
+}
+
+
+.is-complete .otp-input {
+  animation: fade-text 0.2s ease 1.8s forwards;
+}
+
+@keyframes fade-text {
+  to {
+    color: transparent;
+    background-color: #161616;
+    /* Neutral dark center */
+  }
+}
+
+
+
+
+.is-complete .input-wrapper:nth-child(1) {
+  z-index: 4;
+  animation: glow-pulse-green 1.5s infinite alternate 3.0s;
+}
+
+
+@keyframes glow-pulse-green {
+  0% {
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+  }
+
+  100% {
+    box-shadow: 0 0 24px rgba(34, 197, 94, 1);
+  }
+}
+
+/* Glass Shimmer Sweep on the final box */
+.input-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 100%);
+  transform: skewX(-25deg);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.is-complete .input-wrapper:nth-child(1)::after {
+  animation: sweep-shimmer 3s cubic-bezier(0.4, 0, 0.2, 1) infinite 3.5s;
+}
+
+@keyframes sweep-shimmer {
+  0% {
+    left: -150%;
+  }
+
+  25% {
+    left: 200%;
+  }
+
+  100% {
+    left: 200%;
+  }
+}
+
+
+
+.final-tick {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  width: 32px;
+  height: 32px;
+  opacity: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* final-tick animation handled by framer motion */
+
+
+/* ===== Footer ===== */
+.footer-area {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.otp-footer {
+  position: absolute;
+  font-size: 15px;
+  color: #666;
+  transition: opacity 0.3s ease;
+}
+
+.is-complete .otp-footer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.success-message-bottom {
+  position: absolute;
+  font-size: 16px;
+  font-weight: 600;
+  color: #22c55e;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 10px rgba(34, 197, 94, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.otp-footer button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  font-family: inherit;
+  font-size: inherit;
+  transition: color 0.2s ease;
+}
+
+.otp-footer button:hover {
+  color: #ddd;
+}

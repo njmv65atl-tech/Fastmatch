@@ -138,7 +138,7 @@ class ChatService {
                 await notificationServices.sendNotification(
                     new Types.ObjectId(receiverId),
                     `New Message from ${senderInfo?.displayName || 'Someone'}`,
-                    message.length > 50 ? message.substring(0, 47) + '...' : message,
+                    messageType === 'image' ? '📷 Image' : (message.length > 50 ? message.substring(0, 47) + '...' : message),
                     'NEW_MESSAGE',
                     { senderId, messageId: savedMsg._id.toString() }
                 );

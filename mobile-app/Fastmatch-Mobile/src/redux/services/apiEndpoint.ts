@@ -33,4 +33,6 @@ export const apiEndPoints = {
   myFriends: "user/my-friends",
   friendRequests: "user/friend-requests",
   checkFriendStatus: "user/check-friend-status",
+  claimDailyReward: "user/claim-daily-reward",
+  walletHistory: "user/wallet/history",
 };

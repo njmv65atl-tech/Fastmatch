@@ -99,6 +99,20 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    claimDailyReward: builder.mutation({
+      query: () => ({
+        url: apiEndPoints.claimDailyReward,
+        method: "POST",
+        headers: header1,
+      }),
+    }),
+    walletHistory: builder.query({
+      query: () => ({
+        url: apiEndPoints.walletHistory,
+        method: "GET",
+        headers: header1,
+      }),
+    }),
   }),
 });
 
@@ -133,4 +147,6 @@ export const {
   useMyFriendsQuery,
   useFriendRequestsQuery,
   useCheckFriendStatusQuery,
+  useClaimDailyRewardMutation,
+  useWalletHistoryQuery,
 } = authApi;

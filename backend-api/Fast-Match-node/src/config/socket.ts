@@ -542,6 +542,14 @@ export const initializeSocket = (io: Server): Server => {
                 const callBlock = await blockService.canCallUser(userId, data.targetUserId);
                 if (!callBlock.allowed) return socket.emit('match-error', { message: callBlock.reason });
 
+                // Prevent call if target is already in an active call
+                const isTargetInCall = Array.from(activeCalls.values()).some(
+                    (c) => c.user1Id === data.targetUserId || c.user2Id === data.targetUserId
+                );
+                if (isTargetInCall) {
+                    return socket.emit('match-error', { message: 'User is currently busy on another call.' });
+                }
+
                 // Deduct coins & Log
                 sender.walletBalance = (sender.walletBalance || 0) - data.coinCost;
                 await sender.save();

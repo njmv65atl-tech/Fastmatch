@@ -10,7 +10,7 @@ export const TransactionSchema = new Schema<TransactionInterface>({
     },
     type: {
         type: String,
-        enum: ['purchase', 'gift_sent', 'gift_received', 'super_match', 'rewind'],
+        enum: ['purchase', 'gift_sent', 'gift_received', 'super_match', 'rewind', 'daily_reward', 'converted_gift'],
         required: true
     },
     amount: {

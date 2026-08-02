@@ -12,6 +12,8 @@ const appConfig = {
     adminPassword: process.env.ADMIN_PASSWORD as string,
     smtpUser: process.env.SMTP_USER as string,
     smtpPassword: process.env.SMTP_PASSWORD as string,
+    smtpHost: process.env.SMTP_HOST as string,
+    smtpPort: process.env.SMTP_PORT as string,
     webUrl: process.env.WEB_URL as string,
     serverUrl: process.env.SERVER_URL as string,
     encryptionAllowed: false,

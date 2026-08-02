@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 import * as React from "react";
 import { useState, useEffect } from "react";
 import {
@@ -18,6 +11,15 @@ import {
   Platform,
   BackHandler,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
+  withSpring
+} from 'react-native-reanimated';
 import { MobileContainer, Button } from "../../components/UIComponents";
 import { AppView, UserRole } from "../../types";
 import { CheckCircle } from "lucide-react-native";
@@ -33,7 +35,7 @@ import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { useDispatch } from "react-redux";
 import { setToken } from "../../redux/slices/persistedSlice";
 import { DataManager } from "../../helpers/dataManager";
-import { validateOTP } from "../../utils/validators"; // import
+import { validateOTP } from "../../utils/validators";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 
 interface AuthProps {
@@ -53,46 +55,71 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
   const [verifyForgotOtp] = useVerifyOtpMutation();
   const [resendOtp] = useResendOtpMutation();
 
-  // Handle Android back button - go back to WELCOME screen
+  const [status, setStatus] = React.useState<'idle' | 'success'>('idle');
+
+  // Animation Values
+  const shockwaveScale = useSharedValue(1);
+  const shockwaveOpacity = useSharedValue(0);
+  const checkmarkY = useSharedValue(20);
+  const checkmarkOpacity = useSharedValue(0);
+  const headerOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (status === 'success') {
+      Keyboard.dismiss();
+      headerOpacity.value = withTiming(0, { duration: 300 });
+      
+      // Shockwave plays after inputs converge (around 1.2s)
+      shockwaveOpacity.value = withDelay(1200, withSequence(
+        withTiming(0.8, { duration: 100 }),
+        withTiming(0, { duration: 700 })
+      ));
+      shockwaveScale.value = withDelay(1200, withTiming(3.5, { duration: 800, easing: Easing.out(Easing.ease) }));
+      
+      // Checkmark appears after shockwave
+      checkmarkOpacity.value = withDelay(1600, withTiming(1, { duration: 500 }));
+      checkmarkY.value = withDelay(1600, withSpring(0));
+    }
+  }, [status]);
+
+  // Handle Android back button
   useEffect(() => {
     if (Platform.OS === "android") {
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
         () => {
           setView(AppView.WELCOME);
-          return true; // Prevent app closing
+          return true;
         }
       );
-
       return () => backHandler.remove();
     }
   }, [setView]);
 
   const handleOtpChange = (value: string, index: number) => {
-    // Only accept single digit numbers
+    if (status === 'success') return;
     if (!/^\d?$/.test(value)) return;
 
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto-focus to next input if a digit is entered
     if (value && index < 3) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Clear error on typing
     setOtpError("");
   };
 
   const handleKeyPress = (key: string, index: number) => {
-    // Handle backspace to focus previous input
+    if (status === 'success') return;
     if (key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
   const handleResendOtp = async () => {
+    if (status === 'success') return;
     const signupPhone = (user?.phone || "").trim();
     const signupEmail = (user?.email || "").trim();
     const storedForgotEmail = (await DataManager.getForgotOtpEmail()) || "";
@@ -125,7 +152,7 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
   };
 
   const handleOtp = async () => {
-    // ✅ FRONTEND OTP VALIDATION
+    if (status === 'success') return;
     const localError = validateOTP(otp);
     if (localError) {
       setOtpError(localError);
@@ -139,19 +166,9 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
     const signupPhone = (user?.phone || "").trim();
     const signupEmail = (user?.email || "").trim();
     
-    // Explicitly identify flow to prevent crossover:
-    // Use the type prop if explicitly set, otherwise assume signup if we have user credentials.
     const isForgotFlow = type === "forgot" || (!signupPhone && !signupEmail && !!forgotEmail);
 
-    console.log("🔍 OTP Flow:", {
-      type,
-      hasPropEmail: !!email,
-      hasStoredForgotEmail: !!storedForgotEmail,
-      isForgotFlow,
-      loginType: user?.loginType,
-    });
-
-    setOtpError(""); // already cleared above, but safe
+    setOtpError(""); 
 
     if (isForgotFlow) {
       if (!forgotEmail) {
@@ -166,12 +183,13 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
           otp: otpAsNumber,
         },
         (res: any) => {
-          console.log("After OTP verification : ");
           DataManager.setAccessToken(res?.data?.token);
           DataManager.clearForgotOtpEmail();
-          setView(AppView.RESET_PASSWORD);
-          ShowAlertMessage(res?.message , popTypes.info)
-          
+          setStatus('success');
+          setTimeout(() => {
+            setView(AppView.RESET_PASSWORD);
+            ShowAlertMessage(res?.message , popTypes.info);
+          }, 2500);
         }
       );
       return;
@@ -191,24 +209,62 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
           : { email: signupEmail }),
       },
       (res: any) => {
-        console.log("✅ API RESPONSE:", res);
-        
-
         if (res?.data?.success === false) {
           setOtpError("Invalid OTP. Please try again.");
           return;
         }
 
-        dispatch(setToken(res?.data?.token));
-        DataManager.setAccessToken(res?.data?.token);
-        setView(AppView.PROFILE_SETUP);
-        console.log("now i am in profile setup");
+        setStatus('success');
         setTimeout(() => {
+          dispatch(setToken(res?.data?.token));
+          DataManager.setAccessToken(res?.data?.token);
+          // App.tsx useEffect will handle the redirect to PROFILE_SETUP or HOME based on token
+          // setView(AppView.PROFILE_SETUP);
           ShowAlertMessage("OTP verified successfully", popTypes.info);
-        }, 2000);
+        }, 2500);
       }
     );
   };
+
+  const getInputAnimatedStyle = (index: number) => {
+    return useAnimatedStyle(() => {
+      // 0: +114, 1: +38, 2: -38, 3: -114
+      const targetX = index === 0 ? 114 : index === 1 ? 38 : index === 2 ? -38 : -114;
+      
+      const translateX = withTiming(status === 'success' ? targetX : 0, { 
+        duration: 800, 
+        easing: Easing.inOut(Easing.ease) 
+      });
+      
+      const scale = withDelay(800, withTiming(status === 'success' ? 0 : 1, { duration: 400 }));
+      const opacity = withDelay(800, withTiming(status === 'success' ? 0 : 1, { duration: 400 }));
+
+      return {
+        transform: [{ translateX }, { scale }],
+        opacity,
+      };
+    });
+  };
+
+  const shockwaveStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: shockwaveScale.value }],
+      opacity: shockwaveOpacity.value,
+    };
+  });
+
+  const checkmarkContainerStyle = useAnimatedStyle(() => {
+    return {
+      opacity: checkmarkOpacity.value,
+      transform: [{ translateY: checkmarkY.value }],
+    };
+  });
+
+  const headerAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: headerOpacity.value,
+    };
+  });
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -218,36 +274,58 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
       >
         <MobileContainer>
           <View style={styles.otpWrap}>
-            <View style={styles.iconCircle}>
-              <CheckCircle color={colors.primary} size={40} />
-            </View>
-            <Text style={styles.pageTitle}>{OTP_TEXT.pageTitle}</Text>
-            <Text style={styles.pageSubtitle}>{OTP_TEXT.pageSubtitle}</Text>
+            
+            <Animated.View style={[styles.headerContainer, headerAnimatedStyle]}>
+              <View style={styles.iconCircle}>
+                <CheckCircle color={colors.primary} size={40} />
+              </View>
+              <Text style={styles.pageTitle}>{OTP_TEXT.pageTitle}</Text>
+              <Text style={styles.pageSubtitle}>{OTP_TEXT.pageSubtitle}</Text>
+            </Animated.View>
 
-            <View style={styles.otpGrid}>
-              {[0, 1, 2, 3].map((i) => (
-                <TextInput
-                  key={i}
-                  ref={(ref) => (inputRefs.current[i] = ref)}
-                  style={[
-                    styles.otpInput,
-                    otpError && styles.otpInputError,
-                  ]}
-                  maxLength={1}
-                  keyboardType="numeric"
-                  value={otp[i]}
-                  onChangeText={(value) => handleOtpChange(value, i)}
-                  onKeyPress={({ nativeEvent: { key } }) =>
-                    handleKeyPress(key, i)
-                  }
-                />
-              ))}
+            <View style={styles.animationContainer}>
+              <View style={styles.otpGrid}>
+                {/* Connecting Dotted Line Background */}
+                <View style={styles.dottedLine} />
+
+                {/* The 4 Inputs */}
+                {[0, 1, 2, 3].map((i) => (
+                  <Animated.View key={i} style={[getInputAnimatedStyle(i), { zIndex: 10 }]}>
+                    <TextInput
+                      ref={(ref) => (inputRefs.current[i] = ref)}
+                      style={[
+                        styles.otpInput,
+                        otpError ? styles.otpInputError : null,
+                        status === 'success' ? styles.otpInputSuccess : null
+                      ]}
+                      maxLength={1}
+                      keyboardType="numeric"
+                      value={otp[i]}
+                      editable={status !== 'success'}
+                      onChangeText={(value) => handleOtpChange(value, i)}
+                      onKeyPress={({ nativeEvent: { key } }) => handleKeyPress(key, i)}
+                    />
+                  </Animated.View>
+                ))}
+
+                {/* Shockwave Element */}
+                <Animated.View style={[styles.shockwave, shockwaveStyle]} pointerEvents="none" />
+              </View>
+
+              {/* Success Checkmark & Text overlay */}
+              <Animated.View style={[styles.successOverlay, checkmarkContainerStyle]} pointerEvents="none">
+                <CheckCircle color="#22c55e" size={64} />
+                <Text style={styles.successTitle}>Verified Successfully</Text>
+                <Text style={styles.successSubtitle}>Your number has been verified.</Text>
+              </Animated.View>
             </View>
+
             {otpError ? (
-              <Text style={styles.errorText}>{otpError}</Text>
+              <Animated.Text style={[styles.errorText, headerAnimatedStyle]}>{otpError}</Animated.Text>
             ) : null}
-            <View style={{ width: "100%" }}>
-              <Button onClick={handleOtp} fullWidth>
+            
+            <Animated.View style={[{ width: "100%" }, headerAnimatedStyle]}>
+              <Button onClick={handleOtp} fullWidth disabled={status === 'success'}>
                 {OTP_TEXT.verifyButton}
               </Button>
               <View style={{ marginTop: 24, alignItems: "center" }}>
@@ -261,7 +339,7 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
                   </Text>
                 </Text>
               </View>
-            </View>
+            </Animated.View>
           </View>
         </MobileContainer>
       </KeyboardAvoidingView>
@@ -275,6 +353,10 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: "center",
   },
+  headerContainer: {
+    alignItems: "center",
+    width: "100%",
+  },
   otpInputError: {
     borderColor: "red",
   },
@@ -283,7 +365,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: -20,
     marginBottom: 20,
-    textAlign: "left",
+    textAlign: "center",
   },
   iconCircle: {
     width: 80,
@@ -307,10 +389,30 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
+  animationContainer: {
+    height: 150,
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 20,
+    width: "100%",
+  },
   otpGrid: {
     flexDirection: "row",
     gap: 16,
-    marginVertical: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  dottedLine: {
+    position: "absolute",
+    height: 1,
+    left: 30,
+    right: 30,
+    top: "50%",
+    borderStyle: "dashed",
+    borderWidth: 1,
+    borderColor: colors.surfaceAlt,
+    zIndex: 0,
   },
   otpInput: {
     width: 60,
@@ -325,5 +427,44 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  otpInputSuccess: {
+    borderColor: "#22c55e",
+    backgroundColor: "rgba(34, 197, 94, 0.1)",
+  },
+  shockwave: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#22c55e",
+    zIndex: 5,
+  },
+  successOverlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 20,
+  },
+  successTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#22c55e",
+    marginTop: 16,
+  },
+  successSubtitle: {
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 4,
   },
 });

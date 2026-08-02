@@ -486,7 +486,7 @@ const App: React.FC = () => {
         return <MonetizationView setView={setCurrentView} />;
 
       case AppView.FRIENDS:
-        return <FriendsView setView={setCurrentView} />;
+        return <FriendsView setView={handleSetView} />;
 
       case AppView.DISCOVER:
         return <DiscoverView setView={setCurrentView} />;

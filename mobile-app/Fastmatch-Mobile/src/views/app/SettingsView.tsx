@@ -117,7 +117,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   {user?.email || "user@example.com"}
                 </Text>
 
-                {user?.role === UserRole.PREMIUM ? (
+                {user?.isPremium === 'premium' ? (
                   <View
                     style={{
                       backgroundColor: "#FCD34D", // slate-800
@@ -155,7 +155,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
           <Text style={styles.account}>ACCOUNT</Text>
           <View style={styles.menuSection}>
             {/* Temporarily removing this check */}
-            {(!user?.role || user?.role === UserRole.FREE)  && (
+            {user?.isPremium !== 'premium' && (
               <Pressable
                 onPress={() => setView(AppView.SUBSCRIPTION)}
                 style={({ pressed }) => [
@@ -352,6 +352,11 @@ const styles = StyleSheet.create({
     borderRadius: 16, // rounded-2xl
     borderWidth: 1,
     borderColor: "rgba(245,158,11,0.2)", // amber-500/20
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   wrapper: {
     width: "100%",
@@ -370,6 +375,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.05)",
     backgroundColor: "rgba(15,23,42,0.5)", // slate-900/50
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
   leftSection: {

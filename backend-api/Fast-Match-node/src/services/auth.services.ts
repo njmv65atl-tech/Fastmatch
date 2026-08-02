@@ -184,16 +184,23 @@ class AuthService {
 
         const otp = Math.floor(1000 + Math.random() * 9000);
         await userRepos.updateUser(user._id, { otp });
-        mailWithTemplate(
-            "src/views/forgotPassword.ejs",
-            email,
-            appConfig.resetPasswordSubject,
-            {
+        
+        try {
+            mailWithTemplate(
+                "src/views/forgotPassword.ejs",
                 email,
-                otp,
-                year: new Date().getFullYear(),
-            }
-        );
+                appConfig.resetPasswordSubject,
+                {
+                    email,
+                    otp,
+                    year: new Date().getFullYear(),
+                }
+            );
+        } catch (e) {
+            console.log("Email sending failed, likely missing SMTP", e);
+        }
+        
+        return otp;
     }
 
     async verifytForgotOtp(otp: number, email: string) {

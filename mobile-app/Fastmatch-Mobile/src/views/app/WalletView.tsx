@@ -7,19 +7,17 @@ import {
   ScrollView,
   BackHandler,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { MobileContainer, Header } from "../../components/UIComponents";
 import { AppView } from "../../types";
 import { colors } from "../../utils/colors";
-import { Coins, ChevronLeft } from "lucide-react-native";
+import { Coins, ChevronLeft, TrendingUp, TrendingDown } from "lucide-react-native";
 import LinearGradient from "react-native-linear-gradient";
-import { useSelector } from "react-redux";
-import { userSelector } from "../../redux/slices/persistedSlice";
-import { subscribeToProduct } from "../../utils/iap";
+import { useSelector, useDispatch } from "react-redux";
+import { userSelector, setGlobalUser } from "../../redux/slices/persistedSlice";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
-import { useBuyCoinsMockMutation } from "../../redux/services/auth";
-import { useDispatch } from "react-redux";
-import { setGlobalUser } from "../../redux/slices/persistedSlice";
+import { useBuyCoinsMockMutation, useWalletHistoryQuery } from "../../redux/services/auth";
 
 interface WalletViewProps {
   setView: (view: AppView) => void;
@@ -27,15 +25,16 @@ interface WalletViewProps {
 
 export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
   const user = useSelector(userSelector);
+  const dispatch = useDispatch();
+  
+  const [buyCoinsMock] = useBuyCoinsMockMutation();
+  const { data: historyData, isLoading: isLoadingHistory } = useWalletHistoryQuery({});
   
   const coinPackages = [
     { id: "com.fastmatch.coins_100", amount: 100, price: "$0.99", bonus: 0 },
     { id: "com.fastmatch.coins_500", amount: 500, price: "$4.99", bonus: 50 },
     { id: "com.fastmatch.coins_1000", amount: 1000, price: "$9.99", bonus: 200 },
   ];
-
-  const dispatch = useDispatch();
-  const [buyCoinsMock] = useBuyCoinsMockMutation();
 
   const handlePurchase = async (pkg: any) => {
     try {
@@ -116,6 +115,43 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
         <Text style={styles.infoText}>
           Coins can be used to send Virtual Gifts during video calls and unlock Super Matches.
         </Text>
+
+        <View style={styles.historyContainer}>
+          <Text style={styles.sectionTitle}>Coins History</Text>
+          {isLoadingHistory ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
+          ) : historyData?.data && historyData.data.length > 0 ? (
+            historyData.data.map((tx: any) => (
+              <View key={tx._id} style={styles.historyCard}>
+                <View style={styles.historyIconBox}>
+                  {tx.amount > 0 ? (
+                    <TrendingUp size={20} color={colors.success} />
+                  ) : (
+                    <TrendingDown size={20} color={colors.danger} />
+                  )}
+                </View>
+                <View style={styles.historyDetails}>
+                  <Text style={styles.historyTitle}>
+                    {tx.type === 'daily_reward' ? 'Daily Reward' :
+                     tx.type === 'purchase' ? 'Purchased Coins' :
+                     tx.type === 'gift_sent' ? 'Sent Gift' :
+                     tx.type === 'gift_received' ? 'Received Gift' :
+                     tx.type === 'converted_gift' ? 'Converted Gift to Coins' : 'Transaction'}
+                  </Text>
+                  <Text style={styles.historyDesc}>{tx.description || "N/A"}</Text>
+                  <Text style={styles.historyDate}>{new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                </View>
+                <View style={styles.historyAmountWrap}>
+                  <Text style={[styles.historyAmount, { color: tx.amount > 0 ? colors.success : colors.white }]}>
+                    {tx.amount > 0 ? '+' : ''}{tx.amount}
+                  </Text>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noHistoryText}>No transactions yet.</Text>
+          )}
+        </View>
       </ScrollView>
     </MobileContainer>
   );
@@ -214,5 +250,59 @@ const styles = StyleSheet.create({
     color: colors.textPlaceholder,
     textAlign: "center",
     lineHeight: 20,
+  },
+  historyContainer: {
+    marginTop: 10,
+    marginBottom: 40,
+  },
+  historyCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surfaceAlt,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  historyIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  historyDetails: {
+    flex: 1,
+  },
+  historyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.white,
+    marginBottom: 2,
+  },
+  historyDesc: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  historyDate: {
+    fontSize: 11,
+    color: colors.textMuted,
+    opacity: 0.6,
+  },
+  historyAmountWrap: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+  },
+  historyAmount: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  noHistoryText: {
+    color: colors.textMuted,
+    textAlign: "center",
+    marginTop: 20,
+    fontStyle: "italic",
   },
 });

@@ -33,10 +33,10 @@ export const SubscriptionView: React.FC<{
   const [subscriptions, setSubscriptions] = React.useState<IAPSubscription[]>([]);
   const [loading, setLoading] = React.useState(true);
   const features = [
-    "Filter matches by Gender",
-    "Unlimited Skips & Rewinds",
+    "50 Daily Free Coins",
+    "Unlimited Matches & Swipes",
     "Ad-free Experience",
-    "Priority Matching",
+    "Elite Premium Profile Badge",
   ];
 
   React.useEffect(() => {
