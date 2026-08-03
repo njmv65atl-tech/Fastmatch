@@ -28,7 +28,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
   const dispatch = useDispatch();
   
   const [buyCoinsMock] = useBuyCoinsMockMutation();
-  const { data: historyData, isLoading: isLoadingHistory } = useWalletHistoryQuery({});
+  const { data: historyData, isLoading: isLoadingHistory, refetch: refetchHistory } = useWalletHistoryQuery({});
   
   const coinPackages = [
     { id: "com.fastmatch.coins_100", amount: 100, price: "$0.99", bonus: 0 },
@@ -41,6 +41,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
       const response = await buyCoinsMock({ amount: pkg.amount + pkg.bonus }).unwrap() as any;
       if (response?.success && response?.data) {
         dispatch(setGlobalUser(response.data));
+        refetchHistory();
         ShowAlertMessage("Purchase mock successful. Coins added!", popTypes.success);
       } else {
         ShowAlertMessage("Purchase failed.", popTypes.error);

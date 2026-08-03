@@ -28,7 +28,7 @@ interface FriendsViewProps {
 
 export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
   const [activeTab, setActiveTab] = useState<"friends" | "requests">("friends");
-  const user = useSelector((state: RootState) => state.persisted.user);
+  const user = useSelector((state: RootState) => state.persist.user);
 
   const { data: friendsData, isLoading: isLoadingFriends, refetch: refetchFriends } = useMyFriendsQuery({});
   const { data: requestsData, isLoading: isLoadingReqs, refetch: refetchReqs } = useFriendRequestsQuery({});

@@ -28,8 +28,11 @@ export const sendEmail = (to: string, subject: string, html: string) => {
         html
     }
     mailTransporter.sendMail(mailDetails, (err, data) => {
-        if (err) emailLogger.error('Mail error', { err })
-        else {
+        if (err) {
+            console.error('Mail error in sendMail:', err);
+            emailLogger.error('Mail error', { err });
+        } else {
+            console.log('Mail Sent successfully:', data);
             emailLogger.info('Mail Sent successfully', { data });
             if (appConfig.smtpHost === 'smtp.ethereal.email') {
                 console.log('Ethereal Email Preview URL: %s', nodemailer.getTestMessageUrl(data));
