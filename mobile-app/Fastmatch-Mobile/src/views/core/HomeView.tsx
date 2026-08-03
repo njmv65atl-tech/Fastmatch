@@ -59,7 +59,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
     const checkDailyReward = async () => {
       try {
         const res = await claimDailyRewardMutation({}).unwrap();
-        if (res.status && isMounted) {
+        if (res.success && isMounted) {
           // Successfully claimed! Show popup with actual amount.
           setRewardMessage(res.message || "You earned your daily coins!");
           if (res.data) setUser(res.data);
@@ -221,7 +221,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
           )}
         </ScrollView>
 
-        <DailyRewardModal visible={showDailyReward} onClaim={claimReward} />
+        <DailyRewardModal visible={showDailyReward} message={rewardMessage} onClaim={claimReward} />
 
       </MobileContainer>
     </View>

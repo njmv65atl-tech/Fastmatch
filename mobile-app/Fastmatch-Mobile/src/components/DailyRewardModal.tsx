@@ -5,17 +5,18 @@ import { colors } from "../utils/colors";
 
 interface DailyRewardModalProps {
   visible: boolean;
+  message?: string;
   onClaim: () => void;
 }
 
-export const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ visible, onClaim }) => {
+export const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ visible, message, onClaim }) => {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={styles.rewardModalContainer}>
           <Zap size={48} color={colors.gold} />
           <Text style={styles.rewardTitle}>Daily Reward!</Text>
-          <Text style={styles.rewardSubtitle}>You earned 10 coins for logging in today.</Text>
+          <Text style={styles.rewardSubtitle}>{message || "You earned 10 coins for logging in today."}</Text>
           <TouchableOpacity style={styles.claimButton} onPress={onClaim}>
             <Text style={styles.claimButtonText}>Claim</Text>
           </TouchableOpacity>
