@@ -69,7 +69,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 4. Static Assets
-app.use('/public', express.static(path.join(process.cwd(), 'src/public'), { maxAge: 604800000 }));
+app.use('/public', express.static(path.join(process.cwd(), 'src/public')));
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 

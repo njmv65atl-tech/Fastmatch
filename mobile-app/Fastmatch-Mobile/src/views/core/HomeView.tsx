@@ -59,23 +59,20 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
     const checkDailyReward = async () => {
       try {
         const res = await claimDailyRewardMutation({}).unwrap();
-        if (res.success && isMounted) {
+        if (res?.success && isMounted) {
           // Successfully claimed! Show popup with actual amount.
           setRewardMessage(res.message || "You earned your daily coins!");
           if (res.data) setUser(res.data);
           
           setShowDailyReward(true);
         }
-        // If false, it means already claimed, so we do nothing.
       } catch (e) {
         console.log("Daily reward check skipped/failed", e);
       }
     };
-    if (user) {
-      checkDailyReward();
-    }
+    checkDailyReward();
     return () => { isMounted = false; };
-  }, [user]);
+  }, []);
 
   const claimReward = () => {
     // Already claimed in the background, just close the modal.
