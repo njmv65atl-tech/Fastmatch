@@ -21,6 +21,7 @@ import {
 import { AppView } from "../../types";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
+import { IMG_URL } from "../../redux/services";
 
 interface FriendsViewProps {
   setView: (view: AppView, params?: any) => void;
@@ -65,7 +66,11 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         }}
       >
         <Image
-          source={{ uri: friendObj.profilePicture || "https://i.pravatar.cc/150" }}
+          source={{ 
+            uri: friendObj.profilePicture
+              ? friendObj.profilePicture.startsWith("http") ? friendObj.profilePicture : `${IMG_URL}${friendObj.profilePicture}`
+              : "https://i.pravatar.cc/150" 
+          }}
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
@@ -86,7 +91,11 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
     return (
       <View key={item._id} style={styles.userCard}>
         <Image
-          source={{ uri: requester.profilePicture || "https://i.pravatar.cc/150" }}
+          source={{ 
+            uri: requester.profilePicture
+              ? requester.profilePicture.startsWith("http") ? requester.profilePicture : `${IMG_URL}${requester.profilePicture}`
+              : "https://i.pravatar.cc/150" 
+          }}
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
