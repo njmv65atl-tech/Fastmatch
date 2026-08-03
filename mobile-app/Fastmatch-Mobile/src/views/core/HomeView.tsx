@@ -64,7 +64,10 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
           setRewardMessage(res.message || "You earned your daily coins!");
           if (res.data) setUser(res.data);
           
-          setShowDailyReward(true);
+          // Delay popup slightly so it doesn't conflict with the Login Loader Modal closing (Android bug)
+          setTimeout(() => {
+            if (isMounted) setShowDailyReward(true);
+          }, 1200);
         }
       } catch (e) {
         console.log("Daily reward check skipped/failed", e);
