@@ -225,7 +225,7 @@ class UserController extends ResponseHandler {
             return res.status(404).send(responseEncryptor(req, false, message.emailNotRegis));
         }
         const otp = await authServices.forgotPass({ email });
-        return this.handleResponse(res, message.otpSent + ` (Test OTP: ${otp})`);
+        return this.handleResponse(res, message.otpSent);
     }
 
     async verifyOtp(req: Request, res: Response) {
