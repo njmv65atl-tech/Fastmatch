@@ -64,10 +64,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
           setRewardMessage(res.message || "You earned your daily coins!");
           if (res.data) setUser(res.data);
           
-          // Delay popup slightly so it doesn't jarringly appear before layout
-          setTimeout(() => {
-            if (isMounted) setShowDailyReward(true);
-          }, 1000);
+          setShowDailyReward(true);
         }
         // If false, it means already claimed, so we do nothing.
       } catch (e) {
