@@ -32,6 +32,7 @@ export interface UserInterface extends Document {
     language?: string,
     totalRatingScore: number,
     ratingCount: number,
+    lastActive?: Date,
     lastOnlineNotificationAt?: Date,
     dailyMatchCount?: number,
     dailyMatchDate?: Date,

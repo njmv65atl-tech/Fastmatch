@@ -40,6 +40,7 @@ import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { useUserReportMutation } from "../../redux/services/auth";
 import { getUser } from "../../utils/storage";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
+import Torch from 'react-native-torch';
 
 // ─── Icebreaker Prompts ───────────────────────────────────────────────────────
 
@@ -632,6 +633,8 @@ export const VideoChatView: React.FC<CoreProps> = ({
   const [isTranslated, setIsTranslated]             = useState(false);
   const [isFilterActive, setIsFilterActive]         = useState(false);
   const [callDuration, setCallDuration]             = useState(0);
+  const [isFrontCamera, setIsFrontCamera]           = useState(true);
+  const [isTorchOn, setIsTorchOn]                   = useState(false);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -1193,8 +1196,27 @@ export const VideoChatView: React.FC<CoreProps> = ({
                   <ToggleAudioPublishingButton />
                   {/* @ts-ignore */}
                   <ToggleVideoPublishingButton />
-                  {/* @ts-ignore */}
-                  <ToggleCameraFaceButton />
+                  
+                  <View onTouchEnd={() => {
+                    setIsFrontCamera(prev => !prev);
+                    if (isTorchOn) {
+                      setIsTorchOn(false);
+                      Torch.switchState(false);
+                    }
+                  }}>
+                    {/* @ts-ignore */}
+                    <ToggleCameraFaceButton />
+                  </View>
+
+                  {!isFrontCamera && (
+                    <TouchableOpacity style={styles.controlBtn} onPress={() => {
+                      const nextTorch = !isTorchOn;
+                      setIsTorchOn(nextTorch);
+                      Torch.switchState(nextTorch);
+                    }}>
+                      <Text style={styles.controlBtnLabel}>{isTorchOn ? "🔦(On)" : "🔦(Off)"}</Text>
+                    </TouchableOpacity>
+                  )}
 
                   <TouchableOpacity style={styles.controlBtn} onPress={() => setShowEmojiPicker(true)}>
                     <Text style={styles.controlBtnLabel}>😊</Text>

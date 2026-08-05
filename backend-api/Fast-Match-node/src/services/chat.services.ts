@@ -18,7 +18,7 @@ class ChatService {
             $or: [{ user1: userId }, { user2: userId }],
             matchStatus: { $in: ['accepted', 'completed'] }
         })
-            .populate('user1 user2', 'displayName fullName profilePicture isOnline gender isVerified blockedUsers age trustScore ratingCount totalRatingScore')
+            .populate('user1 user2', 'displayName fullName profilePicture isOnline gender isVerified blockedUsers age trustScore ratingCount totalRatingScore lastActive updatedAt')
             .sort({ updatedAt: -1 })
             .lean();
 
@@ -54,7 +54,8 @@ class ChatService {
                     isCallsBlockedByMe,
                     matchId: conn._id,
                     lastMatchedAt: conn.updatedAt || conn.createdAt,
-                    lastInteractionAt: conn.updatedAt || conn.createdAt
+                    lastInteractionAt: conn.updatedAt || conn.createdAt,
+                    lastActive: partner.lastActive || partner.updatedAt
                 });
             }
         });

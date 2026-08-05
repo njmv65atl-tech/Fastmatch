@@ -235,6 +235,9 @@ export const ChatInboxView: React.FC<{
                     <Text style={styles.unreadCount}>{count > 99 ? "99+" : count}</Text>
                   </View>
                 )}
+                {item.isOnline && (
+                  <View style={styles.onlineBadge} />
+                )}
               </View>
 
               <View style={styles.chatInfo}>
@@ -283,6 +286,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary, minWidth: 20, height: 20,
     borderRadius: 10, justifyContent: "center", alignItems: "center",
     borderWidth: 2, borderColor: colors.background, elevation: 3,
+  },
+  onlineBadge: {
+    position: "absolute", bottom: -2, right: -2,
+    backgroundColor: "#4CAF50", width: 16, height: 16,
+    borderRadius: 8, borderWidth: 2, borderColor: colors.background,
+    elevation: 3,
   },
   unreadCount: { color: colors.white, fontSize: 10, fontWeight: "bold" },
   chatInfo: { flex: 1 },

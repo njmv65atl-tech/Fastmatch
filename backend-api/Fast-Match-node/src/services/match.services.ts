@@ -143,6 +143,9 @@ class MatchService {
         if (shouldNotify) {
             updateData.lastOnlineNotificationAt = new Date();
         }
+        if (!isOnline) {
+            updateData.lastActive = new Date();
+        }
 
         await userRepo.updateUser(userId, updateData);
 

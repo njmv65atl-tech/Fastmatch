@@ -32,7 +32,8 @@ import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { NotificationService } from "../../helpers/notificationService";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
-
+import RNFS from 'react-native-fs';
+import { CameraRoll } from '@react-native-camera-roll/camera-roll';
  
 const { width, height } = Dimensions.get("window");
 
@@ -658,30 +659,54 @@ React.useEffect(() => {
       if (result.didCancel || result.errorCode || !result.assets) return;
 
       const base64Img = `data:${result.assets[0].type};base64,${result.assets[0].base64}`;
-      const payload = {
-        receiverId: userId,
-        senderId: currentUserId,
-        message: `[IMAGE] ${base64Img}`,
-      };
 
-      socketService.emit("send-message", payload);
-      setUnreadDividerIndex(null);
-
-      setTimeout(() => refetch(), 800);
-
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          _id: `local-${Date.now()}`,
-          sender: currentUserId,
-          receiver: userId,
-          message: `[IMAGE] ${base64Img}`,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      Alert.alert(
+        "Send Image",
+        "How would you like to send this image?",
+        [
+          {
+            text: "Normal Image",
+            onPress: () => sendImage(base64Img, false),
+          },
+          {
+            text: "View Once",
+            onPress: () => sendImage(base64Img, true),
+          },
+          {
+            text: "Cancel",
+            style: "cancel"
+          }
+        ]
+      );
     } catch (e) {
       console.log('Image picker error:', e);
     }
+  };
+
+  const sendImage = (base64Img: string, isViewOnce: boolean) => {
+    const prefix = isViewOnce ? '[IMAGE_VIEW_ONCE]' : '[IMAGE]';
+    const payload = {
+      receiverId: userId,
+      senderId: currentUserId,
+      message: `${prefix} ${base64Img}`,
+      messageType: 'image',
+    };
+
+    socketService.emit("send-message", payload);
+    setUnreadDividerIndex(null);
+
+    setTimeout(() => refetch(), 800);
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        _id: `local-${Date.now()}`,
+        sender: currentUserId,
+        receiver: userId,
+        message: `${prefix} ${base64Img}`,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
   };
 
   const handleSend = () => {
@@ -1478,8 +1503,24 @@ React.useEffect(() => {
           {!isViewOnceMode && (
             <TouchableOpacity 
               style={{ position: 'absolute', bottom: 50, backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
-              onPress={() => {
-                ShowAlertMessage("Image saved to gallery!", popTypes.success);
+              onPress={async () => {
+                try {
+                  if (!imageViewerUrl) return;
+                  
+                  let filePath = imageViewerUrl;
+                  if (imageViewerUrl.startsWith('data:image')) {
+                    // Extract base64 data
+                    const base64Data = imageViewerUrl.split('base64,')[1];
+                    filePath = `${RNFS.TemporaryDirectoryPath}/saved_image_${Date.now()}.jpg`;
+                    await RNFS.writeFile(filePath, base64Data, 'base64');
+                  }
+                  
+                  await CameraRoll.saveAsset(filePath, { type: 'photo' });
+                  ShowAlertMessage("Image saved to gallery!", popTypes.success);
+                } catch (e) {
+                  console.log("Error saving image", e);
+                  ShowAlertMessage("Failed to save image", popTypes.danger);
+                }
               }}
             >
               <Text style={{ color: colors.white, fontWeight: 'bold' }}>Save Image</Text>

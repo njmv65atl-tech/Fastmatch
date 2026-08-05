@@ -71,6 +71,7 @@ export const UserSchema = new Schema<UserInterface>({
     language: stringType(false),
     totalRatingScore: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    lastActive: { type: Date, default: Date.now },
     lastOnlineNotificationAt: { type: Date, default: null },
     dailyMatchCount: { type: Number, default: 0 },
     dailyMatchDate: { type: Date, default: null },
