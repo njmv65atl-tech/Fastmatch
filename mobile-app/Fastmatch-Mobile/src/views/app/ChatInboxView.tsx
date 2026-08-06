@@ -235,7 +235,7 @@ export const ChatInboxView: React.FC<{
                     <Text style={styles.unreadCount}>{count > 99 ? "99+" : count}</Text>
                   </View>
                 )}
-                {item.isOnline && (
+                {item?.isOnline && (
                   <View style={styles.onlineBadge} />
                 )}
               </View>

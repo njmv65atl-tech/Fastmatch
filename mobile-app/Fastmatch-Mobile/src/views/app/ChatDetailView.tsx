@@ -1519,7 +1519,7 @@ React.useEffect(() => {
                   ShowAlertMessage("Image saved to gallery!", popTypes.success);
                 } catch (e) {
                   console.log("Error saving image", e);
-                  ShowAlertMessage("Failed to save image", popTypes.danger);
+                  ShowAlertMessage("Failed to save image", popTypes.error);
                 }
               }}
             >
