@@ -32,6 +32,7 @@ import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { NotificationService } from "../../helpers/notificationService";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
+import { Linking } from "react-native";
  
 const { width, height } = Dimensions.get("window");
 
@@ -1503,8 +1504,6 @@ React.useEffect(() => {
               style={{ position: 'absolute', bottom: 50, backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
               onPress={async () => {
                 try {
-                  const { CameraRoll } = require('@react-native-camera-roll/camera-roll');
-
                   if (!imageViewerUrl) return;
                   
                   if (imageViewerUrl.startsWith('data:image')) {
@@ -1512,11 +1511,16 @@ React.useEffect(() => {
                     return;
                   }
                   
-                  await CameraRoll.saveAsset(imageViewerUrl, { type: 'photo' });
-                  ShowAlertMessage("Image saved to gallery!", popTypes.success);
+                  const supported = await Linking.canOpenURL(imageViewerUrl);
+                  if (supported) {
+                    await Linking.openURL(imageViewerUrl);
+                    ShowAlertMessage("Opened in browser to save!", popTypes.info);
+                  } else {
+                    ShowAlertMessage("Cannot open image link.", popTypes.error);
+                  }
                 } catch (e) {
-                  console.log("Error saving image", e);
-                  ShowAlertMessage("Failed to save image", popTypes.error);
+                  console.log("Error opening image", e);
+                  ShowAlertMessage("Failed to open image", popTypes.error);
                 }
               }}
             >
