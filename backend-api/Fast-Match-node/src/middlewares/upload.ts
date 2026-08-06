@@ -28,3 +28,21 @@ export const uploadProfilePicture = multer({
     fileFilter,
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
 }).single('profilePicture');
+
+const chatStorage = multer.diskStorage({
+    destination: (_req: Request, _file: Express.Multer.File, cb) => {
+        const uploadPath = path.join(process.cwd(), 'src/public/chat');
+        if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+        cb(null, uploadPath);
+    },
+    filename: (_req: Request, file: Express.Multer.File, cb) => {
+        const uniqueName = `chat-${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
+    }
+});
+
+export const uploadChatImage = multer({
+    storage: chatStorage,
+    fileFilter,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB max for chat
+}).single('chatImage');

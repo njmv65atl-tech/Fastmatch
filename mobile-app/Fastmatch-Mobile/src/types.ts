@@ -57,6 +57,7 @@ export interface User {
   platform?: "android" | "ios" | "web";
   walletBalance?: number;
   trustScore?: number;
+  isPremium?: boolean;
 }
 
 export interface ChatMessage {

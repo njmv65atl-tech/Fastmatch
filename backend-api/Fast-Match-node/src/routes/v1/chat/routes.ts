@@ -2,6 +2,7 @@ import { Router } from 'express';
 import chatController from '@controllers/api/v1/chat';
 import { verifyToken } from '@middlewares/auth';
 import { tryCatchMiddleware } from '@middlewares/async';
+import { uploadChatImage } from '@middlewares/upload';
 
 const router = Router();
 
@@ -16,5 +17,13 @@ router.post('/block-user', verifyToken, tryCatchMiddleware(chatController.blockU
 router.post('/unblock-user', verifyToken, tryCatchMiddleware(chatController.unblockUser));
 router.post('/block-calls', verifyToken, tryCatchMiddleware(chatController.blockCalls));
 router.post('/unblock-calls', verifyToken, tryCatchMiddleware(chatController.unblockCalls));
+
+router.post('/upload-image', verifyToken, uploadChatImage, (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    const imageUrl = `/public/chat/${req.file.filename}`;
+    res.status(200).json({ success: true, url: imageUrl });
+});
 
 export default router;

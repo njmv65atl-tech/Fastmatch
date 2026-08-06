@@ -499,6 +499,7 @@ const App: React.FC = () => {
           <ProfileScreen
             user={user}
             setCancel={() => setCurrentView(AppView.SETTINGS)}
+            setView={setCurrentView}
           />
         );
 

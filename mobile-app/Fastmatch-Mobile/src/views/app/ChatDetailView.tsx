@@ -33,6 +33,8 @@ import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { NotificationService } from "../../helpers/notificationService";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import { Linking } from "react-native";
+import { BASE_URL } from "../../redux/services/index";
+import { DataManager } from "../../helpers/dataManager";
  
 const { width, height } = Dimensions.get("window");
 
@@ -652,12 +654,14 @@ React.useEffect(() => {
         quality: 0.4,
         maxWidth: 800,
         maxHeight: 800,
-        includeBase64: true,
+        includeBase64: false, // No longer need massive base64 strings!
       });
 
       if (result.didCancel || result.errorCode || !result.assets) return;
 
-      const base64Img = `data:${result.assets[0].type};base64,${result.assets[0].base64}`;
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      if (!uri) return;
 
       Alert.alert(
         "Send Image",
@@ -665,11 +669,11 @@ React.useEffect(() => {
         [
           {
             text: "Normal Image",
-            onPress: () => sendImage(base64Img, false),
+            onPress: () => uploadAndSendImage(asset, false),
           },
           {
             text: "View Once",
-            onPress: () => sendImage(base64Img, true),
+            onPress: () => uploadAndSendImage(asset, true),
           },
           {
             text: "Cancel",
@@ -682,12 +686,47 @@ React.useEffect(() => {
     }
   };
 
-  const sendImage = (base64Img: string, isViewOnce: boolean) => {
+  const uploadAndSendImage = async (asset: any, isViewOnce: boolean) => {
+    try {
+      const token = await DataManager.getAccessToken();
+      const formData = new FormData();
+      formData.append('chatImage', {
+        uri: Platform.OS === 'android' ? asset.uri : asset.uri.replace('file://', ''),
+        type: asset.type || 'image/jpeg',
+        name: asset.fileName || `image_${Date.now()}.jpg`,
+      } as any);
+
+      const response = await fetch(`${BASE_URL}/chat/upload-image`, {
+        method: 'POST',
+        headers: {
+          'x-access-token': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.url) {
+        // Construct full backend URL
+        const backendBaseUrl = BASE_URL.replace('/api/v1', '');
+        const fullImageUrl = `${backendBaseUrl}${data.url}`;
+        sendImage(fullImageUrl, isViewOnce);
+      } else {
+        ShowAlertMessage("Failed to upload image", popTypes.error);
+      }
+    } catch (err) {
+      console.log('Upload error:', err);
+      ShowAlertMessage("Error uploading image", popTypes.error);
+    }
+  };
+
+  const sendImage = (imageUrl: string, isViewOnce: boolean) => {
     const prefix = isViewOnce ? '[IMAGE_VIEW_ONCE]' : '[IMAGE]';
     const payload = {
       receiverId: userId,
       senderId: currentUserId,
-      message: `${prefix} ${base64Img}`,
+      message: `${prefix} ${imageUrl}`,
       messageType: 'image',
     };
 
@@ -702,7 +741,7 @@ React.useEffect(() => {
         _id: `local-${Date.now()}`,
         sender: currentUserId,
         receiver: userId,
-        message: `${prefix} ${base64Img}`,
+        message: `${prefix} ${imageUrl}`,
         createdAt: new Date().toISOString(),
       },
     ]);
@@ -1406,7 +1445,7 @@ React.useEffect(() => {
                 {!isEditing && newMessage.length === 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity style={styles.inputAction} onPress={handlePickImage}>
-                      <ImageIcon size={24} color={colors.textMuted} />
+                      <ImageIcon size={24} color={colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.inputAction} onPress={async () => {
                       try {
@@ -1416,33 +1455,15 @@ React.useEffect(() => {
                           quality: 0.4,
                           maxWidth: 800,
                           maxHeight: 800,
-                          includeBase64: true,
+                          includeBase64: false, // Upload URL instead
                         });
 
                         if (result.didCancel || result.errorCode || !result.assets) return;
-
-                        const base64Img = `data:${result.assets[0].type};base64,${result.assets[0].base64}`;
-                        const payload = {
-                          receiverId: userId,
-                          senderId: currentUserId,
-                          message: `[IMAGE_VIEW_ONCE] ${base64Img}`,
-                        };
-
-                        socketService.emit("send-message", payload);
-                        setUnreadDividerIndex(null);
-
-                        setTimeout(() => refetch(), 800);
-
-                        setChatMessages((prev) => [
-                          ...prev,
-                          {
-                            _id: `local-${Date.now()}`,
-                            sender: currentUserId,
-                            receiver: userId,
-                            message: `[IMAGE_VIEW_ONCE] ${base64Img}`,
-                            createdAt: new Date().toISOString(),
-                          },
-                        ]);
+                        
+                        const asset = result.assets[0];
+                        if (!asset.uri) return;
+                        
+                        await uploadAndSendImage(asset, true);
                       } catch (e) {
                         console.error("View Once Image error:", e);
                       }
