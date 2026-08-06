@@ -32,8 +32,6 @@ import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { NotificationService } from "../../helpers/notificationService";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
-import RNFS from 'react-native-fs';
-import { CameraRoll } from '@react-native-camera-roll/camera-roll';
  
 const { width, height } = Dimensions.get("window");
 
@@ -1505,17 +1503,16 @@ React.useEffect(() => {
               style={{ position: 'absolute', bottom: 50, backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 }}
               onPress={async () => {
                 try {
+                  const { CameraRoll } = require('@react-native-camera-roll/camera-roll');
+
                   if (!imageViewerUrl) return;
                   
-                  let filePath = imageViewerUrl;
                   if (imageViewerUrl.startsWith('data:image')) {
-                    // Extract base64 data
-                    const base64Data = imageViewerUrl.split('base64,')[1];
-                    filePath = `${RNFS.TemporaryDirectoryPath}/saved_image_${Date.now()}.jpg`;
-                    await RNFS.writeFile(filePath, base64Data, 'base64');
+                    ShowAlertMessage("Cannot save this local image.", popTypes.info);
+                    return;
                   }
                   
-                  await CameraRoll.saveAsset(filePath, { type: 'photo' });
+                  await CameraRoll.saveAsset(imageViewerUrl, { type: 'photo' });
                   ShowAlertMessage("Image saved to gallery!", popTypes.success);
                 } catch (e) {
                   console.log("Error saving image", e);
