@@ -113,6 +113,13 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    onlineCount: builder.query({
+      query: () => ({
+        url: apiEndPoints.onlineCount,
+        method: "GET",
+        headers: header1,
+      }),
+    }),
   }),
 });
 
@@ -149,4 +156,5 @@ export const {
   useCheckFriendStatusQuery,
   useClaimDailyRewardMutation,
   useWalletHistoryQuery,
+  useOnlineCountQuery,
 } = authApi;

@@ -206,13 +206,13 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         if (rejectedUsersMap.get(currentUser.userId)?.has(userId)) continue;
         if (rejectedUsersMap.get(userId)?.has(currentUser.userId)) continue;
         
-        // Skip recently declined (within 1 hour instead of 24 hours to allow retry later)
+        // Skip recently declined (within 1 minute instead of 1 hour to allow quick retry)
         const recentDecline = await MatchHistory.findOne({
             $or: [
                 { user1: currentUser.userId, user2: userId, matchStatus: 'declined' },
                 { user1: userId, user2: currentUser.userId, matchStatus: 'declined' }
             ],
-            createdAt: { $gte: new Date(Date.now() - 1 * 60 * 60 * 1000) }
+            createdAt: { $gte: new Date(Date.now() - 1 * 60 * 1000) } // 1 minute
         }).lean();
         if (recentDecline) continue;
 
@@ -603,6 +603,11 @@ export const initializeSocket = (io: Server): Server => {
                 // Persist to session map
                 if (!skippedUsersMap.has(userId)) skippedUsersMap.set(userId, new Set());
                 skippedUsersMap.get(userId)?.add(otherIdStr);
+                
+                // Remove from skip list after 1 minute to allow quick rematch
+                setTimeout(() => {
+                    skippedUsersMap.get(userId)?.delete(otherIdStr);
+                }, 1 * 60 * 1000);
 
                 // Persist to database (for cross-session)
                 await User.findByIdAndUpdate(userId, {
@@ -643,6 +648,11 @@ export const initializeSocket = (io: Server): Server => {
                         // Add to searcher's skip list for THIS session
                     if (!skippedUsersMap.has(otherIdStr)) skippedUsersMap.set(otherIdStr, new Set());
                     skippedUsersMap.get(otherIdStr)?.add(userId);
+                    
+                    // Remove from skip list after 1 minute to allow quick rematch
+                    setTimeout(() => {
+                        skippedUsersMap.get(otherIdStr)?.delete(userId);
+                    }, 1 * 60 * 1000);
 
                     // Persist decline to database (cross-session)
                     await User.findByIdAndUpdate(otherIdStr, {

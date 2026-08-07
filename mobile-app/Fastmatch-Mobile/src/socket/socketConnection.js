@@ -62,7 +62,9 @@ const SocketConnection = ({ setView }) => {
 
       socket.on("match-error", (err) => {
         console.error("🔔 [Global] match-error received:", err);
-        ShowAlertMessage(err?.message || "Match request failed", popTypes.error);
+        if (err?.message !== "Partner left the search.") {
+          ShowAlertMessage(err?.message || "Match request failed", popTypes.error);
+        }
       });
 
       socket.on("friend-request-accepted", () => {

@@ -29,9 +29,9 @@ import { fontFamily } from "../../assets/fonts/fontFamily";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import { DailyRewardModal } from "../../components/DailyRewardModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useClaimDailyRewardMutation } from "../../redux/services/auth";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "../../redux/slices/persistedSlice";
+import { useClaimDailyRewardMutation, useOnlineCountQuery } from "../../redux/services/auth";
 
 
 
@@ -52,6 +52,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
   const [showDailyReward, setShowDailyReward] = React.useState(false);
   const [rewardMessage, setRewardMessage] = React.useState("You earned 10 coins for logging in today.");
   const [claimDailyRewardMutation] = useClaimDailyRewardMutation();
+  const { data: onlineData } = useOnlineCountQuery({}, { pollingInterval: 30000 });
   const dispatch = useDispatch();
 
   React.useEffect(() => {
@@ -120,9 +121,18 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
             <Text style={styles.heroTitle}>
               {HOME_TEXT.greeting}, {user?.displayName}
             </Text>
-            <Text style={styles.heroSubtitle}>{HOME_TEXT.readyQuestion}</Text>
-
-
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+              <Text style={styles.heroSubtitle}>{HOME_TEXT.readyQuestion}</Text>
+              {onlineData?.data?.onlineCount !== undefined && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(76, 175, 80, 0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50', marginRight: 6 }} />
+                  <Text style={{ color: '#4CAF50', fontWeight: 'bold', fontSize: 12 }}>
+                    {onlineData.data.onlineCount} Online
+                  </Text>
+                </View>
+              )}
+            </View>
 
           </View>
 

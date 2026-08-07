@@ -35,4 +35,5 @@ export const apiEndPoints = {
   checkFriendStatus: "user/check-friend-status",
   claimDailyReward: "user/claim-daily-reward",
   walletHistory: "user/wallet/history",
+  onlineCount: "match/online-count",
 };

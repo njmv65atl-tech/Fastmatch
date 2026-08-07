@@ -13,7 +13,7 @@ import {
 import { MobileContainer, Header } from "../../components/UIComponents";
 import { AppView } from "../../types";
 import { colors } from "../../utils/colors";
-import { useConversationHistoryQuery, useClearChatMutation } from "../../redux/services/auth";
+import { useConversationHistoryQuery, useClearChatMutation, useFriendRequestsQuery, useAcceptFriendRequestMutation } from "../../redux/services/auth";
 import { IMG_URL } from "../../redux/services";
 import { socket } from "../../socket/socket";
 import { useDispatch } from "react-redux";
@@ -41,6 +41,8 @@ export const ChatInboxView: React.FC<{
   const { data, isLoading, error, refetch } = useConversationHistoryQuery({}, {
     refetchOnMountOrArgChange: true
   });
+  const { data: requestsData, isLoading: isLoadingReqs, refetch: refetchReqs } = useFriendRequestsQuery({});
+  const [acceptFriendRequest] = useAcceptFriendRequestMutation();
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = React.useState(false);
   const [clearChat] = useClearChatMutation();
@@ -129,14 +131,14 @@ export const ChatInboxView: React.FC<{
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), refetchReqs()]);
       setLocalUpdates({}); // Clear overrides after fresh API fetch
     } catch (err) {
       console.error("[ChatInbox] Refresh failed:", err);
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetch, refetchReqs]);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const getUnreadCount = (item: any): number => {
@@ -205,6 +207,49 @@ export const ChatInboxView: React.FC<{
           <View style={styles.loadingContainer}><Text style={styles.loadingText}>Loading...</Text></View>
         )}
 
+        {/* Friend Requests Section */}
+        {!isLoadingReqs && requestsData?.data && requestsData.data.length > 0 && (
+          <View style={styles.requestsContainer}>
+            <Text style={styles.requestsTitle}>Friend Requests ({requestsData.data.length})</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.requestsScroll}>
+              {requestsData.data.map((req: any) => {
+                const requester = req.requester;
+                if (!requester) return null;
+                const avatarUrl = requester.profilePicture
+                  ? requester.profilePicture.startsWith("http") ? requester.profilePicture : `${IMG_URL}${requester.profilePicture}`
+                  : "https://via.placeholder.com/100";
+                
+                return (
+                  <TouchableOpacity 
+                    key={req._id} 
+                    style={styles.requestItem}
+                    onPress={() => {
+                      setView(AppView.PROFILE, { userId: requester._id });
+                    }}
+                  >
+                    <Image source={{ uri: avatarUrl }} style={styles.requestAvatar} />
+                    <Text style={styles.requestName} numberOfLines={1}>{requester.displayName || requester.fullName || "User"}</Text>
+                    <TouchableOpacity 
+                      style={styles.acceptButton}
+                      onPress={async () => {
+                        try {
+                          await acceptFriendRequest({ requestId: req._id }).unwrap();
+                          refetchReqs();
+                          refetch();
+                        } catch (e) {
+                          console.warn("Failed to accept friend request:", e);
+                        }
+                      }}
+                    >
+                      <Text style={styles.acceptText}>Accept</Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
         {!isLoading && uniqueMatchList.length === 0 && (
           <View style={styles.emptyContainer}><Text style={styles.emptyText}>No chats found</Text></View>
         )}
@@ -266,6 +311,52 @@ export const ChatInboxView: React.FC<{
 };
 
 const styles = StyleSheet.create({
+  requestsContainer: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 10,
+  },
+  requestsTitle: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  requestsScroll: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  requestItem: {
+    alignItems: 'center',
+    width: 70,
+  },
+  requestAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 6,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  requestName: {
+    color: '#FFF',
+    fontSize: 12,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  acceptButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  acceptText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   inboxContent: { padding: 16, paddingBottom: 100, gap: 12 },
   chatRow: {
     flexDirection: "row",

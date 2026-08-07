@@ -19,7 +19,9 @@ import {
   Modal,
   Pressable,
   Alert,
+  FlatList,
 } from "react-native";
+import FastImage from 'react-native-fast-image';
 import { MobileContainer } from "../../components/UIComponents";
 import { colors } from "../../utils/colors";
 import { CHAT_DETAIL_TEXT } from "../../utils/commonText";
@@ -491,9 +493,6 @@ React.useEffect(() => {
       const isFromMe = sender === myId && receiver === currentChatTargetId;
 
       if (isFromTarget || isFromMe) {
-        // Force a refetch of history to get the real database _id for sent messages
-        refetch();
-
         if (isFromTarget && payload._id) {
           socketService.emit("messageRead", { messageId: payload._id, senderId: sender });
         }
@@ -534,9 +533,7 @@ React.useEffect(() => {
           ];
         });
 
-        // Tell backend we "saw" the new message by triggering a silent history fetch
-        if (isFromTarget) {
-          refetch();
+          // Optional: Tell backend we "saw" the new message (no refetch needed)
         }
       }
     };
@@ -699,8 +696,7 @@ React.useEffect(() => {
       const response = await fetch(`${BASE_URL}/chat/upload-image`, {
         method: 'POST',
         headers: {
-          'x-access-token': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
+          'x-access-token': `Bearer ${token}`
         },
         body: formData,
       });
@@ -732,8 +728,6 @@ React.useEffect(() => {
 
     socketService.emit("send-message", payload);
     setUnreadDividerIndex(null);
-
-    setTimeout(() => refetch(), 800);
 
     setChatMessages((prev) => [
       ...prev,
@@ -785,10 +779,6 @@ React.useEffect(() => {
     socketService.emit("send-message", payload);
     setNewMessage("");
     setUnreadDividerIndex(null); // ✅ clear badge on send
-
-    setTimeout(() => {
-      refetch();
-    }, 800);
 
     setChatMessages((prev) => [
       ...prev,
@@ -1123,8 +1113,11 @@ React.useEffect(() => {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setProfilePopupVisible(true)}>
-              <Image
-                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100" }}
+              <FastImage
+                source={{ 
+                  uri: chatUserAvatar || "https://via.placeholder.com/100",
+                  priority: FastImage.priority.high
+                }}
                 style={styles.chatHeaderAvatar}
               />
             </TouchableOpacity>
@@ -1141,12 +1134,14 @@ React.useEffect(() => {
                   </>
                 ) : (
                   <Text style={{ fontSize: 10, color: colors.white, opacity: 0.6 }}>
-                    Last seen {chatUser?.lastActive ? (() => {
-                      const date = new Date(chatUser.lastActive);
+                    Last seen {(() => {
+                      const lastSeenTime = chatUser?.lastActive || chatUser?.updatedAt || chatUser?.lastInteractionAt;
+                      if (!lastSeenTime) return 'recently';
+                      const date = new Date(lastSeenTime);
                       const today = new Date();
                       const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
                       return isToday ? `today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                    })() : 'recently'}
+                    })()}
                   </Text>
                 )}
               </View>
@@ -1184,7 +1179,13 @@ React.useEffect(() => {
         <Modal visible={profilePopupVisible} transparent animationType="fade" onRequestClose={() => setProfilePopupVisible(false)}>
           <View style={styles.menuOverlay}>
             <View style={[styles.menuDropdown, { alignItems: 'center', padding: 20 }]}>
-              <Image source={{ uri: chatUserAvatar || "https://via.placeholder.com/100" }} style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 10 }} />
+              <FastImage 
+                source={{ 
+                  uri: chatUserAvatar || "https://via.placeholder.com/100",
+                  priority: FastImage.priority.high 
+                }} 
+                style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 10 }} 
+              />
               <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>{chatUserName}</Text>
               <Text style={{ color: colors.textMuted, fontSize: 14, marginBottom: 5 }}>Age: {chatUser?.age || 'N/A'}</Text>
               <Text style={{ color: colors.textMuted, fontSize: 14, marginBottom: 5 }}>Trust Score: {chatUser?.trustScore ?? 100}</Text>
@@ -1221,25 +1222,139 @@ React.useEffect(() => {
           </View>
         </Modal>
 
-          <ScrollView
-            ref={scrollRef}
+          <FlatList
+            ref={scrollRef as any}
             style={[styles.messagesScroll, { opacity: scrollReady ? 1 : 0 }]}
             contentContainerStyle={styles.messagesContent}
             showsVerticalScrollIndicator={false}
-            onContentSizeChange={(_, newHeight) => {
-              if (isInitialLoad.current) {
-                scrollRef.current?.scrollToEnd({ animated: false });
-                isInitialLoad.current = false;
-                setTimeout(() => setScrollReady(true), 80);
-              } else if (isPullRefresh.current) {
-                const addedHeight = newHeight - prevContentHeight.current;
-                scrollRef.current?.scrollTo({ y: addedHeight, animated: false });
-                isPullRefresh.current = false;
-              } else {
-                scrollRef.current?.scrollToEnd({ animated: true });
-              }
-              prevContentHeight.current = newHeight;
+            data={[...chatMessages].reverse()}
+            inverted
+            keyExtractor={(msg: any, index: number) => msg._id || index.toString()}
+            onLayout={() => setScrollReady(true)}
+            renderItem={({ item: msg, index }) => {
+              const isMe = toComparableUserId(msg.sender) === toComparableUserId(currentUserId);
+              const isExpanded = expandedMessages[msg._id];
+              
+              const decryptedMessage = simulateDecrypt(msg.message);
+              const isLongMessage = decryptedMessage?.length > 150;
+
+              // Since the list is inverted, the next item in time is actually at index - 1 in the reversed array
+              const reversedIndex = index;
+              const msgDate = new Date(msg.createdAt).toDateString();
+              const reversedChatMessages = [...chatMessages].reverse();
+              const prevMsgDate = reversedIndex < reversedChatMessages.length - 1 ? new Date(reversedChatMessages[reversedIndex + 1].createdAt).toDateString() : null;
+              const showDateHeader = msgDate !== prevMsgDate;
+
+              // Unread divider logic: unreadDividerIndex is from the original array
+              // The matching index in reversed array is (chatMessages.length - 1 - unreadDividerIndex)
+              const reversedUnreadDividerIndex = unreadDividerIndex !== null ? chatMessages.length - 1 - unreadDividerIndex : null;
+              const isUnreadDivider = reversedUnreadDividerIndex !== null && reversedIndex === reversedUnreadDividerIndex;
+
+              return (
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                  <View>
+                    {showDateHeader && (
+                      <View style={styles.dateHeaderBadge}>
+                        <Text style={styles.dateHeaderBadgeText}>{formatDateHeader(msg.createdAt)}</Text>
+                      </View>
+                    )}
+
+                    {isUnreadDivider && (
+                      <View style={styles.unreadDividerBadge}>
+                        <Text style={styles.unreadDividerBadgeText}>
+                          NEW MESSAGES
+                        </Text>
+                      </View>
+                    )}
+
+                    <Pressable 
+                      style={isMe ? styles.msgRight : styles.msgLeft}
+                      onLongPress={() => {
+                        setSelectedMsg({ ...msg, message: decryptedMessage });
+                        setMessageActionVisible(true);
+                      }}
+                    >
+                      <View style={isMe ? styles.bubbleRight : styles.bubbleLeft}>
+                        {decryptedMessage?.startsWith('[IMAGE] ') ? (
+                          <TouchableOpacity onPress={() => {
+                            setImageViewerUrl(decryptedMessage.replace('[IMAGE] ', ''));
+                            setImageViewerMsgId(msg._id);
+                            setImageViewerVisible(true);
+                          }}>
+                            <Image 
+                              source={{ uri: decryptedMessage.replace('[IMAGE] ', '') }} 
+                              style={{ width: 200, height: 200, borderRadius: 10 }}
+                              resizeMode="cover"
+                            />
+                          </TouchableOpacity>
+                        ) : decryptedMessage?.startsWith('[IMAGE_VIEW_ONCE] ') ? (
+                          <TouchableOpacity 
+                            style={{ width: 200, height: 200, backgroundColor: colors.surfaceAlt, borderRadius: 10, justifyContent: 'center', alignItems: 'center' }}
+                            onPress={() => {
+                              setImageViewerUrl(decryptedMessage.replace('[IMAGE_VIEW_ONCE] ', ''));
+                              setImageViewerMsgId(msg._id);
+                              setIsViewOnceMode(true);
+                              setImageViewerVisible(true);
+                            }}>
+                            <ImageIcon size={40} color={colors.primary} />
+                            <Text style={{ color: colors.primary, marginTop: 10, fontWeight: 'bold' }}>View Once</Text>
+                            <Text style={{ color: colors.textMuted, fontSize: 12 }}>Tap to view image</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <Text
+                            style={isMe ? styles.msgTextLight : styles.msgText}
+                            numberOfLines={isExpanded ? undefined : 5}
+                            ellipsizeMode="tail"
+                          >
+                            {decryptedMessage}
+                          </Text>
+                        )}
+
+                        {isLongMessage && !decryptedMessage?.startsWith('[IMAGE] ') && (
+                          <TouchableOpacity onPress={() => toggleExpand(msg._id)}>
+                            <Text style={[styles.readMore, isMe && { color: colors.white, opacity: 0.9 }]}>
+                              {isExpanded ? "Show Less" : "Read More..."}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+
+                        <View style={styles.msgFooter}>
+                          {msg.isEdited && (
+                            <Text style={[styles.editedBadge, isMe && { color: colors.white, opacity: 0.7 }]}>
+                              Edited
+                            </Text>
+                          )}
+                          <Text style={[styles.msgTime, isMe && { color: colors.white }]}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Text>
+                          {isMe && (
+                            <View style={{ marginLeft: 4 }}>
+                              {msg.isRead ? (
+                                <Text style={{ color: '#34B7F1', fontSize: 12, fontWeight: 'bold' }}>✓✓</Text>
+                              ) : msg._id.toString().startsWith('local-') ? (
+                                <Text style={{ color: colors.white, opacity: 0.7, fontSize: 12, fontWeight: 'bold' }}>✓</Text>
+                              ) : (
+                                <Text style={{ color: colors.white, opacity: 0.7, fontSize: 12, fontWeight: 'bold' }}>✓✓</Text>
+                              )}
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </Pressable>
+                  </View>
+                </TouchableWithoutFeedback>
+              );
             }}
+            ListEmptyComponent={
+              !isLoading ? (
+                <View style={[styles.emptyStateContainer, { transform: [{ scaleY: -1 }] }]}>
+                  <Text style={styles.noMessagesText}>No messages yet</Text>
+                </View>
+              ) : null
+            }
             refreshControl={
               <RefreshControl
                 refreshing={refreshing || isLoading}
@@ -1247,127 +1362,7 @@ React.useEffect(() => {
                 colors={[colors.primary]}
               />
             }
-          >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <View style={{ flex: 1 }}>
-                {chatMessages.length === 0 && !isLoading && (
-                  <View style={styles.emptyStateContainer}>
-                    <Text style={styles.noMessagesText}>No messages yet</Text>
-                  </View>
-                )}
-
-                {chatMessages.map((msg: any, index: number) => {
-                  const isMe = toComparableUserId(msg.sender) === toComparableUserId(currentUserId);
-                  const isExpanded = expandedMessages[msg._id];
-                  
-                  const decryptedMessage = simulateDecrypt(msg.message);
-                  const isLongMessage = decryptedMessage?.length > 150;
-
-                  const msgDate = new Date(msg.createdAt).toDateString();
-                  const prevMsgDate = index > 0 ? new Date(chatMessages[index - 1].createdAt).toDateString() : null;
-                  const showDateHeader = msgDate !== prevMsgDate;
-
-                  const isUnreadDivider = unreadDividerIndex !== null && index === unreadDividerIndex;
-
-                  return (
-                    <React.Fragment key={msg._id || index}>
-                      {showDateHeader && (
-                        <View style={styles.dateHeaderBadge}>
-                          <Text style={styles.dateHeaderBadgeText}>{formatDateHeader(msg.createdAt)}</Text>
-                        </View>
-                      )}
-
-                      {isUnreadDivider && (
-                        <View style={styles.unreadDividerBadge}>
-                          <Text style={styles.unreadDividerBadgeText}>
-                            NEW MESSAGES
-                          </Text>
-                        </View>
-                      )}
-
-                      <Pressable 
-                        style={isMe ? styles.msgRight : styles.msgLeft}
-                        onLongPress={() => {
-                          setSelectedMsg({ ...msg, message: decryptedMessage });
-                          setMessageActionVisible(true);
-                        }}
-                      >
-                        <View style={isMe ? styles.bubbleRight : styles.bubbleLeft}>
-                          {decryptedMessage?.startsWith('[IMAGE] ') ? (
-                            <TouchableOpacity onPress={() => {
-                              setImageViewerUrl(decryptedMessage.replace('[IMAGE] ', ''));
-                              setImageViewerMsgId(msg._id);
-                              setImageViewerVisible(true);
-                            }}>
-                              <Image 
-                                source={{ uri: decryptedMessage.replace('[IMAGE] ', '') }} 
-                                style={{ width: 200, height: 200, borderRadius: 10 }}
-                                resizeMode="cover"
-                              />
-                            </TouchableOpacity>
-                          ) : decryptedMessage?.startsWith('[IMAGE_VIEW_ONCE] ') ? (
-                            <TouchableOpacity 
-                              style={{ width: 200, height: 200, backgroundColor: colors.surfaceAlt, borderRadius: 10, justifyContent: 'center', alignItems: 'center' }}
-                              onPress={() => {
-                                setImageViewerUrl(decryptedMessage.replace('[IMAGE_VIEW_ONCE] ', ''));
-                                setImageViewerMsgId(msg._id);
-                                setIsViewOnceMode(true);
-                                setImageViewerVisible(true);
-                              }}>
-                              <ImageIcon size={40} color={colors.primary} />
-                              <Text style={{ color: colors.primary, marginTop: 10, fontWeight: 'bold' }}>View Once</Text>
-                              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Tap to view image</Text>
-                            </TouchableOpacity>
-                          ) : (
-                            <Text
-                              style={isMe ? styles.msgTextLight : styles.msgText}
-                              numberOfLines={isExpanded ? undefined : 5}
-                              ellipsizeMode="tail"
-                            >
-                              {decryptedMessage}
-                            </Text>
-                          )}
-
-                          {isLongMessage && !decryptedMessage?.startsWith('[IMAGE] ') && (
-                            <TouchableOpacity onPress={() => toggleExpand(msg._id)}>
-                              <Text style={[styles.readMore, isMe && { color: colors.white, opacity: 0.9 }]}>
-                                {isExpanded ? "Show Less" : "Read More..."}
-                              </Text>
-                            </TouchableOpacity>
-                          )}
-
-                          <View style={styles.msgFooter}>
-                            {msg.isEdited && (
-                              <Text style={[styles.editedBadge, isMe && { color: colors.white, opacity: 0.7 }]}>
-                                Edited
-                              </Text>
-                            )}
-                            <Text style={[styles.msgTime, isMe && { color: colors.white }]}>
-                              {new Date(msg.createdAt).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </Text>
-                            {isMe && (
-                              <View style={{ marginLeft: 4 }}>
-                                {msg.isRead ? (
-                                  <Text style={{ color: '#34B7F1', fontSize: 12, fontWeight: 'bold' }}>✓✓</Text>
-                                ) : msg._id.toString().startsWith('local-') ? (
-                                  <Text style={{ color: colors.white, opacity: 0.7, fontSize: 12, fontWeight: 'bold' }}>✓</Text>
-                                ) : (
-                                  <Text style={{ color: colors.white, opacity: 0.7, fontSize: 12, fontWeight: 'bold' }}>✓✓</Text>
-                                )}
-                              </View>
-                            )}
-                          </View>
-                        </View>
-                      </Pressable>
-                    </React.Fragment>
-                  );
-                })}
-              </View>
-            </TouchableWithoutFeedback>
-          </ScrollView>
+          />
 
           {isTyping && (
             <View style={{ paddingHorizontal: 16, paddingVertical: 4 }}>
