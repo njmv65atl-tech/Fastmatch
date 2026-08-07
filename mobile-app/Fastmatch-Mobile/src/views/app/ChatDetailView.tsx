@@ -285,11 +285,12 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
   // Derive friendship status
   const isFriend = React.useMemo(() => {
     if (isFriendLocal) return true;
+    if (friendStatusData?.data?.status === 'accepted') return true;
     if (!myFriendsData?.data) return false;
     return myFriendsData.data.some((f: any) => 
       f.requester?._id === userId || f.recipient?._id === userId
     );
-  }, [myFriendsData, userId, isFriendLocal]);
+  }, [myFriendsData, friendStatusData, userId, isFriendLocal]);
 
   // Listen for friend-request-accepted event to update UI instantly for the sender
   React.useEffect(() => {
@@ -686,7 +687,7 @@ React.useEffect(() => {
       const token = await DataManager.getAccessToken();
       const formData = new FormData();
       formData.append('chatImage', {
-        uri: Platform.OS === 'android' ? asset.uri : asset.uri.replace('file://', ''),
+        uri: asset.uri,
         type: asset.type || 'image/jpeg',
         name: asset.fileName || `image_${Date.now()}.jpg`,
       } as any);
