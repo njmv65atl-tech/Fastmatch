@@ -506,7 +506,7 @@ class UserController extends ResponseHandler {
             const friends = await FriendModel.find({
                 $or: [{ requester: currentUserId }, { recipient: currentUserId }],
                 status: 'accepted'
-            }).populate('requester recipient', 'displayName profilePicture isOnline isPremium publicKey');
+            }).populate('requester recipient', 'displayName profilePicture isOnline isPremium publicKey lastActive');
 
             return res.status(200).send(responseEncryptor(req, true, "Friends fetched", friends));
         } catch (error: any) {
@@ -520,7 +520,7 @@ class UserController extends ResponseHandler {
             const requests = await FriendModel.find({
                 recipient: currentUserId,
                 status: 'pending'
-            }).populate('requester', 'displayName profilePicture isOnline isPremium publicKey');
+            }).populate('requester', 'displayName profilePicture isOnline isPremium publicKey lastActive');
 
             return res.status(200).send(responseEncryptor(req, true, "Friend requests fetched", requests));
         } catch (error: any) {

@@ -685,34 +685,69 @@ React.useEffect(() => {
   const uploadAndSendImage = async (asset: any, isViewOnce: boolean) => {
     try {
       const token = await DataManager.getAccessToken();
+      if (!token) {
+        ShowAlertMessage("Session expired. Please log in again.", popTypes.error);
+        return;
+      }
+
+      const fileUri = asset.uri;
+      const fileType = asset.type || 'image/jpeg';
+      const fileName = asset.fileName || `image_${Date.now()}.jpg`;
+
       const formData = new FormData();
       formData.append('chatImage', {
-        uri: asset.uri,
-        type: asset.type || 'image/jpeg',
-        name: asset.fileName || `image_${Date.now()}.jpg`,
+        uri: fileUri,
+        type: fileType,
+        name: fileName,
       } as any);
 
-      const response = await fetch(`${BASE_URL}/chat/upload-image`, {
-        method: 'POST',
-        headers: {
-          'x-access-token': `Bearer ${token}`
-        },
-        body: formData,
+      const uploadUrl = `${BASE_URL}chat/upload-image`;
+      console.log('[ChatDetail] Uploading image via XHR to:', uploadUrl, '| URI:', fileUri, '| Type:', fileType);
+
+      // Use XMLHttpRequest for more reliable file uploads in React Native
+      const data: any = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('x-access-token', `Bearer ${token}`);
+        // Do NOT set Content-Type — XHR will auto-set multipart/form-data with boundary
+
+        xhr.onload = () => {
+          console.log('[ChatDetail] XHR status:', xhr.status, '| Response:', xhr.responseText?.substring(0, 200));
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (e) {
+              reject(new Error(`Invalid JSON response: ${xhr.responseText?.substring(0, 100)}`));
+            }
+          } else {
+            reject(new Error(`Server returned ${xhr.status}: ${xhr.responseText?.substring(0, 100)}`));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error('Network request failed'));
+        };
+
+        xhr.ontimeout = () => {
+          reject(new Error('Upload timed out'));
+        };
+
+        xhr.timeout = 30000; // 30 second timeout
+        xhr.send(formData);
       });
 
-      const data = await response.json();
-      
       if (data.success && data.url) {
-        // Construct full backend URL
-        const backendBaseUrl = BASE_URL.replace('/api/v1', '');
+        const backendBaseUrl = BASE_URL.replace('/api/v1/', '').replace('/api/v1', '');
         const fullImageUrl = `${backendBaseUrl}${data.url}`;
+        console.log('[ChatDetail] Upload success, image URL:', fullImageUrl);
         sendImage(fullImageUrl, isViewOnce);
       } else {
-        ShowAlertMessage("Failed to upload image", popTypes.error);
+        console.error('[ChatDetail] Upload response not successful:', JSON.stringify(data));
+        ShowAlertMessage(data.message || "Failed to upload image", popTypes.error);
       }
-    } catch (err) {
-      console.log('Upload error:', err);
-      ShowAlertMessage("Error uploading image", popTypes.error);
+    } catch (err: any) {
+      console.error('[ChatDetail] Upload exception:', err?.message || err);
+      ShowAlertMessage(err?.message || "Error uploading image", popTypes.error);
     }
   };
 
@@ -1131,12 +1166,18 @@ React.useEffect(() => {
                 ) : (
                   <Text style={{ fontSize: 10, color: colors.white, opacity: 0.6 }}>
                     Last seen {(() => {
-                      const lastSeenTime = chatUser?.lastActive || chatUser?.updatedAt || chatUser?.lastInteractionAt;
+                      const lastSeenTime = chatUser?.lastActive;
                       if (!lastSeenTime) return 'recently';
                       const date = new Date(lastSeenTime);
-                      const today = new Date();
-                      const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
-                      return isToday ? `today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                      const now = new Date();
+                      const diffMs = now.getTime() - date.getTime();
+                      const diffMins = Math.floor(diffMs / 60000);
+                      if (diffMins < 1) return 'just now';
+                      if (diffMins < 60) return `${diffMins}m ago`;
+                      const diffHours = Math.floor(diffMins / 60);
+                      if (diffHours < 24) return `${diffHours}h ago`;
+                      const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                      return isToday ? `today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : `${date.toLocaleDateString([], {month: 'short', day: 'numeric'})} at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                     })()}
                   </Text>
                 )}

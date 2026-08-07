@@ -52,7 +52,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
   const [showDailyReward, setShowDailyReward] = React.useState(false);
   const [rewardMessage, setRewardMessage] = React.useState("You earned 10 coins for logging in today.");
   const [claimDailyRewardMutation] = useClaimDailyRewardMutation();
-  const { data: onlineData } = useOnlineCountQuery({}, { pollingInterval: 30000 });
+  const { data: onlineData } = useOnlineCountQuery({}, { pollingInterval: 10000 });
   const dispatch = useDispatch();
 
   React.useEffect(() => {
@@ -125,10 +125,43 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
               <Text style={styles.heroSubtitle}>{HOME_TEXT.readyQuestion}</Text>
               {onlineData?.data?.onlineCount !== undefined && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(76, 175, 80, 0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CAF50', marginRight: 6 }} />
-                  <Text style={{ color: '#4CAF50', fontWeight: 'bold', fontSize: 12 }}>
-                    {onlineData.data.onlineCount} Online
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(76, 175, 80, 0.15)',
+                  paddingHorizontal: 14,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: 'rgba(76, 175, 80, 0.3)',
+                }}>
+                  <View style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: '#4CAF50',
+                    marginRight: 8,
+                    shadowColor: '#4CAF50',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.8,
+                    shadowRadius: 4,
+                    elevation: 4,
+                  }} />
+                  <Text style={{
+                    color: '#4CAF50',
+                    fontWeight: '700',
+                    fontSize: 13,
+                    letterSpacing: 0.3,
+                  }}>
+                    {onlineData.data.onlineCount.toLocaleString()}
+                  </Text>
+                  <Text style={{
+                    color: 'rgba(76, 175, 80, 0.8)',
+                    fontWeight: '500',
+                    fontSize: 11,
+                    marginLeft: 4,
+                  }}>
+                    Online Now
                   </Text>
                 </View>
               )}

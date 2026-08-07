@@ -18,12 +18,18 @@ router.post('/unblock-user', verifyToken, tryCatchMiddleware(chatController.unbl
 router.post('/block-calls', verifyToken, tryCatchMiddleware(chatController.blockCalls));
 router.post('/unblock-calls', verifyToken, tryCatchMiddleware(chatController.unblockCalls));
 
-router.post('/upload-image', verifyToken, uploadChatImage, (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file uploaded' });
-    }
-    const imageUrl = `/public/chat/${req.file.filename}`;
-    res.status(200).json({ success: true, url: imageUrl });
+router.post('/upload-image', verifyToken, (req, res) => {
+    uploadChatImage(req, res, (err: any) => {
+        if (err) {
+            console.error('[upload-image] Multer error:', err.message || err);
+            return res.status(400).json({ success: false, message: err.message || 'Upload failed' });
+        }
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+        const imageUrl = `/public/chat/${req.file.filename}`;
+        res.status(200).json({ success: true, url: imageUrl });
+    });
 });
 
 export default router;
