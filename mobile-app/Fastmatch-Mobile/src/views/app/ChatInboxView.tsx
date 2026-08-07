@@ -207,48 +207,6 @@ export const ChatInboxView: React.FC<{
           <View style={styles.loadingContainer}><Text style={styles.loadingText}>Loading...</Text></View>
         )}
 
-        {/* Friend Requests Section */}
-        {!isLoadingReqs && requestsData?.data && requestsData.data.length > 0 && (
-          <View style={styles.requestsContainer}>
-            <Text style={styles.requestsTitle}>Friend Requests ({requestsData.data.length})</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.requestsScroll}>
-              {requestsData.data.map((req: any) => {
-                const requester = req.requester;
-                if (!requester) return null;
-                const avatarUrl = requester.profilePicture
-                  ? requester.profilePicture.startsWith("http") ? requester.profilePicture : `${IMG_URL}${requester.profilePicture}`
-                  : "https://via.placeholder.com/100";
-                
-                return (
-                  <TouchableOpacity 
-                    key={req._id} 
-                    style={styles.requestItem}
-                    onPress={() => {
-                      setView(AppView.PROFILE, { userId: requester._id });
-                    }}
-                  >
-                    <Image source={{ uri: avatarUrl }} style={styles.requestAvatar} />
-                    <Text style={styles.requestName} numberOfLines={1}>{requester.displayName || requester.fullName || "User"}</Text>
-                    <TouchableOpacity 
-                      style={styles.acceptButton}
-                      onPress={async () => {
-                        try {
-                          await acceptFriendRequest({ requestId: req._id }).unwrap();
-                          refetchReqs();
-                          refetch();
-                        } catch (e) {
-                          console.warn("Failed to accept friend request:", e);
-                        }
-                      }}
-                    >
-                      <Text style={styles.acceptText}>Accept</Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
 
         {!isLoading && uniqueMatchList.length === 0 && (
           <View style={styles.emptyContainer}><Text style={styles.emptyText}>No chats found</Text></View>
