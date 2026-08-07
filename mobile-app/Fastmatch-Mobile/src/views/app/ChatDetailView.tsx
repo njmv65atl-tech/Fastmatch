@@ -534,7 +534,6 @@ React.useEffect(() => {
         });
 
           // Optional: Tell backend we "saw" the new message (no refetch needed)
-        }
       }
     };
 
