@@ -72,6 +72,8 @@ const userSocketMap: Map<string, string> = new Map();
 const socketUserMap: Map<string, string> = new Map();
 const activeCalls: Map<string, { user1Id: string; user2Id: string }> = new Map();
 const searchStartTimes: Map<string, number> = new Map();
+const callStartTimes: Map<string, number> = new Map();
+const ghostCooldowns: Map<string, number> = new Map();
 
 // Track skipped users per search session (cleared on stop-search/disconnect)
 const skippedUsersMap: Map<string, Set<string>> = new Map();
@@ -135,6 +137,21 @@ const startActualCall = async (io: Server, matchId: string, u1Id: string, u2Id: 
         io.to(s1).emit('call-start', { success: true, match, role: 'caller', remoteUser: match.user2, streamToken: { token: token1, apiKey: getStreamApiKey(), userId: u1Id }, callId: matchId });
         io.to(s2).emit('call-start', { success: true, match, role: 'callee', remoteUser: match.user1, streamToken: { token: token2, apiKey: getStreamApiKey(), userId: u2Id }, callId: matchId });
 
+        // Increment daily match count for free users
+        const now = new Date();
+        const usersToUpdate = [];
+        if (match.user1.isPremium !== 'premium') usersToUpdate.push(u1Id);
+        if (match.user2.isPremium !== 'premium') usersToUpdate.push(u2Id);
+        
+        for (const id of usersToUpdate) {
+            const userDoc = await User.findById(id).lean();
+            if (userDoc) {
+                const lastDate = userDoc.dailyMatchDate ? new Date(userDoc.dailyMatchDate) : new Date(0);
+                const isSameDay = lastDate.getDate() === now.getDate() && lastDate.getMonth() === now.getMonth() && lastDate.getFullYear() === now.getFullYear();
+                const currentCount = isSameDay ? (userDoc.dailyMatchCount || 0) : 0;
+                await User.updateOne({ _id: id }, { dailyMatchCount: currentCount + 1, dailyMatchDate: now });
+            }
+        }
         // AI Icebreaker Generation (Simulation based on mutual interests)
         const user1Interests = match.user1.interests || [];
         const user2Interests = match.user2.interests || [];
@@ -181,7 +198,12 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
     const myInterests = currentUser.interests.map((i: string) => i.toLowerCase().trim());
     const mySkipped = skippedUsersMap.get(currentUser.userId) || new Set();
 
-    for (const [userId] of onlineUsersMap.entries()) {
+    // Expanding Search Radius logic
+    const waitTime = Date.now() - (searchStartTimes.get(currentUser.userId) || Date.now());
+    const isRelaxed = waitTime > 10000; // >10s: drop interest requirements
+    const isDesperate = waitTime > 20000; // >20s: drop location/language requirements
+
+    for (const [userId, freshCandidate] of onlineUsersMap.entries()) {
         if (userId === currentUser.userId) continue;
 
         // Skip if user is in active call (activeCalls keyed by matchId, not userId)
@@ -205,20 +227,6 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         // Skip rejected users (session only)
         if (rejectedUsersMap.get(currentUser.userId)?.has(userId)) continue;
         if (rejectedUsersMap.get(userId)?.has(currentUser.userId)) continue;
-        
-        // Skip recently declined (within 1 minute instead of 1 hour to allow quick retry)
-        const recentDecline = await MatchHistory.findOne({
-            $or: [
-                { user1: currentUser.userId, user2: userId, matchStatus: 'declined' },
-                { user1: userId, user2: currentUser.userId, matchStatus: 'declined' }
-            ],
-            createdAt: { $gte: new Date(Date.now() - 1 * 60 * 1000) } // 1 minute
-        }).lean();
-        if (recentDecline) continue;
-
-        // 🔄 Fetch FRESH data from DB for this candidate
-        const freshCandidate = await User.findById(userId).select('-password').lean();
-        if (!freshCandidate) continue;
 
         // Block Check (full block + call-only block)
         const myBlockedList = currentUser.user.blockedUsers?.map((id: any) => id.toString()) || [];
@@ -228,17 +236,27 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         const theirCallBlockedList = (freshCandidate.blockedCalls || []).map((id: any) => id.toString());
         if (myCallBlockedList.includes(userId) || theirCallBlockedList.includes(currentUser.userId)) continue;
 
-        // Gender preference check
+        // Gender preference check (Fix for 'other' gender)
         const up = currentUser.preference || 'everyone';
-        const candidateGender = freshCandidate.gender;
+        const candidateGender = freshCandidate.gender || 'other';
         const candidatePref = freshCandidate.preference || 'everyone';
-        const searcherGender = (currentUser.gender && currentUser.gender !== 'other') ? currentUser.gender : null;
-        if (up !== 'everyone' && candidateGender && up !== candidateGender) continue;
-        if (candidatePref !== 'everyone' && searcherGender && candidatePref !== searcherGender) continue;
+        const searcherGender = currentUser.gender || 'other';
+        
+        if (up !== 'everyone' && up !== candidateGender) continue;
+        if (candidatePref !== 'everyone' && candidatePref !== searcherGender) continue;
 
         const theirInterests = (freshCandidate.interests || []).map((i: string) => i.toLowerCase().trim());
         const common = myInterests.filter((i: string) => theirInterests.includes(i));
         const isAlsoSearching = matchmakingQueue.has(userId);
+
+        // Strict Matching constraints
+        if (!isRelaxed) {
+            if (!hasNoInterests(myInterests) && !hasNoInterests(theirInterests) && common.length === 0) continue;
+        }
+        if (!isDesperate) {
+            if (currentUser.user.language && freshCandidate.language && currentUser.user.language !== freshCandidate.language) continue;
+            if (currentUser.location && freshCandidate.location && currentUser.location !== freshCandidate.location) continue;
+        }
 
         let score = 0;
 
@@ -263,6 +281,13 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         if (currentUser.location && freshCandidate.location && currentUser.location === freshCandidate.location) {
             score += 100;
         }
+        
+        // 5. Popularity/ELO boost
+        const myScore = currentUser.user.trustScore || 100;
+        const theirScore = freshCandidate.trustScore || 100;
+        const diff = Math.abs(myScore - theirScore);
+        if (diff < 20) score += 300; // Very similar popularity
+        else if (diff < 50) score += 100;
 
         if (score > highestScore) {
             highestScore = score;
@@ -299,49 +324,63 @@ export const initializeSocket = (io: Server): Server => {
     let lastQueueNames = '';
     const MATCHMAKING_BATCH_SIZE = 5;
     const MATCH_TIMEOUT_MS = 30000;
+    let isProcessingQueue = false;
     setInterval(async () => {
         if (mongoose.connection.readyState !== 1) return;
+        if (isProcessingQueue) return;
+        isProcessingQueue = true;
 
-        // 📊 Smart Queue Logs
-        const currentNames = Array.from(matchmakingQueue.values()).map(u => u.user.displayName).sort().join(', ');
-        if (currentNames !== lastQueueNames) {
-            if (currentNames) {
-                console.log(`[ matchmaking ] ⏳ Queue status changed: [${currentNames}]`);
-            } else if (lastQueueNames) {
-                console.log(`[ matchmaking ] ⏳ Queue is now empty.`);
+        try {
+            // 📊 Smart Queue Logs
+            const currentNames = Array.from(matchmakingQueue.values()).map(u => u.user.displayName).sort().join(', ');
+            if (currentNames !== lastQueueNames) {
+                if (currentNames) {
+                    console.log(`[ matchmaking ] ⏳ Queue status changed: [${currentNames}]`);
+                } else if (lastQueueNames) {
+                    console.log(`[ matchmaking ] ⏳ Queue is now empty.`);
+                }
+                lastQueueNames = currentNames;
             }
-            lastQueueNames = currentNames;
-        }
 
-        if (matchmakingQueue.size < 1) return;
-
-        // Timeout stale pending matches in activeVerifications
-        const now = Date.now();
-        for (const [mid, v] of activeVerifications.entries()) {
-            if (now - (v.match?.matchedAt?.getTime() || now) > MATCH_TIMEOUT_MS) {
-                clearTimeout(v.timeout);
-                activeVerifications.delete(mid);
-                [v.s1, v.s2].forEach(s => { io.to(s).emit('match-error', { message: 'Match timed out.' }); });
-                // Re-queue both users
-                const u1Entry = matchmakingQueue.get(v.u1Id);
-                if (u1Entry) u1Entry.isMatching = false;
-                const u2Entry = matchmakingQueue.get(v.u2Id);
-                if (u2Entry) u2Entry.isMatching = false;
-                console.log(`[ matchmaking ] ⏰ Match ${mid} timed out, users re-queued.`);
+            if (matchmakingQueue.size < 1) {
+                isProcessingQueue = false;
+                return;
             }
-        }
 
-        let processed = 0;
-        for (const [userId, user] of matchmakingQueue.entries()) {
-            if (processed >= MATCHMAKING_BATCH_SIZE) break;
-            if (user.isMatching) continue;
+            // Timeout stale pending matches in activeVerifications
+            const now = Date.now();
+            for (const [mid, v] of activeVerifications.entries()) {
+                if (now - (v.match?.matchedAt?.getTime() || now) > MATCH_TIMEOUT_MS) {
+                    clearTimeout(v.timeout);
+                    activeVerifications.delete(mid);
+                    [v.s1, v.s2].forEach(s => { io.to(s).emit('match-error', { message: 'Match timed out.' }); });
+                    // Re-queue both users
+                    const u1Entry = matchmakingQueue.get(v.u1Id);
+                    if (u1Entry) u1Entry.isMatching = false;
+                    const u2Entry = matchmakingQueue.get(v.u2Id);
+                    if (u2Entry) u2Entry.isMatching = false;
+                    console.log(`[ matchmaking ] ⏰ Match ${mid} timed out, users re-queued.`);
+                }
+            }
 
-            const match = await findCompatibleOnlineUser(user);
-            if (match) {
+            // Sort the queue to prioritize premium users (VIP Priority Queue)
+            const sortedQueue = Array.from(matchmakingQueue.entries()).sort((a, b) => {
+                if (a[1].isPremium === b[1].isPremium) return a[1].joinedAt - b[1].joinedAt;
+                return a[1].isPremium ? -1 : 1;
+            });
+
+            let processed = 0;
+            for (const [userId, user] of sortedQueue) {
+                if (processed >= MATCHMAKING_BATCH_SIZE) break;
+                if (user.isMatching) continue;
+
+                // Lock before async operation to prevent race conditions
                 user.isMatching = true;
 
-                const otherQueueEntry = matchmakingQueue.get(match.matchedUserId);
-                if (otherQueueEntry) otherQueueEntry.isMatching = true;
+                const match = await findCompatibleOnlineUser(user);
+                if (match) {
+                    const otherQueueEntry = matchmakingQueue.get(match.matchedUserId);
+                    if (otherQueueEntry) otherQueueEntry.isMatching = true;
 
                 try {
                     const m = await matchService.createMatch(
@@ -376,7 +415,14 @@ export const initializeSocket = (io: Server): Server => {
                     console.error("Match error:", err);
                 }
                 processed++;
+                } else {
+                    user.isMatching = false;
+                }
             }
+        } catch (error) {
+            console.error('[ matchmaking loop error ]', error);
+        } finally {
+            isProcessingQueue = false;
         }
     }, 1500);
 
@@ -407,6 +453,10 @@ export const initializeSocket = (io: Server): Server => {
         socket.emit('connected', { success: true, user: { _id: user._id, displayName: user.displayName } });
 
         socket.on('find-match', async (data: { preference?: string }) => {
+            if (ghostCooldowns.has(userId)) {
+                return socket.emit('match-error', { message: 'You are on a 2-minute cooldown for dropping matches too quickly. Please wait.' });
+            }
+
             if (!searchStartTimes.has(userId)) searchStartTimes.set(userId, Date.now());
 
             // 🔄 REFRESH USER DATA: Fetch latest from DB (catches recent unblocks/profile updates)
@@ -423,12 +473,6 @@ export const initializeSocket = (io: Server): Server => {
                 if (currentCount >= 10) {
                     return socket.emit('limit_exhausted', { message: 'You have exhausted your 10 free daily matches. Please upgrade to premium for unlimited matching.' });
                 }
-
-                // Increment and update
-                await User.updateOne({ _id: userId }, { 
-                    dailyMatchCount: currentCount + 1,
-                    dailyMatchDate: now
-                });
             }
 
             console.log(`[ find-match ] 📥 Raw Payload from ${freshUser.displayName}:`, JSON.stringify(data));
@@ -597,9 +641,6 @@ export const initializeSocket = (io: Server): Server => {
                 const other = match.user1._id.toString() === userId ? match.user2 : match.user1;
                 const otherIdStr = other._id.toString();
 
-                // Decrease trust score of the skipped user
-                await User.findByIdAndUpdate(otherIdStr, { $inc: { trustScore: -2 } });
-
                 // Persist to session map
                 if (!skippedUsersMap.has(userId)) skippedUsersMap.set(userId, new Set());
                 skippedUsersMap.get(userId)?.add(otherIdStr);
@@ -742,11 +783,19 @@ export const initializeSocket = (io: Server): Server => {
                 if (mongoose.connection.readyState !== 1) return;
                 const m = await matchService.endCall(new Types.ObjectId(data.matchId), user._id);
                 const call = activeCalls.get(data.matchId);
+                const startTime = callStartTimes.get(data.matchId);
+                if (startTime && Date.now() - startTime < 5000) {
+                    // Ghost Penalty
+                    ghostCooldowns.set(userId, Date.now());
+                    setTimeout(() => ghostCooldowns.delete(userId), 2 * 60 * 1000);
+                }
+                
                 if (call) {
                     const other = call.user1Id === userId ? call.user2Id : call.user1Id;
                     const otherSid = userSocketMap.get(other);
                     if (otherSid) io.to(otherSid).emit('call-ended', { match: m, endedBy: userId });
                     activeCalls.delete(data.matchId);
+                    callStartTimes.delete(data.matchId);
                 }
                 socket.emit('call-ended', { match: m, endedBy: userId });
             } catch (e) {
@@ -931,12 +980,19 @@ export const initializeSocket = (io: Server): Server => {
             // Clean up any active call the user was in
             for (const [mid, call] of activeCalls.entries()) {
                 if (call.user1Id === userId || call.user2Id === userId) {
+                    const startTime = callStartTimes.get(mid);
+                    if (startTime && Date.now() - startTime < 5000) {
+                        // Ghost Penalty on disconnect
+                        ghostCooldowns.set(userId, Date.now());
+                        setTimeout(() => ghostCooldowns.delete(userId), 2 * 60 * 1000);
+                    }
                     const otherId = call.user1Id === userId ? call.user2Id : call.user1Id;
                     const otherSid = userSocketMap.get(otherId);
                     if (otherSid) {
                         io.to(otherSid).emit('call-ended', { match: null, endedBy: userId, message: 'Partner disconnected.' });
                     }
                     activeCalls.delete(mid);
+                    callStartTimes.delete(mid);
                 }
             }
             userSocketMap.delete(userId);

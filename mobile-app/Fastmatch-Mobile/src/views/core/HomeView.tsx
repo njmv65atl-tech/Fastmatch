@@ -19,6 +19,8 @@ import {
   View,
   Image,
   Modal,
+  Animated,
+  Easing,
 } from "react-native";
 
 
@@ -42,6 +44,62 @@ interface CoreProps {
   setView: (view: AppView, params?: any) => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
+
+const OnlineCounter = ({ count }: { count: number }) => {
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.5,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
+  return (
+    <View style={styles.onlineBadgeContainer}>
+      <LinearGradient
+        colors={['rgba(76, 175, 80, 0.2)', 'rgba(76, 175, 80, 0.05)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.onlineBadgeGradient}
+      >
+        <View style={styles.pulseContainer}>
+          <Animated.View
+            style={[
+              styles.pulseRing,
+              {
+                transform: [{ scale: pulseAnim }],
+                opacity: pulseAnim.interpolate({
+                  inputRange: [1, 1.5],
+                  outputRange: [0.6, 0],
+                }),
+              },
+            ]}
+          />
+          <View style={styles.onlineDot} />
+        </View>
+        <Text style={styles.onlineCountText}>
+          {count.toLocaleString()}
+        </Text>
+        <Text style={styles.onlineLabelText}>
+          Online Now
+        </Text>
+      </LinearGradient>
+    </View>
+  );
+};
 
 
 
@@ -125,45 +183,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
               <Text style={styles.heroSubtitle}>{HOME_TEXT.readyQuestion}</Text>
               {onlineData?.data?.onlineCount !== undefined && (
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: 'rgba(76, 175, 80, 0.15)',
-                  paddingHorizontal: 14,
-                  paddingVertical: 6,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: 'rgba(76, 175, 80, 0.3)',
-                }}>
-                  <View style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 5,
-                    backgroundColor: '#4CAF50',
-                    marginRight: 8,
-                    shadowColor: '#4CAF50',
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.8,
-                    shadowRadius: 4,
-                    elevation: 4,
-                  }} />
-                  <Text style={{
-                    color: '#4CAF50',
-                    fontWeight: '700',
-                    fontSize: 13,
-                    letterSpacing: 0.3,
-                  }}>
-                    {onlineData.data.onlineCount.toLocaleString()}
-                  </Text>
-                  <Text style={{
-                    color: 'rgba(76, 175, 80, 0.8)',
-                    fontWeight: '500',
-                    fontSize: 11,
-                    marginLeft: 4,
-                  }}>
-                    Online Now
-                  </Text>
-                </View>
+                <OnlineCounter count={onlineData.data.onlineCount} />
               )}
             </View>
 
@@ -321,6 +341,62 @@ const styles = StyleSheet.create({
     color: colors.textPlaceholder,
     fontSize: 10,
     fontWeight: "bold",
+  },
+  modalCloseText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  onlineBadgeContainer: {
+    overflow: 'hidden',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.4)',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  onlineBadgeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+  },
+  pulseContainer: {
+    width: 14,
+    height: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+    position: 'absolute',
+  },
+  pulseRing: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#4CAF50',
+    position: 'absolute',
+  },
+  onlineCountText: {
+    color: '#81C784',
+    fontWeight: '800',
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  onlineLabelText: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '600',
+    fontSize: 12,
+    marginLeft: 6,
   },
   hero: {
     backgroundColor: colors.surface,

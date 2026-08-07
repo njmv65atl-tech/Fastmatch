@@ -13,8 +13,21 @@ import { FriendModel } from '@models/friend';
 import { Transaction } from '@models/transaction';
 import { RekognitionClient, DetectModerationLabelsCommand } from "@aws-sdk/client-rekognition";
 import notificationServices from '@services/notification.services';
+import { createCircuitBreaker } from '@config/circuitBreaker';
 
+// eslint-disable-next-line no-restricted-syntax
 const rekognition = new RekognitionClient({ region: process.env.AWS_REGION || "us-east-1" });
+
+// Circuit Breaker for AWS Rekognition
+const rekognitionBreaker = createCircuitBreaker(async (command: any) => {
+    return await rekognition.send(command);
+}, { name: 'AWSRekognition' });
+
+rekognitionBreaker.fallback((command, error) => {
+    console.warn('[AWS Rekognition] Circuit open/failed. Bypassing moderation.', error.message);
+    // Return empty labels to simulate a clean frame
+    return { ModerationLabels: [] };
+});
 
 const message = { ...authConstant.auth, ...userConstant.user };
 const { forbidden } = constants;
@@ -581,13 +594,13 @@ class UserController extends ResponseHandler {
                 MinConfidence: 80
             });
 
-            const response = await rekognition.send(command);
+            const response = await rekognitionBreaker.fire(command);
             const labels = response.ModerationLabels || [];
 
             // Define critical explicit labels
             const explicitLabels = ["Explicit Nudity", "Nudity", "Sexual Activity", "Graphic Male Nudity", "Graphic Female Nudity"];
             
-            const isExplicit = labels.some(label => explicitLabels.includes(label.Name || ""));
+            const isExplicit = labels.some((label: any) => explicitLabels.includes(label.Name || ""));
 
             if (isExplicit) {
                 // Auto-ban user

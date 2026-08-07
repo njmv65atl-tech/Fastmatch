@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 import axios from "axios";
 import appConfig from "@config/config";
 import { GoogleAuth } from 'google-auth-library';
+import { createCircuitBreaker } from "@config/circuitBreaker";
 
 // ─── Product ID Mapping ─────────────────────────────────────────
 const PRODUCT_MAP: Record<string, { plan: 'monthly' | 'yearly'; price: number }> = {
@@ -16,6 +17,18 @@ const PRODUCT_MAP: Record<string, { plan: 'monthly' | 'yearly'; price: number }>
 };
 
 class SubscriptionService {
+    private appleBreaker: any;
+    private googleBreaker: any;
+
+    constructor() {
+        // Initialize Circuit Breakers for external APIs
+        this.appleBreaker = createCircuitBreaker(async (url: string, payload: any) => {
+            return await axios.post(url, payload);
+        });
+        this.googleBreaker = createCircuitBreaker(async (client: any, url: string) => {
+            return await client.request({ url });
+        });
+    }
 
     // ═════════════════════════════════════════════════════════════
     // RECEIPT VERIFICATION (Called from App after purchase)
@@ -119,13 +132,13 @@ class SubscriptionService {
         };
 
         try {
-            // Try production first
-            let response = await axios.post(APPLE_PRODUCTION_URL, payload);
+            // Try production first via Circuit Breaker
+            let response = await this.appleBreaker.fire(APPLE_PRODUCTION_URL, payload);
 
             // Status 21007 means sandbox receipt sent to production — retry on sandbox
             if (response.data.status === 21007) {
                 console.log('[Apple] Sandbox receipt detected, retrying on sandbox...');
-                response = await axios.post(APPLE_SANDBOX_URL, payload);
+                response = await this.appleBreaker.fire(APPLE_SANDBOX_URL, payload);
             }
 
             const data = response.data;
@@ -175,7 +188,7 @@ class SubscriptionService {
             const client = await auth.getClient();
             const url = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`;
 
-            const response = await client.request({ url });
+            const response = await this.googleBreaker.fire(client, url);
             const data: any = response.data;
 
             console.log('[Google] Subscription data:', JSON.stringify(data, null, 2));

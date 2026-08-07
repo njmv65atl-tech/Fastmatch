@@ -8,6 +8,7 @@ import { uploadProfilePicture } from '@middlewares/upload';
 import { verifyAdminToken } from '@middlewares/adminAuth';
 
 import * as adminValidation from './validation';
+import { cacheMiddleware } from '@middlewares/cache';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.post('/verify-otp', validator(adminValidation.verifyOtpSchema), adminCont
 router.post('/reset-password', validator(adminValidation.resetPasswordSchema), adminController.adminResetPassword);
 router.post('/logout', verifyAdminToken, adminController.adminLogout);
 router.get('/get-profile', verifyAdminToken, adminController.adminGetProfile);
-router.get('/dashboard-stats', verifyAdminToken, adminController.getDashboardStats);
+router.get('/dashboard-stats', verifyAdminToken, cacheMiddleware(300), adminController.getDashboardStats);
 
 // User Management
 router.get('/users', verifyAdminToken, adminController.getUsers);
@@ -56,6 +57,6 @@ router.post('/announcements', verifyAdminToken, adminController.createAnnounceme
 router.delete('/announcements/:id', verifyAdminToken, adminController.deleteAnnouncement);
 
 // Icebreakers for mobile app (public)
-router.get('/public/icebreakers', adminController.getActiveIcebreakers);
+router.get('/public/icebreakers', cacheMiddleware(300), adminController.getActiveIcebreakers);
 
 export default router;

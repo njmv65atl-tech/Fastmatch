@@ -68,8 +68,38 @@ export const authApi = emptySplitApi.injectEndpoints({
     reportBlock : Method.POST(builder, apiEndPoints.reportBlock , header1),
     buyCoinsMock : Method.POST(builder, apiEndPoints.buyCoinsMock , header1),
     upgradePremiumMock : Method.POST(builder, apiEndPoints.upgradePremiumMock , header1),
-    sendFriendRequest: Method.POST(builder, apiEndPoints.sendFriendRequest, header1),
-    acceptFriendRequest: Method.POST(builder, apiEndPoints.acceptFriendRequest, header1),
+    sendFriendRequest: builder.mutation({
+      query: (body) => ({
+        url: apiEndPoints.sendFriendRequest,
+        method: "POST",
+        body,
+        headers: header1,
+      }),
+      async onQueryStarted({ targetUserId }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          authApi.util.updateQueryData('checkFriendStatus', targetUserId, (draft: any) => {
+             if (draft) draft.status = 'pending';
+          })
+        );
+        try { await queryFulfilled; } catch { patchResult.undo(); }
+      }
+    }),
+    acceptFriendRequest: builder.mutation({
+      query: (body) => ({
+        url: apiEndPoints.acceptFriendRequest,
+        method: "POST",
+        body,
+        headers: header1,
+      }),
+      async onQueryStarted({ requestId }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          authApi.util.updateQueryData('friendRequests', undefined, (draft: any) => {
+            if (draft?.data) draft.data = draft.data.filter((r: any) => r._id !== requestId);
+          })
+        );
+        try { await queryFulfilled; } catch { patchResult.undo(); }
+      }
+    }),
     myFriends: builder.query({
       query: () => ({
         url: apiEndPoints.myFriends,
@@ -91,6 +121,16 @@ export const authApi = emptySplitApi.injectEndpoints({
         body,
         headers: header1,
       }),
+      async onQueryStarted({ friendId }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          authApi.util.updateQueryData('myFriends', undefined, (draft: any) => {
+            if (draft?.data) {
+              draft.data = draft.data.filter((f: any) => f._id !== friendId);
+            }
+          })
+        );
+        try { await queryFulfilled; } catch { patchResult.undo(); }
+      }
     }),
     checkFriendStatus: builder.query({
       query: (userId) => ({

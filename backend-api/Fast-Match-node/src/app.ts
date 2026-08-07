@@ -2,6 +2,7 @@ import appConfig from "./config/config";
 import './config/serverValidator';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import helmet from "helmet";
 import logger from 'morgan';
 import fs from 'fs';
@@ -53,6 +54,19 @@ app.set('trust proxy', 1);
 // 1. Logs & CORS
 app.use(logger('dev'));
 app.use(cors({ origin: true, credentials: true }));
+
+// 1.5. Compression (Gzip/Brotli)
+app.use(compression({
+    // Only compress responses > 1KB (avoiding overhead for tiny responses)
+    threshold: 1024,
+    // Filter to avoid double-compression
+    filter: (req, res) => {
+        if (req.headers['x-no-compression']) {
+            return false;
+        }
+        return compression.filter(req, res);
+    }
+}));
 
 // 2. Socket.IO Bypass & Security (Bypass Socket calls from standard Express security/parsers)
 app.use((req: Request, res: Response, next: NextFunction) => {

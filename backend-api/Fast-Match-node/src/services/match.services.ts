@@ -169,9 +169,10 @@ class MatchService {
                 partnerIds.add(pId);
             });
 
-            for (const pId of partnerIds) {
-                await notificationServices.sendNotification(
-                    new Types.ObjectId(pId),
+            const pIdsArray = Array.from(partnerIds).map(id => new Types.ObjectId(id));
+            if (pIdsArray.length > 0) {
+                await notificationServices.sendBulkNotification(
+                    pIdsArray,
                     'Partner Online',
                     `${displayName} is now online. Say hi!`,
                     'ONLINE_STATUS',

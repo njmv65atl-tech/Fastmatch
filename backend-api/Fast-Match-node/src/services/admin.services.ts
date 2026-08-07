@@ -220,17 +220,17 @@ class AdminService {
             query.isPremium = 'free';
         }
 
-        // Fetch users and send push notifications asynchronously
+        // Fetch users and send push notifications asynchronously via bulk operation
         const users = await User.find(query).select('_id');
-        users.forEach(user => {
-            notificationServices.sendNotification(
-                user._id,
-                data.title,
-                data.message,
-                'announcement',
-                { announcementId: announcement._id.toString() }
-            ).catch(err => console.error('FCM Error:', err));
-        });
+        const userIds = users.map(u => u._id as Types.ObjectId);
+        
+        notificationServices.sendBulkNotification(
+            userIds,
+            data.title,
+            data.message,
+            'announcement',
+            { announcementId: announcement._id.toString() }
+        ).catch(err => console.error('Bulk FCM Error:', err));
 
         return announcement;
     }

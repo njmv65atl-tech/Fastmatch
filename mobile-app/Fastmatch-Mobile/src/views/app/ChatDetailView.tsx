@@ -780,25 +780,50 @@ React.useEffect(() => {
     if (!message) return;
 
     if (isEditing && editingMessageId) {
+      const originalMessages = [...chatMessages];
+      const targetMessageId = editingMessageId;
+      const targetMessageText = message;
+
+      // 1. Optimistic Update (Immediate UI response)
+      setChatMessages((prev) =>
+        prev.map((m) =>
+          m._id === targetMessageId ? { ...m, message: targetMessageText, isEdited: true } : m
+        )
+      );
+      dispatch(
+        authApi.util.updateQueryData("chatHistory", userId, (draft: any) => {
+          if (draft?.data) {
+            let messagesArray = Array.isArray(draft.data) ? draft.data : draft.data.messages;
+            if (messagesArray) {
+              const msgIndex = messagesArray.findIndex((m: any) => m._id === targetMessageId);
+              if (msgIndex !== -1) {
+                messagesArray[msgIndex].message = targetMessageText;
+                messagesArray[msgIndex].isEdited = true;
+              }
+            }
+          }
+        })
+      );
+      setIsEditing(false);
+      setEditingMessageId(null);
+      setNewMessage("");
+
+      // 2. API Call in Background
       managerApiCall(
         editMessage,
         {
-          messageId: editingMessageId,
-          newMessage: message,
+          messageId: targetMessageId,
+          newMessage: targetMessageText,
         },
         (res: any) => {
           console.log("Edit message success:", res);
-          setChatMessages((prev) =>
-            prev.map((m) =>
-              m._id === editingMessageId ? { ...m, message: message, isEdited: true } : m
-            )
-          );
-          setIsEditing(false);
-          setEditingMessageId(null);
-          setNewMessage("");
         },
         (err: any) => {
           console.log("Edit message failed:", err);
+          Alert.alert("Error", "Failed to edit message. Reverting.");
+          // 3. Rollback on failure
+          setChatMessages(originalMessages);
+          dispatch(authApi.util.invalidateTags([{ type: 'Chat', id: userId } as any]));
         }
       );
       return;
@@ -1073,27 +1098,38 @@ React.useEffect(() => {
                     }
                     setMessageActionVisible(false);
 
+                    // 1. Save original state for rollback
+                    const originalMessages = [...chatMessages];
+                    const msgIdToDelete = selectedMsg._id;
+                    
+                    // 2. Optimistic Update (Immediate UI response)
+                    setChatMessages((prev) => prev.filter(m => m._id !== msgIdToDelete));
+                    dispatch(
+                      authApi.util.updateQueryData("chatHistory", userId, (draft: any) => {
+                        if (draft?.data) {
+                          if (Array.isArray(draft.data)) {
+                            draft.data = draft.data.filter((m: any) => m._id !== msgIdToDelete);
+                          } else if (draft.data.messages) {
+                            draft.data.messages = draft.data.messages.filter((m: any) => m._id !== msgIdToDelete);
+                          }
+                        }
+                      })
+                    );
+                    setSelectedMsg(null);
+
+                    // 3. API Call in Background
                     managerApiCall(
                       deleteMessages,
-                      { messageIds: [selectedMsg._id] },
+                      { messageIds: [msgIdToDelete] },
                       (res: any) => {
-                        setChatMessages((prev) => prev.filter(m => m._id !== selectedMsg._id));
-                        
-                        dispatch(
-                          authApi.util.updateQueryData("chatHistory", userId, (draft: any) => {
-                            if (draft?.data) {
-                              if (Array.isArray(draft.data)) {
-                                draft.data = draft.data.filter((m: any) => m._id !== selectedMsg._id);
-                              } else if (draft.data.messages) {
-                                draft.data.messages = draft.data.messages.filter((m: any) => m._id !== selectedMsg._id);
-                              }
-                            }
-                          })
-                        );
-                        setSelectedMsg(null);
+                        // Success, already updated optimistically
                       },
                       (err: any) => {
                         console.log("Delete message failed:", err);
+                        Alert.alert("Error", "Failed to delete message. Reverting.");
+                        // 4. Rollback on failure
+                        setChatMessages(originalMessages);
+                        dispatch(authApi.util.invalidateTags([{ type: 'Chat', id: userId } as any]));
                       }
                     );
                   }}
