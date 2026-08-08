@@ -20,7 +20,6 @@ export const emptySplitApi = createApi({
   baseQuery: fetchBaseQuery({
     // baseUrl: BASE_URL_LIVE,
     baseUrl: BASE_URL,
-    credentials: 'include',
     prepareHeaders: async (headers, { getState }) => {
       // console.log('VITE_LOCAL_SERVER: ', BASE_URL_LIVE);
       const access_token = await DataManager.getAccessToken();
