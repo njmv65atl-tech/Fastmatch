@@ -151,10 +151,10 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                 <AppLogo size="sm" />
               </View>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
 
               {user?.role === UserRole.PREMIUM && (
-                <View style={styles.premiumBadge1}>
+                <View style={[styles.premiumBadge1, { marginRight: 10 }]}>
                   <LinearGradient
                     colors={["#FDE047", "#FACC15", "#F59E0B"]}
                     start={{ x: 0, y: 0 }}
@@ -174,7 +174,9 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               )}
               
               {onlineData?.data?.onlineCount !== undefined && (
-                <OnlineCounter count={onlineData.data.onlineCount} />
+                <View style={{ marginLeft: user?.role === UserRole.PREMIUM ? 0 : 0 }}>
+                  <OnlineCounter count={onlineData.data.onlineCount} />
+                </View>
               )}
               </View>
             </View>

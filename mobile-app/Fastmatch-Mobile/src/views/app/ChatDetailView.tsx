@@ -1440,7 +1440,7 @@ React.useEffect(() => {
               }}
               ListEmptyComponent={
                 !isLoading ? (
-                  <View style={[styles.emptyStateContainer, { transform: [{ scaleY: -1 }] }]}>
+                  <View style={[styles.emptyStateContainer, { transform: Platform.OS === 'android' ? [{ scaleY: -1 }, { scaleX: -1 }] : [{ scaleY: -1 }] }]}>
                     <Text style={styles.noMessagesText}>No messages yet</Text>
                   </View>
                 ) : null

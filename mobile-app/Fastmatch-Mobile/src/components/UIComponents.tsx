@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
   verticalText: {
     marginTop: 8,
   },
-  container: { flex: 1, flexDirection: "row", alignItems: "center" },
+  container: { flex: 1, backgroundColor: colors.background },
 
   logoBox: {
     justifyContent: "center",
