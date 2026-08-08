@@ -1,0 +1,21 @@
+diff --git a/node_modules/react-native-prevent-screenshot-ios-android/ios/PreventScreenshotIosAndroid.h b/node_modules/react-native-prevent-screenshot-ios-android/ios/PreventScreenshotIosAndroid.h
+index 34dede6..53edaf3 100644
+--- a/node_modules/react-native-prevent-screenshot-ios-android/ios/PreventScreenshotIosAndroid.h
++++ b/node_modules/react-native-prevent-screenshot-ios-android/ios/PreventScreenshotIosAndroid.h
+@@ -2,16 +2,10 @@
+ #import "react-native-prevent-screenshot-ios-android.h"
+ #endif
+ 
+-#ifdef RCT_NEW_ARCH_ENABLED
+-#import "RNPreventScreenshotIosAndroidSpec.h"
+-
+-@interface PreventScreenshotIosAndroid : NSObject <NativePreventScreenshotIosAndroidSpec>
+-#else
+ #import <React/RCTBridgeModule.h>
+ #import <React/RCTConvert.h>
+ #import <React/RCTEventEmitter.h>
+ 
+ @interface PreventScreenshotIosAndroid : RCTEventEmitter <RCTBridgeModule>
+-#endif
+ 
+ @end

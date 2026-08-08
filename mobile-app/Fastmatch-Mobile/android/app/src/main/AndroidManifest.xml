@@ -51,7 +51,7 @@
       android:allowBackup="false"
       android:fullBackupContent="false"
       android:theme="@style/AppTheme"
-      android:usesCleartextTraffic="false"
+      android:usesCleartextTraffic="true"
       android:networkSecurityConfig="@xml/network_security_config"
       android:supportsRtl="true">
 

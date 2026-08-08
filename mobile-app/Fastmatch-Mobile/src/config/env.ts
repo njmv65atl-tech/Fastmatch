@@ -3,7 +3,7 @@ import Config from 'react-native-config';
 // Safely access Config in case the native module is stripped by ProGuard
 const cfg = Config ?? {};
 
-export const API_URL = cfg.API_URL || 'https://54.91.165.108';
+export const API_URL = cfg.API_URL || 'http://54.91.165.108';
 export const DELL_URL = cfg.DELL_URL || 'https://54.91.165.108';
 export const API_VERSION = cfg.API_VERSION || '/api/v1/';
 

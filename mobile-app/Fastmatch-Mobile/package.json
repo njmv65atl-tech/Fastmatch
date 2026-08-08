@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "web": "vite"
+    "web": "vite",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@notifee/react-native": "^9.1.8",
@@ -67,6 +68,8 @@
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
     "lucide-react": "^0.563.0",
+    "patch-package": "^8.0.1",
+    "postinstall-postinstall": "^2.1.0",
     "prettier": "2.8.8",
     "react-test-renderer": "18.3.1",
     "typescript": "5.0.4"
