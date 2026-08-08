@@ -1588,7 +1588,7 @@ React.useEffect(() => {
               setImageViewerVisible(false);
               if (isViewOnceMode && imageViewerMsgId) {
                 // Delete the message completely after viewing
-                managerApiCall(deleteMessages, { messageIds: [imageViewerMsgId] });
+                managerApiCall(deleteMessages, { messageIds: [imageViewerMsgId] }, () => {});
                 setChatMessages(prev => prev.filter(m => m._id !== imageViewerMsgId));
                 setIsViewOnceMode(false);
               }
@@ -1757,6 +1757,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: colors.borderSubtle,
     paddingBottom: Platform.OS === "ios" ? verticalScale(25) : verticalScale(10), 
+  },
+  inputAction: {
+    padding: scale(8),
+    marginRight: scale(4),
   },
   chatInput: {
     flex: 1,

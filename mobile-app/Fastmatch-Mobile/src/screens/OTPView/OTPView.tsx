@@ -242,7 +242,7 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
       return {
         transform: [{ translateX }, { scale }],
         opacity,
-      };
+      } as any;
     });
   };
 

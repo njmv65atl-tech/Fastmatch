@@ -283,7 +283,7 @@ class UserController extends ResponseHandler {
             const users = await User.aggregate([
                 { $match: { _id: { $ne: currentUserId }, isBanned: false } },
                 { $sample: { size: 20 } },
-                { $project: { password: 0, otps: 0 } }
+                { $project: { password: 0, otp: 0, walletBalance: 0, trustScore: 0, lastActive: 0, fcmToken: 0, deviceToken: 0, loginSessionId: 0 } }
             ]);
             return this.handleResponse(res, "Discovered users fetched", users);
         } catch (error: any) {
@@ -294,9 +294,8 @@ class UserController extends ResponseHandler {
     async requestVerification(req: Request, res: Response) {
         try {
             const currentUserId = req.user._id;
-            // Simulate auto-approval for verification
-            await User.findByIdAndUpdate(currentUserId, { isVerified: true });
-            return this.handleResponse(res, "Verification successful");
+            // Mock disabled in prod: await User.findByIdAndUpdate(currentUserId, { isVerified: true });
+            return res.status(403).send(responseEncryptor(req, false, "Verification must be done via standard flow (disabled)"));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
@@ -304,9 +303,7 @@ class UserController extends ResponseHandler {
     async buyCoinsMock(req: Request, res: Response) {
         try {
             const { amount } = req.body;
-            if (!amount || typeof amount !== 'number') {
-                return res.status(400).send(responseEncryptor(req, false, "Invalid amount"));
-            }
+            return res.status(403).send(responseEncryptor(req, false, "Purchasing coins via mock is disabled in production"));
             const currentUserId = req.user._id;
             const user = await User.findById(currentUserId);
             if (!user) return res.status(404).send(responseEncryptor(req, false, "User not found"));
@@ -444,10 +441,7 @@ class UserController extends ResponseHandler {
     async upgradePremiumMock(req: Request, res: Response) {
         try {
             const currentUserId = req.user._id;
-            const updatedUser = await User.findByIdAndUpdate(
-                currentUserId,
-                { isPremium: 'premium', subscriptionPlan: 'monthly', subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) },
-                { new: true }
+            return res.status(403).send(responseEncryptor(req, false, "Premium upgrade mock is disabled in production"));
             ).select('-password -otps');
             return res.status(200).send(responseEncryptor(req, true, "Upgraded to Premium Mock", updatedUser));
         } catch (error: any) {

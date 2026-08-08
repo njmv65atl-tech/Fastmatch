@@ -6,6 +6,7 @@ export const apiEndPoints = {
   userSignUp: "user/signUp",
   userSignOut : "user/logout",
   verifySignUpOtp: "user/verify-signup-otp",
+  deleteAccount: "user/delete-profile",
   resendOtp: "user/resend-otp",
 
   verifyOtp: "user/verify-otp",

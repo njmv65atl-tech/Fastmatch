@@ -382,7 +382,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
                   try {
                     await fetch('/api/v1/match/rate', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${socket.auth?.token?.split(' ')[1]}` },
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${((socket.auth as any)?.token || '').split(' ')[1]}` },
                       body: JSON.stringify({ matchId: lastMatchId, rating: givenRating })
                     });
                   } catch(e) {}

@@ -9,12 +9,14 @@ import {
   Modal,
   BackHandler,
   Platform,
+  Alert,
 } from 'react-native';
 import { EditProfileScreen } from '../../screens/EditProfileScreen/editProfileScreen';
 import { scale } from '../../helpers/metrics';
 import { IMAGE_URL } from '../../config/env';
-// import removed
-import { ShowAlertMessage, popTypes } from '../../helpers/commonFunctions';
+import { managerApiCall } from '../../helpers/managerApiCallFn';
+import { useDeleteAccountMutation } from '../../redux/services/auth';
+import { ShowAlertMessage, popTypes, onLogout } from '../../helpers/commonFunctions';
 
 const BASE_URL = IMAGE_URL;
 
@@ -22,6 +24,27 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
   const [isEditing, setIsEditing] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deleteAccount] = useDeleteAccountMutation();
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: () => {
+            managerApiCall(deleteAccount, {}, (res: any) => {
+               ShowAlertMessage('Account deleted successfully', popTypes.success);
+               onLogout();
+            });
+          }
+        }
+      ]
+    );
+  };
 
   // Android back button handling
   useEffect(() => {
@@ -251,6 +274,16 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
         >
           <Text style={styles.editButtonIcon}>✎</Text>
           <Text style={styles.editButtonText}>Edit Profile</Text>
+        </TouchableOpacity>
+
+        {/* ── Delete Account Button ── */}
+        <TouchableOpacity
+          style={[styles.editButton, { marginTop: 15, backgroundColor: '#ffebee', borderColor: '#ffcdd2' }]}
+          activeOpacity={0.85}
+          onPress={handleDeleteAccount}
+        >
+          <Text style={[styles.editButtonIcon, { color: '#d32f2f' }]}>🗑️</Text>
+          <Text style={[styles.editButtonText, { color: '#d32f2f' }]}>Delete Account</Text>
         </TouchableOpacity>
 
         <View style={styles.bottomSpacer} />

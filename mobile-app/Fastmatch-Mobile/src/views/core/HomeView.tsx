@@ -32,7 +32,7 @@ import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import { DailyRewardModal } from "../../components/DailyRewardModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch } from "react-redux";
-import { setCredentials } from "../../redux/slices/persistedSlice";
+import { setGlobalUser } from "../../redux/slices/persistedSlice";
 import { useClaimDailyRewardMutation, useOnlineCountQuery } from "../../redux/services/auth";
 
 

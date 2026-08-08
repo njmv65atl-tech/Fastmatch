@@ -31,7 +31,7 @@ export const Login = () => {
   const formik = useFormik({
     initialValues: {
       email: Cookies.get('remember_email') || '',
-      password: Cookies.get('remember_password') || '',
+      password: '',
       rememberMe: Cookies.get('remember_me') === 'true',
     },
     validationSchema,
@@ -43,11 +43,9 @@ export const Login = () => {
           onSuccess: (data) => {
             if (values.rememberMe) {
               Cookies.set('remember_email', values.email, { expires: 30 });
-              Cookies.set('remember_password', values.password, { expires: 30 });
               Cookies.set('remember_me', 'true', { expires: 30 });
             } else {
               Cookies.remove('remember_email');
-              Cookies.remove('remember_password');
               Cookies.remove('remember_me');
             }
 

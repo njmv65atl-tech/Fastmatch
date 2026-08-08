@@ -47,7 +47,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
 
   const renderFriendItem = (item: any) => {
     // Determine friend object by checking who the current user is
-    const currentUserId = user?.id || user?._id;
+    const currentUserId = (user as any)?.id || (user as any)?._id;
     const friendObj = item.requester?._id === currentUserId ? item.recipient : item.requester;
     if (!friendObj) return null;
 

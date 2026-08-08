@@ -57,6 +57,7 @@ export const authApi = emptySplitApi.injectEndpoints({
 
     userReport: Method.POST(builder, apiEndPoints.videoCallReport, header1),
     userLogout : Method.POST(builder, apiEndPoints.userSignOut , header1),
+    deleteAccount : Method.DELETE(builder, apiEndPoints.deleteAccount , header1),
     clearChat  : Method.POST(builder, apiEndPoints.clearChat , header1),
     blockUser : Method.POST(builder, apiEndPoints.blockUser , header1),
     unblockUser : Method.POST(builder, apiEndPoints.unblockUser , header1),
@@ -177,6 +178,7 @@ export const {
   useChatHistoryQuery,
   useUserReportMutation,
   useUserLogoutMutation,
+  useDeleteAccountMutation,
   useClearChatMutation,
   useBlockUserMutation,
   useUnblockUserMutation,

@@ -18,7 +18,7 @@ class AuthService {
     otpGenerator = new randomNumber();
 
     private generateTokens(userId: Types.ObjectId, password: string | null, loginSessionId?: string, deviceId?: string, deviceName?: string, platform?: string, forgotPass: boolean = false) {
-        return this.jwt.generateToken({ _id: userId, password, loginSessionId, deviceId, deviceName, platform }, forgotPass);
+        return this.jwt.generateToken({ _id: userId, loginSessionId, deviceId, deviceName, platform }, forgotPass);
     }
 
     async logoutUser(_id: Types.ObjectId) {
@@ -160,7 +160,7 @@ class AuthService {
     async verifyOtpAndActivate(otp: number, identifier: string, deviceId?: string, deviceName?: string, platform?: string) {
         const userExist = await userRepos.checkUserByEmailOrPhone(identifier);
         if (!userExist) throw new Error(message.userNotExist);
-        if (otp != userExist.otp && otp != 1234) throw new Error(message.invalidOtp);
+        if (otp != userExist.otp) throw new Error(message.invalidOtp);
 
         const loginSessionId = randomUUID();
         const updateFields: any = { isVerified: true, otp: 0, loginSessionId, isLogin: true };
@@ -200,7 +200,7 @@ class AuthService {
             console.log("Email sending failed, likely missing SMTP", e);
         }
         
-        return otp;
+        return true;
     }
 
     async verifytForgotOtp(otp: number, email: string) {

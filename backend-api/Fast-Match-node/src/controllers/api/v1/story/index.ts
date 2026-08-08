@@ -18,7 +18,8 @@ class StoryController extends ResponseHandler {
             const { mediaType } = req.body;
             let mediaUrl = '';
             if (req.file) {
-                mediaUrl = `/uploads/${req.file.filename}`;
+                const filePath = req.file.path.split('public')[1].replace(/\\/g, '/');
+                mediaUrl = `/public${filePath}`;
             }
 
             if (!mediaUrl) {

@@ -11,3 +11,8 @@ app-release-extracted/
 **/app-release-extracted/*
 serviceAccountKey.json
 **/serviceAccountKey.json
+
+*.p8
+*service-account.json
+check_users.js
+

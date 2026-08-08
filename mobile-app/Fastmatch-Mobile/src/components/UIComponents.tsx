@@ -31,8 +31,9 @@ export const Button: React.FC<{
   onClick?: () => void;
   variant?: "primary" | "ghost" | "danger" | "gold";
   fullWidth?: boolean;
+  disabled?: boolean;
   style?: any;
-}> = ({ children, onClick, variant = "primary", style, fullWidth }) => {
+}> = ({ children, onClick, variant = "primary", style, fullWidth, disabled }) => {
   const isGradient = variant === "primary" || variant === "gold";
 
   const getGradientColors = () => {
@@ -75,7 +76,8 @@ export const Button: React.FC<{
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onClick}
-      style={[fullWidth && { width: "100%" }]}
+      disabled={disabled}
+      style={[fullWidth && { width: "100%" }, disabled && { opacity: 0.5 }]}
     >
       {isGradient ? (
         <LinearGradient
