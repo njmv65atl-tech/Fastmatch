@@ -90,10 +90,10 @@ const OnlineCounter = ({ count }: { count: number }) => {
           />
           <View style={styles.onlineDot} />
         </View>
-        <Text style={styles.onlineCountText}>
+        <Text style={styles.onlineCountText} numberOfLines={1}>
           {count.toLocaleString()}
         </Text>
-        <Text style={styles.onlineLabelText}>
+        <Text style={[styles.onlineLabelText, { flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit>
           Online Now
         </Text>
       </LinearGradient>
@@ -146,18 +146,12 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
       <MobileContainer>
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.hero}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}
-            >
-              <View style={styles.heroNav}>
+            <View style={styles.heroNav}>
+              <View>
                 <AppLogo size="sm" />
               </View>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 }}>
 
               {user?.role === UserRole.PREMIUM && (
                 <View style={styles.premiumBadge1}>

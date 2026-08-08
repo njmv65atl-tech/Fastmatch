@@ -37,6 +37,7 @@ import { Linking } from "react-native";
 import { BASE_URL } from "../../redux/services/index";
 import { DataManager } from "../../helpers/dataManager";
 import { NativeModules } from 'react-native';
+import { enableSecureView, disableSecureView } from 'react-native-prevent-screenshot-ios-android';
 const { AppScreenshotPrevent, FileDownloader } = NativeModules;
 const { width, height } = Dimensions.get("window");
 
@@ -637,8 +638,10 @@ React.useEffect(() => {
     try {
       if (imageViewerVisible && isViewOnceMode) {
         if (Platform.OS === 'android' && AppScreenshotPrevent) AppScreenshotPrevent.forbid();
+        if (Platform.OS === 'ios') enableSecureView();
       } else {
         if (Platform.OS === 'android' && AppScreenshotPrevent) AppScreenshotPrevent.allow();
+        if (Platform.OS === 'ios') disableSecureView();
       }
     } catch (e) {
       console.warn('Screenshot prevention error', e);
@@ -646,6 +649,7 @@ React.useEffect(() => {
     return () => {
       try {
         if (Platform.OS === 'android' && AppScreenshotPrevent) AppScreenshotPrevent.allow();
+        if (Platform.OS === 'ios') disableSecureView();
       } catch (e) { }
     };
   }, [imageViewerVisible, isViewOnceMode]);
@@ -1436,7 +1440,7 @@ React.useEffect(() => {
               }}
               ListEmptyComponent={
                 !isLoading ? (
-                  <View style={[styles.emptyStateContainer, { transform: [{ scaleY: -1 }, { scaleX: -1 }] }]}>
+                  <View style={[styles.emptyStateContainer, { transform: [{ scaleY: -1 }] }]}>
                     <Text style={styles.noMessagesText}>No messages yet</Text>
                   </View>
                 ) : null
