@@ -119,7 +119,7 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
           </TouchableOpacity>
 
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            <Image source={{ uri: avatarUrl, cache: 'force-cache' }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarFallback}>
               <Text style={styles.avatarInitials}>{initials}</Text>

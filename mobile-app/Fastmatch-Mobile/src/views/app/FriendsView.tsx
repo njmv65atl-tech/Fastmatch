@@ -59,9 +59,9 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         onPress={() => {
           setView(AppView.CHAT_DETAIL, {
             userId: friendObj._id,
-            chatUserName: friendObj.displayName || "Unknown",
-            chatUserAvatar: friendObj.profilePicture,
-            chatUser: friendObj
+            userName: friendObj.displayName || friendObj.fullName || friendObj.name || "Unknown",
+            userAvatar: friendObj.profilePicture,
+            item: friendObj
           });
         }}
       >
@@ -74,7 +74,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{friendObj.displayName || "Unknown"}</Text>
+          <Text style={styles.userName}>{friendObj.displayName || friendObj.fullName || friendObj.name || "Unknown"}</Text>
           <Text style={styles.userStatus}>Friends since {new Date(item.createdAt).toLocaleDateString()}</Text>
         </View>
         <View style={styles.actionBtn}>
@@ -99,7 +99,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           style={styles.avatar}
         />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{requester.displayName || "Unknown"}</Text>
+          <Text style={styles.userName}>{requester.displayName || requester.fullName || requester.name || "Unknown"}</Text>
           <Text style={styles.userStatus}>Wants to be friends</Text>
         </View>
         <TouchableOpacity

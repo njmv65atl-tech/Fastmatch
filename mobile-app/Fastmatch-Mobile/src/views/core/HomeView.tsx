@@ -149,11 +149,15 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
             <View
               style={{
                 flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center"
               }}
             >
               <View style={styles.heroNav}>
                 <AppLogo size="sm" />
               </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
 
               {user?.role === UserRole.PREMIUM && (
                 <View style={styles.premiumBadge1}>
@@ -174,6 +178,11 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                   </LinearGradient>
                 </View>
               )}
+              
+              {onlineData?.data?.onlineCount !== undefined && (
+                <OnlineCounter count={onlineData.data.onlineCount} />
+              )}
+              </View>
             </View>
 
             <Text style={styles.heroTitle}>
@@ -182,9 +191,6 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
             
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
               <Text style={styles.heroSubtitle}>{HOME_TEXT.readyQuestion}</Text>
-              {onlineData?.data?.onlineCount !== undefined && (
-                <OnlineCounter count={onlineData.data.onlineCount} />
-              )}
             </View>
 
           </View>
@@ -348,7 +354,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   onlineBadgeContainer: {
-    overflow: 'hidden',
     borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(76, 175, 80, 0.4)',
@@ -361,9 +366,11 @@ const styles = StyleSheet.create({
   onlineBadgeGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   pulseContainer: {
     width: 14,

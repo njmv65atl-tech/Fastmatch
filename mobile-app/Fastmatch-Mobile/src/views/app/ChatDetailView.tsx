@@ -36,7 +36,8 @@ import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import { Linking } from "react-native";
 import { BASE_URL } from "../../redux/services/index";
 import { DataManager } from "../../helpers/dataManager";
- 
+import { NativeModules } from 'react-native';
+const { AppScreenshotPrevent, FileDownloader } = NativeModules;
 const { width, height } = Dimensions.get("window");
 
 interface ChatDetailProps {
@@ -631,6 +632,23 @@ React.useEffect(() => {
     }, 200);
     return () => clearTimeout(timer);
   }, [chatMessages]);
+
+  React.useEffect(() => {
+    try {
+      if (imageViewerVisible && isViewOnceMode) {
+        if (Platform.OS === 'android' && AppScreenshotPrevent) AppScreenshotPrevent.forbid();
+      } else {
+        if (Platform.OS === 'android' && AppScreenshotPrevent) AppScreenshotPrevent.allow();
+      }
+    } catch (e) {
+      console.warn('Screenshot prevention error', e);
+    }
+    return () => {
+      try {
+        if (Platform.OS === 'android' && AppScreenshotPrevent) AppScreenshotPrevent.allow();
+      } catch (e) { }
+    };
+  }, [imageViewerVisible, isViewOnceMode]);
 
   const toggleExpand = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -1418,7 +1436,7 @@ React.useEffect(() => {
               }}
               ListEmptyComponent={
                 !isLoading ? (
-                  <View style={[styles.emptyStateContainer, { transform: [{ scaleY: -1 }] }]}>
+                  <View style={[styles.emptyStateContainer, { transform: [{ scaleY: -1 }, { scaleX: -1 }] }]}>
                     <Text style={styles.noMessagesText}>No messages yet</Text>
                   </View>
                 ) : null
@@ -1561,9 +1579,9 @@ React.useEffect(() => {
         </KeyboardAvoidingView>
       </View>
 
-      {/* Image Viewer Modal */}
-      <Modal visible={imageViewerVisible} transparent={true} animationType="fade">
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }}>
+      {/* Image Viewer Overlay */}
+      {imageViewerVisible && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
           <TouchableOpacity 
             style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 }}
             onPress={() => {
@@ -1597,12 +1615,16 @@ React.useEffect(() => {
                     return;
                   }
                   
-                  const supported = await Linking.canOpenURL(imageViewerUrl);
-                  if (supported) {
-                    await Linking.openURL(imageViewerUrl);
-                    ShowAlertMessage("Opened in browser to save!", popTypes.info);
-                  } else {
-                    ShowAlertMessage("Cannot open image link.", popTypes.error);
+                  try {
+                    if (Platform.OS === 'android' && FileDownloader) {
+                      const fileName = `FastMatch_${new Date().getTime()}.jpg`;
+                      await FileDownloader.downloadImage(imageViewerUrl, fileName);
+                      ShowAlertMessage("Image saved to Downloads folder!", popTypes.success);
+                    } else {
+                      await Linking.openURL(imageViewerUrl);
+                    }
+                  } catch (e) {
+                    ShowAlertMessage("Cannot download image.", popTypes.error);
                   }
                 } catch (e) {
                   console.log("Error opening image", e);
@@ -1614,7 +1636,7 @@ React.useEffect(() => {
             </TouchableOpacity>
           )}
         </View>
-      </Modal>
+      )}
     </MobileContainer>
   );
 };

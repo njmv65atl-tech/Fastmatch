@@ -308,11 +308,18 @@ class UserController extends ResponseHandler {
                 return res.status(400).send(responseEncryptor(req, false, "Invalid amount"));
             }
             const currentUserId = req.user._id;
-            const updatedUser = await User.findByIdAndUpdate(
-                currentUserId,
-                { $inc: { walletBalance: amount } },
-                { new: true }
-            ).select('-password -otps');
+            const user = await User.findById(currentUserId);
+            if (!user) return res.status(404).send(responseEncryptor(req, false, "User not found"));
+            
+            const maxWalletLimit = 50000;
+            const currentBalance = user.walletBalance || 0;
+            
+            if (currentBalance + amount > maxWalletLimit) {
+                return res.status(400).send(responseEncryptor(req, false, "Maximum only 50000 coins can be stored in your wallet."));
+            }
+
+            user.walletBalance = currentBalance + amount;
+            const updatedUser = await user.save();
 
             await Transaction.create({
                 userId: currentUserId,
@@ -355,15 +362,24 @@ class UserController extends ResponseHandler {
                 return res.status(404).send(responseEncryptor(req, false, "Gift not found or already converted"));
             }
 
+            const user = await User.findById(currentUserId);
+            const maxWalletLimit = 50000;
+            const currentBalance = user?.walletBalance || 0;
+            
+            if (currentBalance + gift.coinValue > maxWalletLimit) {
+                return res.status(400).send(responseEncryptor(req, false, "Maximum only 50000 coins can be stored in your wallet. Convert some coins later."));
+            }
+            
             // Convert gift to coins
             gift.status = 'converted';
             await gift.save();
-
-            const updatedUser = await User.findByIdAndUpdate(
-                currentUserId,
-                { $inc: { walletBalance: gift.coinValue } },
-                { new: true }
-            ).select('-password -otps');
+            
+            if (user) {
+                user.walletBalance = currentBalance + gift.coinValue;
+                await user.save();
+            }
+            
+            const updatedUser = user;
 
             return res.status(200).send(responseEncryptor(req, true, "Gift converted successfully", updatedUser));
         } catch (error: any) {
@@ -401,7 +417,14 @@ class UserController extends ResponseHandler {
             
             user.loginStreak = streak;
             user.lastRewardClaimedAt = now;
-            user.walletBalance += rewardCoins;
+            const maxWalletLimit = 50000;
+            const currentBalance = user.walletBalance || 0;
+            
+            if (currentBalance + rewardCoins > maxWalletLimit) {
+                return res.status(400).send(responseEncryptor(req, false, "Maximum only 50000 coins can be stored in your wallet."));
+            }
+            
+            user.walletBalance = currentBalance + rewardCoins;
             await user.save();
 
             // Record transaction
@@ -519,7 +542,7 @@ class UserController extends ResponseHandler {
             const friends = await FriendModel.find({
                 $or: [{ requester: currentUserId }, { recipient: currentUserId }],
                 status: 'accepted'
-            }).populate('requester recipient', 'displayName profilePicture isOnline isPremium publicKey lastActive');
+            }).populate('requester recipient', 'displayName fullName profilePicture isOnline isPremium publicKey lastActive age trustScore ratingCount totalRatingScore gender');
 
             return res.status(200).send(responseEncryptor(req, true, "Friends fetched", friends));
         } catch (error: any) {
@@ -533,7 +556,7 @@ class UserController extends ResponseHandler {
             const requests = await FriendModel.find({
                 recipient: currentUserId,
                 status: 'pending'
-            }).populate('requester', 'displayName profilePicture isOnline isPremium publicKey lastActive');
+            }).populate('requester', 'displayName fullName profilePicture isOnline isPremium publicKey lastActive age trustScore ratingCount totalRatingScore gender');
 
             return res.status(200).send(responseEncryptor(req, true, "Friend requests fetched", requests));
         } catch (error: any) {
