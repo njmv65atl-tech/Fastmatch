@@ -93,7 +93,7 @@ const OnlineCounter = ({ count }: { count: number }) => {
         <Text style={styles.onlineCountText} numberOfLines={1}>
           {count.toLocaleString()}
         </Text>
-        <Text style={[styles.onlineLabelText, { flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit>
+        <Text style={styles.onlineLabelText} numberOfLines={1}>
           Online Now
         </Text>
       </LinearGradient>
@@ -147,14 +147,14 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.hero}>
             <View style={styles.heroNav}>
-              <View>
+              <View style={{ flexShrink: 1 }}>
                 <AppLogo size="sm" />
               </View>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
 
               {user?.role === UserRole.PREMIUM && (
-                <View style={[styles.premiumBadge1, { marginRight: 10 }]}>
+                <View style={[styles.premiumBadge1, { marginRight: 8, marginLeft: 0 }]}>
                   <LinearGradient
                     colors={["#FDE047", "#FACC15", "#F59E0B"]}
                     start={{ x: 0, y: 0 }}
@@ -174,9 +174,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               )}
               
               {onlineData?.data?.onlineCount !== undefined && (
-                <View style={{ marginLeft: user?.role === UserRole.PREMIUM ? 0 : 0 }}>
-                  <OnlineCounter count={onlineData.data.onlineCount} />
-                </View>
+                <OnlineCounter count={onlineData.data.onlineCount} />
               )}
               </View>
             </View>
@@ -366,7 +364,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
     borderRadius: 24,
-    overflow: 'hidden',
   },
   pulseContainer: {
     width: 14,
@@ -392,14 +389,14 @@ const styles = StyleSheet.create({
   onlineCountText: {
     color: '#81C784',
     fontWeight: '800',
-    fontSize: 14,
+    fontSize: 13,
     letterSpacing: 0.5,
   },
   onlineLabelText: {
     color: 'rgba(255, 255, 255, 0.85)',
     fontWeight: '600',
-    fontSize: 12,
-    marginLeft: 6,
+    fontSize: 11,
+    marginLeft: 4,
   },
   hero: {
     backgroundColor: colors.surface,
