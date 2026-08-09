@@ -31,8 +31,6 @@ import { useDispatch } from "react-redux";
 import { Send, ChevronLeft, MoreVertical, ShieldBan, Trash2, Pencil, Flag, Phone, Image as ImageIcon, UserPlus, UserMinus, Check, X } from "lucide-react-native";
 import { AppView, Attachment, Message } from "../../types";
 import { SCREEN_HEIGHT, SCREEN_WIDTH, isIPhoneX } from "../../helpers/metrics";
-import RNFS from 'react-native-fs';
-import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import socketService from "../../helpers/SocketService";
 import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
@@ -1640,6 +1638,9 @@ React.useEffect(() => {
                       await FileDownloader.downloadImage(imageViewerUrl, fileName);
                       ShowAlertMessage("Image saved to Downloads folder!", popTypes.success);
                     } else if (Platform.OS === 'ios') {
+                      const RNFS = require('react-native-fs');
+                      const { CameraRoll } = require('@react-native-camera-roll/camera-roll');
+                      
                       const destPath = `${RNFS.CachesDirectoryPath}/FastMatch_${Date.now()}.jpg`;
                       const downloadResult = await RNFS.downloadFile({
                         fromUrl: imageViewerUrl,
