@@ -129,6 +129,9 @@ const handleStage1Cleanup = async (io: Server, userId: string) => {
 
 const startActualCall = async (io: Server, matchId: string, u1Id: string, u2Id: string, s1: string, s2: string, match: any) => {
     try {
+        matchmakingQueue.delete(u1Id);
+        matchmakingQueue.delete(u2Id);
+        activeVerifications.delete(matchId);
         activeCalls.set(matchId, { user1Id: u1Id, user2Id: u2Id });
         await createStreamCall(matchId, u1Id, [u1Id, u2Id]);
         if (!activeCalls.has(matchId)) return;
@@ -203,7 +206,7 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
     const isRelaxed = waitTime > 10000; // >10s: drop interest requirements
     const isDesperate = waitTime > 20000; // >20s: drop location/language requirements
 
-    for (const [userId, freshCandidate] of onlineUsersMap.entries()) {
+    for (const [userId, freshCandidate] of matchmakingQueue.entries()) {
         if (userId === currentUser.userId) continue;
 
         // Skip if user is in active call (activeCalls keyed by matchId, not userId)
@@ -212,8 +215,8 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         );
         if (isInCall) continue;
         // Skip if user is already being matched (isMatching flag in queue)
-        const qEntry = matchmakingQueue.get(userId);
-        if (qEntry && qEntry.isMatching) continue;
+        if (freshCandidate.isMatching) continue;
+        
         // Check if they are part of an active verification
         let inVerification = false;
         for (const v of activeVerifications.values()) {
@@ -230,10 +233,10 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
 
         // Block Check (full block + call-only block)
         const myBlockedList = currentUser.user.blockedUsers?.map((id: any) => id.toString()) || [];
-        const theirBlockedList = (freshCandidate.blockedUsers || []).map((id: any) => id.toString());
+        const theirBlockedList = (freshCandidate.user?.blockedUsers || []).map((id: any) => id.toString());
         if (myBlockedList.includes(userId) || theirBlockedList.includes(currentUser.userId)) continue;
         const myCallBlockedList = currentUser.user.blockedCalls?.map((id: any) => id.toString()) || [];
-        const theirCallBlockedList = (freshCandidate.blockedCalls || []).map((id: any) => id.toString());
+        const theirCallBlockedList = (freshCandidate.user?.blockedCalls || []).map((id: any) => id.toString());
         if (myCallBlockedList.includes(userId) || theirCallBlockedList.includes(currentUser.userId)) continue;
 
         // Gender preference check (Fix for 'other' gender)
@@ -247,7 +250,7 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
 
         const theirInterests = (freshCandidate.interests || []).map((i: string) => i.toLowerCase().trim());
         const common = myInterests.filter((i: string) => theirInterests.includes(i));
-        const isAlsoSearching = matchmakingQueue.has(userId);
+        const isAlsoSearching = true;
 
         // Strict Matching constraints
         if (!isRelaxed) {
@@ -261,11 +264,7 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         let score = 0;
 
         // 1. Online Status (Active Searching gets huge priority)
-        if (isAlsoSearching) {
-            score += 10000;
-        } else {
-            score += 1000; // They are online but not actively in the fast-match queue
-        }
+        score += 10000;
 
         // 2. Matching Interests
         if (common.length > 0) {
@@ -284,7 +283,7 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         
         // 5. Popularity/ELO boost
         const myScore = currentUser.user.trustScore || 100;
-        const theirScore = freshCandidate.trustScore || 100;
+        const theirScore = freshCandidate.user?.trustScore || 100;
         const diff = Math.abs(myScore - theirScore);
         if (diff < 20) score += 300; // Very similar popularity
         else if (diff < 50) score += 100;
@@ -293,7 +292,7 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
             highestScore = score;
             bestMatch = {
                 matchedUserId: userId,
-                displayName: freshCandidate.displayName,
+                displayName: freshCandidate.user?.displayName || 'User',
                 isAlsoSearching: isAlsoSearching,
                 matchType: common.length > 0 ? 'interest' : 'random'
             };
@@ -389,6 +388,9 @@ export const initializeSocket = (io: Server): Server => {
                         user.preference,
                         match.matchType || 'interest'
                     );
+                    
+                    activeVerifications.set(m._id.toString(), { u1Id: userId, u2Id: match.matchedUserId } as any);
+
                     const matchData = await matchService.getMatchDetails(m._id as Types.ObjectId);
 
                     const user1Details = matchData.user1;
@@ -591,7 +593,7 @@ export const initializeSocket = (io: Server): Server => {
                     (c) => c.user1Id === data.targetUserId || c.user2Id === data.targetUserId
                 );
                 if (isTargetInCall) {
-                    return socket.emit('match-error', { message: 'User is currently busy on another call.' });
+                    return socket.emit('super-request-error', { message: 'This person is already on a call with someone.' });
                 }
 
                 // Deduct coins & Log
@@ -635,6 +637,7 @@ export const initializeSocket = (io: Server): Server => {
 
                 // Decline the current match in DB
                 await matchService.respondToMatch(new Types.ObjectId(data.matchId), user._id, 'declined');
+                activeVerifications.delete(data.matchId);
                 
                 // Find the other user and add to skip list
                 const match = await matchService.getMatchDetails(new Types.ObjectId(data.matchId));
@@ -682,6 +685,7 @@ export const initializeSocket = (io: Server): Server => {
 
                 const result = await matchService.respondToMatch(new Types.ObjectId(data.matchId), user._id, data.response);
                 if (data.response === 'declined') {
+                    activeVerifications.delete(data.matchId);
                     const other = result.match.user1._id.toString() === userId ? result.match.user2 : result.match.user1;
                     const otherIdStr = other._id.toString();
                     const otherSid = userSocketMap.get(otherIdStr);

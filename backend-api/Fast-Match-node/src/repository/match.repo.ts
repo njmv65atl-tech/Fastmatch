@@ -11,8 +11,8 @@ class MatchRepository {
 
     async getMatchById(_id: Types.ObjectId) {
         const match = await MatchHistory.findById(_id)
-            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isOnline interests isVerified ratingCount totalRatingScore')
-            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isOnline interests isVerified ratingCount totalRatingScore')
+            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isOnline interests isVerified ratingCount totalRatingScore isPremium')
+            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isOnline interests isVerified ratingCount totalRatingScore isPremium')
             .lean() as any;
         return match;
     }
@@ -23,8 +23,8 @@ class MatchRepository {
 
     async updateMatchWithDoc(_id: Types.ObjectId, updateFields: any) {
         const match = await MatchHistory.findByIdAndUpdate(_id, updateFields, { new: true })
-            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isOnline isVerified ratingCount totalRatingScore')
-            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isOnline isVerified ratingCount totalRatingScore')
+            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isOnline isVerified ratingCount totalRatingScore isPremium')
+            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isOnline isVerified ratingCount totalRatingScore isPremium')
             .lean() as any;
         return match;
     }
@@ -34,8 +34,8 @@ class MatchRepository {
             $or: [{ user1: userId }, { user2: userId }],
             matchStatus: 'completed'
         })
-            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isVerified ratingCount totalRatingScore')
-            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isVerified ratingCount totalRatingScore')
+            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isVerified ratingCount totalRatingScore isPremium')
+            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isVerified ratingCount totalRatingScore isPremium')
             .sort({ createdAt: -1 })
             .skip(offset)
             .limit(limit)
@@ -54,8 +54,8 @@ class MatchRepository {
             $or: [{ user1: userId }, { user2: userId }],
             matchStatus: { $in: ['pending', 'accepted'] }
         })
-            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isOnline socketId isVerified ratingCount totalRatingScore')
-            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isOnline socketId isVerified ratingCount totalRatingScore')
+            .populate('user1', 'fullName displayName profilePicture gender dateOfBirth isOnline socketId isVerified ratingCount totalRatingScore isPremium')
+            .populate('user2', 'fullName displayName profilePicture gender dateOfBirth isOnline socketId isVerified ratingCount totalRatingScore isPremium')
             .lean() as any;
         return match;
     }

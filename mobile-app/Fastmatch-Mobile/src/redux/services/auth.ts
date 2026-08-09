@@ -115,6 +115,13 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    sentFriendRequests: builder.query({
+      query: () => ({
+        url: apiEndPoints.sentFriendRequests,
+        method: "GET",
+        headers: header1,
+      }),
+    }),
     removeFriend: builder.mutation({
       query: (body) => ({
         url: apiEndPoints.removeFriend,
@@ -122,15 +129,36 @@ export const authApi = emptySplitApi.injectEndpoints({
         body,
         headers: header1,
       }),
-      async onQueryStarted({ friendId }, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ friendId, targetUserId }, { dispatch, queryFulfilled }) {
+        const idToRemove = friendId || targetUserId;
         const patchResult = dispatch(
           authApi.util.updateQueryData('myFriends', undefined, (draft: any) => {
             if (draft?.data) {
-              draft.data = draft.data.filter((f: any) => f._id !== friendId);
+              draft.data = draft.data.filter((f: any) => f._id !== idToRemove && (f.user?._id !== idToRemove));
             }
           })
         );
-        try { await queryFulfilled; } catch { patchResult.undo(); }
+        const patchResult2 = dispatch(
+          authApi.util.updateQueryData('checkFriendStatus', idToRemove, (draft: any) => {
+             if (draft) draft.status = 'none';
+          })
+        );
+        const patchResult3 = dispatch(
+          authApi.util.updateQueryData('sentFriendRequests', undefined, (draft: any) => {
+            if (draft?.data) draft.data = draft.data.filter((r: any) => r.recipient?._id !== idToRemove);
+          })
+        );
+        const patchResult4 = dispatch(
+          authApi.util.updateQueryData('friendRequests', undefined, (draft: any) => {
+            if (draft?.data) draft.data = draft.data.filter((r: any) => r.requester?._id !== idToRemove);
+          })
+        );
+        try { await queryFulfilled; } catch { 
+          patchResult.undo(); 
+          patchResult2.undo();
+          patchResult3.undo();
+          patchResult4.undo();
+        }
       }
     }),
     checkFriendStatus: builder.query({
@@ -195,6 +223,7 @@ export const {
   useRemoveFriendMutation,
   useMyFriendsQuery,
   useFriendRequestsQuery,
+  useSentFriendRequestsQuery,
   useCheckFriendStatusQuery,
   useClaimDailyRewardMutation,
   useWalletHistoryQuery,

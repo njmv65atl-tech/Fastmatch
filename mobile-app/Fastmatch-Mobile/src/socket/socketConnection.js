@@ -43,11 +43,7 @@ const SocketConnection = ({ setView }) => {
         dispatch(setHasUnread(true));
       });
 
-      // Global match request events
-      socket.on("incoming-match-request", (payload) => {
-        console.log("🔔 [Global] incoming-match-request received:", payload);
-        dispatch(setIncomingMatchRequest(payload));
-      });
+
 
       socket.on("incoming-match-canceled", () => {
         console.log("🔔 [Global] incoming-match-canceled, clearing popup");
@@ -120,7 +116,7 @@ const SocketConnection = ({ setView }) => {
       socket.off("connect_error");
       socket.off("connect");
       socket.off("new-message-notification");
-      socket.off("incoming-match-request");
+
       socket.off("incoming-match-canceled");
       socket.off("match-declined");
       socket.off("match-error");

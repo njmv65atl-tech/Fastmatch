@@ -1,4 +1,5 @@
 import * as React from "react";
+import FastImage from 'react-native-fast-image';
 import { useState, useCallback, useEffect } from "react";
 import {
   View,
@@ -288,7 +289,11 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
           <TouchableOpacity onPress={handleAvatarPress}>
             <View style={styles.avatarPlaceholder}>
               {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                <FastImage 
+                  source={{ uri: avatarUri, priority: FastImage.priority.normal }} 
+                  style={styles.avatarImage} 
+                  resizeMode={FastImage.resizeMode.cover}
+                />
               ) : (
                 <User color={colors.surfaceAlt} size={40} />
               )}

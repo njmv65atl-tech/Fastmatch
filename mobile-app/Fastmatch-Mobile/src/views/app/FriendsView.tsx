@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import FastImage from 'react-native-fast-image';
 import {
   View,
   Text,
@@ -9,14 +10,16 @@ import {
   ActivityIndicator,
   RefreshControl
 } from "react-native";
-import { ChevronLeft, UserCheck, UserPlus, Clock } from "lucide-react-native";
+import { ChevronLeft, UserCheck, UserPlus, Clock, X, UserMinus } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { scale, verticalScale, moderateScale } from "../../helpers/metrics";
 import { MobileContainer } from "../../components/UIComponents";
 import {
   useMyFriendsQuery,
   useFriendRequestsQuery,
-  useAcceptFriendRequestMutation
+  useAcceptFriendRequestMutation,
+  useSentFriendRequestsQuery,
+  useRemoveFriendMutation
 } from "../../redux/services/auth";
 import { AppView } from "../../types";
 import { useSelector } from "react-redux";
@@ -33,7 +36,27 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
 
   const { data: friendsData, isLoading: isLoadingFriends, refetch: refetchFriends } = useMyFriendsQuery({});
   const { data: requestsData, isLoading: isLoadingReqs, refetch: refetchReqs } = useFriendRequestsQuery({});
+  const { data: sentReqsData, isLoading: isLoadingSentReqs, refetch: refetchSentReqs } = useSentFriendRequestsQuery({});
   const [acceptFriendRequest, { isLoading: isAccepting }] = useAcceptFriendRequestMutation();
+  const [removeFriend, { isLoading: isRemoving }] = useRemoveFriendMutation();
+
+  const handleDecline = async (userId: string) => {
+    try {
+      await removeFriend({ targetUserId: userId }).unwrap();
+      refetchReqs();
+    } catch (e) {
+      console.warn("Failed to decline friend request:", e);
+    }
+  };
+
+  const handleCancel = async (userId: string) => {
+    try {
+      await removeFriend({ targetUserId: userId }).unwrap();
+      refetchSentReqs();
+    } catch (e) {
+      console.warn("Failed to cancel friend request:", e);
+    }
+  };
 
   const handleAccept = async (requestId: string) => {
     try {
@@ -65,13 +88,15 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           });
         }}
       >
-        <Image
+        <FastImage
           source={{ 
             uri: friendObj.profilePicture
               ? friendObj.profilePicture.startsWith("http") ? friendObj.profilePicture : `${IMG_URL}${friendObj.profilePicture}`
-              : "https://i.pravatar.cc/150" 
+              : "https://i.pravatar.cc/150",
+            priority: FastImage.priority.normal 
           }}
           style={styles.avatar}
+          resizeMode={FastImage.resizeMode.cover}
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{friendObj.displayName || friendObj.fullName || friendObj.name || "Unknown"}</Text>
@@ -90,25 +115,69 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
 
     return (
       <View key={item._id} style={styles.userCard}>
-        <Image
+        <FastImage
           source={{ 
             uri: requester.profilePicture
               ? requester.profilePicture.startsWith("http") ? requester.profilePicture : `${IMG_URL}${requester.profilePicture}`
-              : "https://i.pravatar.cc/150" 
+              : "https://i.pravatar.cc/150",
+            priority: FastImage.priority.normal 
           }}
           style={styles.avatar}
+          resizeMode={FastImage.resizeMode.cover}
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{requester.displayName || requester.fullName || requester.name || "Unknown"}</Text>
           <Text style={styles.userStatus}>Wants to be friends</Text>
         </View>
+        <View style={{ flexDirection: 'column', gap: 5 }}>
+          <TouchableOpacity
+            style={styles.acceptBtn}
+            onPress={() => handleAccept(item._id)}
+            disabled={isAccepting}
+          >
+            <UserPlus color={colors.white} size={14} />
+            <Text style={styles.acceptBtnText}>Accept</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.acceptBtn, { backgroundColor: colors.surfaceAlt }]}
+            onPress={() => handleDecline(requester._id)}
+            disabled={isRemoving}
+          >
+            <X color={colors.textMuted} size={14} />
+            <Text style={[styles.acceptBtnText, { color: colors.textMuted }]}>Decline</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderSentRequestItem = (item: any) => {
+    const recipient = item.recipient;
+    if (!recipient) return null;
+
+    return (
+      <View key={item._id} style={styles.userCard}>
+        <FastImage
+          source={{ 
+            uri: recipient.profilePicture
+              ? recipient.profilePicture.startsWith("http") ? recipient.profilePicture : `${IMG_URL}${recipient.profilePicture}`
+              : "https://i.pravatar.cc/150",
+            priority: FastImage.priority.normal 
+          }}
+          style={styles.avatar}
+          resizeMode={FastImage.resizeMode.cover}
+        />
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>{recipient.displayName || recipient.fullName || recipient.name || "Unknown"}</Text>
+          <Text style={styles.userStatus}>Request Sent</Text>
+        </View>
         <TouchableOpacity
-          style={styles.acceptBtn}
-          onPress={() => handleAccept(item._id)}
-          disabled={isAccepting}
+          style={[styles.acceptBtn, { backgroundColor: colors.surfaceAlt }]}
+          onPress={() => handleCancel(recipient._id)}
+          disabled={isRemoving}
         >
-          <UserPlus color={colors.white} size={18} />
-          <Text style={styles.acceptBtnText}>Accept</Text>
+          <UserMinus color={colors.danger} size={14} />
+          <Text style={[styles.acceptBtnText, { color: colors.danger }]}>Cancel</Text>
         </TouchableOpacity>
       </View>
     );
@@ -138,7 +207,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           onPress={() => setActiveTab("requests")}
         >
           <Text style={[styles.tabText, activeTab === "requests" && styles.activeTabText]}>
-            Requests {(requestsData?.data?.length || 0) > 0 ? `(${requestsData.data.length})` : null}
+            Requests {((requestsData?.data?.length || 0) + (sentReqsData?.data?.length || 0)) > 0 ? `(${((requestsData?.data?.length || 0) + (sentReqsData?.data?.length || 0))})` : null}
           </Text>
         </TouchableOpacity>
       </View>
@@ -150,7 +219,10 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
             refreshing={activeTab === 'friends' ? isLoadingFriends : isLoadingReqs}
             onRefresh={() => {
               if (activeTab === 'friends') refetchFriends();
-              else refetchReqs();
+              else {
+                refetchReqs();
+                refetchSentReqs();
+              }
             }}
             tintColor={colors.primary}
           />
@@ -168,16 +240,31 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
             </View>
           )
         ) : (
-          isLoadingReqs ? (
-            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
-          ) : requestsData?.data?.length > 0 ? (
-            requestsData.data.map(renderRequestItem)
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Clock color={colors.textMuted} size={48} />
-              <Text style={styles.emptyText}>No pending friend requests.</Text>
-            </View>
-          )
+          <View style={{ paddingBottom: 20 }}>
+            <Text style={{ color: colors.white, fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 5 }}>Incoming Requests</Text>
+            {isLoadingReqs ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+            ) : requestsData?.data?.length > 0 ? (
+              requestsData.data.map(renderRequestItem)
+            ) : (
+              <View style={[styles.emptyContainer, { marginTop: 20, marginBottom: 20 }]}>
+                <Clock color={colors.textMuted} size={32} />
+                <Text style={styles.emptyText}>No pending friend requests.</Text>
+              </View>
+            )}
+
+            <Text style={{ color: colors.white, fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 20 }}>Sent Requests</Text>
+            {isLoadingSentReqs ? (
+              <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+            ) : sentReqsData?.data?.length > 0 ? (
+              sentReqsData.data.map(renderSentRequestItem)
+            ) : (
+              <View style={[styles.emptyContainer, { marginTop: 20 }]}>
+                <Clock color={colors.textMuted} size={32} />
+                <Text style={styles.emptyText}>No sent friend requests.</Text>
+              </View>
+            )}
+          </View>
         )}
       </ScrollView>
     </MobileContainer>

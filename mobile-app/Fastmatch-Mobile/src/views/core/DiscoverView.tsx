@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import FastImage from 'react-native-fast-image';
 import {
   View,
   Text,
@@ -95,10 +96,10 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
           <View style={styles.grid}>
             {users.map((u) => (
               <View key={u._id} style={styles.card}>
-                <Image 
-                  source={{ uri: u.profilePicture ? `${IMAGE_URL}${u.profilePicture}` : "https://via.placeholder.com/150" }} 
-                  style={styles.image} 
-                  blurRadius={15} // Heavy blur for mystery
+                <FastImage 
+                  source={{ uri: u.profilePicture ? `${IMAGE_URL}${u.profilePicture}` : "https://via.placeholder.com/150", priority: FastImage.priority.normal }} 
+                  style={styles.image as any} 
+                  resizeMode={FastImage.resizeMode.cover}
                 />
                 <View style={styles.infoOverlay}>
                   <Text style={styles.nameText}>{u.displayName || "Mystery Match"}</Text>

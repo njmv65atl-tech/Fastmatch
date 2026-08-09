@@ -1,5 +1,6 @@
 
 import * as React from "react";
+import FastImage from 'react-native-fast-image';
 import {
   BackHandler,
   View,
@@ -28,6 +29,10 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { useBlockUserMutation, useChatHistoryQuery, useClearChatMutation, useUnblockUserMutation, useBlockCallsMutation, useUnblockCallsMutation, useDeleteMessagesMutation, useEditMessageMutation, useReportBlockMutation, authApi, useMyFriendsQuery, useFriendRequestsQuery, useSendFriendRequestMutation, useAcceptFriendRequestMutation, useRemoveFriendMutation, useCheckFriendStatusQuery } from "../../redux/services/auth";
 import { useDispatch } from "react-redux";
 import { Send, ChevronLeft, MoreVertical, ShieldBan, Trash2, Pencil, Flag, Phone, Image as ImageIcon, UserPlus, UserMinus, Check, X } from "lucide-react-native";
+import { AppView, Attachment, Message } from "../../types";
+import { SCREEN_HEIGHT, SCREEN_WIDTH, isIPhoneX } from "../../helpers/metrics";
+import RNFS from 'react-native-fs';
+import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import socketService from "../../helpers/SocketService";
 import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
@@ -1205,9 +1210,10 @@ React.useEffect(() => {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setProfilePopupVisible(true)}>
-              <Image
-                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100" }}
+              <FastImage
+                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", priority: FastImage.priority.normal }}
                 style={styles.chatHeaderAvatar}
+                resizeMode={FastImage.resizeMode.cover}
               />
             </TouchableOpacity>
 
@@ -1274,9 +1280,10 @@ React.useEffect(() => {
         <Modal visible={profilePopupVisible} transparent animationType="fade" onRequestClose={() => setProfilePopupVisible(false)}>
           <View style={styles.menuOverlay}>
             <View style={[styles.menuDropdown, { alignItems: 'center', padding: 20 }]}>
-              <Image 
-                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100" }} 
+              <FastImage 
+                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", priority: FastImage.priority.normal }} 
                 style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 10 }} 
+                resizeMode={FastImage.resizeMode.cover}
               />
               <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>{chatUserName}</Text>
               <Text style={{ color: colors.textMuted, fontSize: 14, marginBottom: 5 }}>Age: {chatUser?.age || 'N/A'}</Text>
@@ -1494,10 +1501,18 @@ React.useEffect(() => {
                     <Text style={{ color: colors.white, fontWeight: 'bold' }}>Accept Friend Request</Text>
                   </TouchableOpacity>
                 ) : isRequestSentByMe ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                    <Check color={colors.success} size={16} />
-                    <Text style={{ color: colors.success, fontWeight: 'bold' }}>Request Sent</Text>
-                  </View>
+                  <TouchableOpacity 
+                    style={{ backgroundColor: colors.danger, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', gap: 5, alignItems: 'center' }}
+                    onPress={() => {
+                      removeFriend({ targetUserId: userId }).then(() => {
+                        setRequestSentLocal(false);
+                        ShowAlertMessage("Friend request cancelled", popTypes.success);
+                      });
+                    }}
+                  >
+                    <UserMinus color={colors.white} size={18} />
+                    <Text style={{ color: colors.white, fontWeight: 'bold' }}>Cancel Request</Text>
+                  </TouchableOpacity>
                 ) : (
                   <TouchableOpacity 
                     style={{ backgroundColor: colors.surfaceAlt, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', gap: 5, alignItems: 'center' }}
@@ -1624,8 +1639,18 @@ React.useEffect(() => {
                       const fileName = `FastMatch_${new Date().getTime()}.jpg`;
                       await FileDownloader.downloadImage(imageViewerUrl, fileName);
                       ShowAlertMessage("Image saved to Downloads folder!", popTypes.success);
-                    } else {
-                      await Linking.openURL(imageViewerUrl);
+                    } else if (Platform.OS === 'ios') {
+                      const destPath = `${RNFS.CachesDirectoryPath}/FastMatch_${Date.now()}.jpg`;
+                      const downloadResult = await RNFS.downloadFile({
+                        fromUrl: imageViewerUrl,
+                        toFile: destPath,
+                      }).promise;
+                      if (downloadResult.statusCode === 200) {
+                        await CameraRoll.saveAsset(destPath, { type: 'photo' });
+                        ShowAlertMessage('Image saved to Photos!', popTypes.success);
+                      } else {
+                        ShowAlertMessage('Failed to download image.', popTypes.error);
+                      }
                     }
                   } catch (e) {
                     ShowAlertMessage("Cannot download image.", popTypes.error);

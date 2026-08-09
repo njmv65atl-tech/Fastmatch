@@ -74,7 +74,7 @@ import { managerApiCall } from "./src/helpers/managerApiCallFn";
 import { notificationService } from "./src/helpers/notificationService";
 import persistStore from "redux-persist/es/persistStore";
 import { persistor } from "./src/redux/store";
-import { resetGlobalStore, incomingMatchRequestSelector, clearIncomingMatchRequest } from "./src/redux/slices/globalSlice";
+import { resetGlobalStore } from "./src/redux/slices/globalSlice";
 import { socket } from "./src/socket/socket";
 import { useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
@@ -88,7 +88,7 @@ const App: React.FC = () => {
   const [upgradePremiumMock] = useUpgradePremiumMockMutation();
   const currentUser = useSelector(userSelector);
   const completeProfile = useSelector(completeProfileSelector);
-  const incomingMatchRequest = useSelector(incomingMatchRequestSelector);
+
 
   const [user, setUser] = useState<User | null>(currentUser || null);
   const [showSplash, setShowSplash] = useState(true); 
@@ -133,7 +133,7 @@ const App: React.FC = () => {
   const [rateMatch] = useRateMatchMutation();
 
   const dispatch = useDispatch();
-  const [showAllInterestsApp, setShowAllInterestsApp] = useState(false);
+
  React.useEffect(() => {
   const unsubscribe = NetInfo.addEventListener(state => {
     setIsConnected(state.isConnected);
@@ -545,120 +545,7 @@ const App: React.FC = () => {
 
         <Loader />
 
-        {/* Global Real-Time Match Request Modal */}
-        <Modal
-          transparent
-          animationType="fade"
-          visible={!!incomingMatchRequest}
-          onRequestClose={() => {
-            if (incomingMatchRequest?.matchId) {
-              socket.emit("match-response", { matchId: incomingMatchRequest.matchId, response: "declined" });
-            }
-            dispatch(clearIncomingMatchRequest());
-          }}
-        >
-          <View style={styles.matchRequestOverlay}>
-            <View style={styles.matchRequestContainer}>
-              <View style={styles.matchRequestHeader}>
-                <View style={styles.matchRequestPulseRing} />
-                <Text style={styles.matchRequestTitle}>
-                  {incomingMatchRequest?.isSuperMatch ? "Super Match Request!" : "Incoming Match Request"}
-                </Text>
-                <Text style={styles.matchRequestSubtitle}>Someone wants to start a video chat with you right now</Text>
-              </View>
 
-              <View style={styles.matchRequestUserCard}>
-                <Image
-                  source={{
-                    uri: incomingMatchRequest?.remoteUser?.profilePicture
-                      ? (incomingMatchRequest.remoteUser.profilePicture.includes("http")
-                          ? incomingMatchRequest.remoteUser.profilePicture
-                          : `${IMAGE_URL}${incomingMatchRequest.remoteUser.profilePicture}`)
-                      : "https://picsum.photos/200/200"
-                  }}
-                  style={styles.matchRequestAvatar}
-                />
-                <Text style={styles.matchRequestName}>
-                  {incomingMatchRequest?.remoteUser?.displayName || incomingMatchRequest?.remoteUser?.fullName || "A User"}
-                </Text>
-                
-                {/* User interests */}
-                {incomingMatchRequest?.remoteUser?.interests && incomingMatchRequest.remoteUser.interests.length > 0 && (
-                  <View style={styles.matchRequestInterests}>
-                    {incomingMatchRequest.remoteUser.interests.slice(0, 3).map((interest: string, index: number) => (
-                      <View key={index} style={styles.matchRequestInterestBadge}>
-                        <Text style={styles.matchRequestInterestText}>{interest}</Text>
-                      </View>
-                    ))}
-                    {incomingMatchRequest.remoteUser.interests.length > 3 && (
-                      <TouchableOpacity 
-                        style={styles.matchRequestInterestBadge} 
-                        onPress={() => setShowAllInterestsApp(true)}
-                      >
-                        <Text style={styles.matchRequestInterestText}>+{incomingMatchRequest.remoteUser.interests.length - 3}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.matchRequestFooter}>
-                <TouchableOpacity
-                  style={[styles.matchRequestButton, styles.matchRequestDeclineBtn]}
-                  onPress={() => {
-                    if (incomingMatchRequest?.matchId) {
-                      socket.emit("match-response", { matchId: incomingMatchRequest.matchId, response: "declined" });
-                    }
-                    dispatch(clearIncomingMatchRequest());
-                  }}
-                >
-                  <Text style={styles.matchRequestDeclineText}>Reject</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.matchRequestButton, styles.matchRequestAcceptBtn]}
-                  onPress={() => {
-                    if (incomingMatchRequest?.matchId) {
-                      socket.emit("match-response", { matchId: incomingMatchRequest.matchId, response: "accepted" });
-                    }
-                    dispatch(clearIncomingMatchRequest());
-                  }}
-                >
-                  <Text style={styles.matchRequestAcceptText}>Accept</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-
-        {/* ── Incoming Match Request All Interests Modal ── */}
-        <Modal
-          visible={showAllInterestsApp}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowAllInterestsApp(false)}
-        >
-          <View style={styles.modalOverlayInt}>
-            <View style={styles.interestsModalContainer}>
-              <Text style={styles.interestsModalTitle}>All Interests</Text>
-              <ScrollView contentContainerStyle={styles.allInterestsScroll}>
-                <View style={styles.interestsContainerModal}>
-                  {incomingMatchRequest?.remoteUser?.interests?.map((interest: string, index: number) => (
-                    <View key={index} style={styles.interestBadgeModal}>
-                      <Text style={styles.interestTextModal}>{interest}</Text>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
-              <TouchableOpacity
-                style={styles.closeInterestsBtn}
-                onPress={() => setShowAllInterestsApp(false)}
-              >
-                <Text style={styles.closeInterestsText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
 
         <Modal transparent animationType="fade" visible={showPremiumModal}>
           <View style={styles.modalOverlay}>

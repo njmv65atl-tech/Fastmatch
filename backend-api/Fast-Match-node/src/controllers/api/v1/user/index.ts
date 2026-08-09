@@ -61,6 +61,7 @@ class UserController extends ResponseHandler {
         this.acceptFriendRequest = this.acceptFriendRequest.bind(this);
         this.myFriends = this.myFriends.bind(this);
         this.friendRequests = this.friendRequests.bind(this);
+        this.getSentFriendRequests = this.getSentFriendRequests.bind(this);
         this.removeFriend = this.removeFriend.bind(this);
         this.moderateFrame = this.moderateFrame.bind(this);
         this.walletHistory = this.walletHistory.bind(this);
@@ -555,6 +556,21 @@ class UserController extends ResponseHandler {
             return res.status(200).send(responseEncryptor(req, true, "Friend requests fetched", requests));
         } catch (error: any) {
             return res.status(constants.errorCode)
+                .send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async getSentFriendRequests(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const requests = await FriendModel.find({
+                requester: currentUserId,
+                status: 'pending'
+            }).populate('recipient', 'displayName profilePicture');
+
+            return res.status(200).send(responseEncryptor(req, true, "Sent friend requests fetched", requests));
+        } catch (error: any) {
+            return res.status(constants.errorCode || 500)
                 .send(responseEncryptor(req, false, error.message));
         }
     }
