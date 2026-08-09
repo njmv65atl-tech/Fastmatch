@@ -1,5 +1,5 @@
 import * as React from "react";
-import FastImage from 'react-native-fast-image';
+
 import {
   View,
   Text,
@@ -98,15 +98,15 @@ export const SettingsView: React.FC<SettingsProps> = ({
                 style={styles.avatarWrapper}
               > */}
               <View style={[styles.avatarInner, { marginTop: 4 }]}>
-                <FastImage
+                <Image
                   source={{
                     uri:
                       `${IMG_URL}${user?.profilePicture}` ||
                       "https://picsum.photos/200/200",
-                    priority: FastImage.priority.normal
+                    cache: 'force-cache'
                   }}
                   style={styles.avatar}
-                  resizeMode={FastImage.resizeMode.cover}
+                  resizeMode="cover"
                 />
               </View>
               {/* </LinearGradient> */}

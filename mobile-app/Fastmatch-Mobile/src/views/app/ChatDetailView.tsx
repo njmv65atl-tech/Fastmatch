@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import FastImage from 'react-native-fast-image';
+
 import {
   BackHandler,
   View,
@@ -1210,10 +1210,10 @@ React.useEffect(() => {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setProfilePopupVisible(true)}>
-              <FastImage
-                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", priority: FastImage.priority.normal }}
+              <Image
+                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", cache: 'force-cache' }}
                 style={styles.chatHeaderAvatar}
-                resizeMode={FastImage.resizeMode.cover}
+                resizeMode="cover"
               />
             </TouchableOpacity>
 
@@ -1280,10 +1280,10 @@ React.useEffect(() => {
         <Modal visible={profilePopupVisible} transparent animationType="fade" onRequestClose={() => setProfilePopupVisible(false)}>
           <View style={styles.menuOverlay}>
             <View style={[styles.menuDropdown, { alignItems: 'center', padding: 20 }]}>
-              <FastImage 
-                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", priority: FastImage.priority.normal }} 
+              <Image 
+                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", cache: 'force-cache' }} 
                 style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 10 }} 
-                resizeMode={FastImage.resizeMode.cover}
+                resizeMode="cover"
               />
               <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>{chatUserName}</Text>
               <Text style={{ color: colors.textMuted, fontSize: 14, marginBottom: 5 }}>Age: {chatUser?.age || 'N/A'}</Text>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import FastImage from 'react-native-fast-image';
+
 import {
   View,
   Text,
@@ -143,10 +143,10 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
           </TouchableOpacity>
 
           {avatarUrl ? (
-            <FastImage 
-              source={{ uri: avatarUrl, priority: FastImage.priority.high, cache: FastImage.cacheControl.immutable }} 
+            <Image 
+              source={{ uri: avatarUrl, cache: 'force-cache' }} 
               style={styles.avatar} 
-              resizeMode={FastImage.resizeMode.cover}
+              resizeMode="cover"
             />
           ) : (
             <View style={styles.avatarFallback}>

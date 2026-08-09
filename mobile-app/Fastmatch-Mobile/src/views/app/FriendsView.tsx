@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import FastImage from 'react-native-fast-image';
+
 import {
   View,
   Text,
@@ -88,15 +88,15 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           });
         }}
       >
-        <FastImage
+        <Image
           source={{ 
             uri: friendObj.profilePicture
               ? friendObj.profilePicture.startsWith("http") ? friendObj.profilePicture : `${IMG_URL}${friendObj.profilePicture}`
               : "https://i.pravatar.cc/150",
-            priority: FastImage.priority.normal 
+            cache: 'force-cache' 
           }}
           style={styles.avatar}
-          resizeMode={FastImage.resizeMode.cover}
+          resizeMode="cover"
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{friendObj.displayName || friendObj.fullName || friendObj.name || "Unknown"}</Text>
@@ -115,15 +115,15 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
 
     return (
       <View key={item._id} style={styles.userCard}>
-        <FastImage
+        <Image
           source={{ 
             uri: requester.profilePicture
               ? requester.profilePicture.startsWith("http") ? requester.profilePicture : `${IMG_URL}${requester.profilePicture}`
               : "https://i.pravatar.cc/150",
-            priority: FastImage.priority.normal 
+            cache: 'force-cache' 
           }}
           style={styles.avatar}
-          resizeMode={FastImage.resizeMode.cover}
+          resizeMode="cover"
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{requester.displayName || requester.fullName || requester.name || "Unknown"}</Text>
@@ -157,15 +157,15 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
 
     return (
       <View key={item._id} style={styles.userCard}>
-        <FastImage
+        <Image
           source={{ 
             uri: recipient.profilePicture
               ? recipient.profilePicture.startsWith("http") ? recipient.profilePicture : `${IMG_URL}${recipient.profilePicture}`
               : "https://i.pravatar.cc/150",
-            priority: FastImage.priority.normal 
+            cache: 'force-cache' 
           }}
           style={styles.avatar}
-          resizeMode={FastImage.resizeMode.cover}
+          resizeMode="cover"
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{recipient.displayName || recipient.fullName || recipient.name || "Unknown"}</Text>

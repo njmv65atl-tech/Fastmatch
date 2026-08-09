@@ -1,5 +1,5 @@
 import * as React from "react";
-import FastImage from 'react-native-fast-image';
+
 import {
   View,
   Text,
@@ -226,15 +226,15 @@ export const ChatInboxView: React.FC<{
               activeOpacity={0.7}
             >
               <View style={styles.avatarContainer}>
-                <FastImage
+                <Image
                   source={{
                     uri: item.profilePicture
                       ? item.profilePicture.startsWith("http") ? item.profilePicture : `${IMG_URL}${item.profilePicture}`
                       : "https://via.placeholder.com/100",
-                    priority: FastImage.priority.normal
+                    cache: 'force-cache'
                   }}
                   style={styles.chatAvatar}
-                  resizeMode={FastImage.resizeMode.cover}
+                  resizeMode="cover"
                 />
                 {count > 0 && (
                   <View style={styles.unreadBadge}>
