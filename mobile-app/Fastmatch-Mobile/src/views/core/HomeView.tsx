@@ -52,7 +52,7 @@ const OnlineCounter = ({ count }: { count: number }) => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.5,
+          toValue: 1.8,
           duration: 1000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -68,35 +68,26 @@ const OnlineCounter = ({ count }: { count: number }) => {
   }, [pulseAnim]);
 
   return (
-    <View style={styles.onlineBadgeContainer}>
-      <LinearGradient
-        colors={['rgba(76, 175, 80, 0.2)', 'rgba(76, 175, 80, 0.05)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.onlineBadgeGradient}
-      >
-        <View style={styles.pulseContainer}>
-          <Animated.View
-            style={[
-              styles.pulseRing,
-              {
-                transform: [{ scale: pulseAnim }],
-                opacity: pulseAnim.interpolate({
-                  inputRange: [1, 1.5],
-                  outputRange: [0.6, 0],
-                }),
-              },
-            ]}
-          />
-          <View style={styles.onlineDot} />
-        </View>
-        <Text style={styles.onlineCountText} numberOfLines={1}>
-          {count.toLocaleString()}
-        </Text>
-        <Text style={styles.onlineLabelText} numberOfLines={1}>
-          Online Now
-        </Text>
-      </LinearGradient>
+    <View style={styles.onlineRow}>
+      <View style={styles.onlineDotWrap}>
+        <Animated.View
+          style={[
+            styles.onlinePulseRing,
+            {
+              transform: [{ scale: pulseAnim }],
+              opacity: pulseAnim.interpolate({
+                inputRange: [1, 1.8],
+                outputRange: [0.6, 0],
+              }),
+            },
+          ]}
+        />
+        <View style={styles.onlineDotInner} />
+      </View>
+      <Text style={styles.onlineText}>
+        <Text style={styles.onlineCountBold}>{count.toLocaleString()}</Text>
+        {' People Online Now'}
+      </Text>
     </View>
   );
 };
@@ -154,7 +145,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
 
               {user?.role === UserRole.PREMIUM && (
-                <View style={[styles.premiumBadge1, { marginRight: 8, marginLeft: 0 }]}>
+                <View style={styles.premiumBadge1}>
                   <LinearGradient
                     colors={["#FDE047", "#FACC15", "#F59E0B"]}
                     start={{ x: 0, y: 0 }}
@@ -171,10 +162,6 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                     </View>
                   </LinearGradient>
                 </View>
-              )}
-              
-              {onlineData?.data?.onlineCount !== undefined && (
-                <OnlineCounter count={onlineData.data.onlineCount} />
               )}
               </View>
             </View>
@@ -220,7 +207,10 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                   {HOME_TEXT.startMatching}
                 </Button>
               </View>
-              
+
+              {onlineData?.data?.onlineCount !== undefined && (
+                <OnlineCounter count={onlineData.data.onlineCount} />
+              )}
               
             </View>
 
@@ -347,56 +337,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  onlineBadgeContainer: {
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(76, 175, 80, 0.4)',
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  onlineBadgeGradient: {
+  onlineRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderRadius: 24,
+    justifyContent: 'center',
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(76, 175, 80, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.2)',
   },
-  pulseContainer: {
-    width: 14,
-    height: 14,
+  onlineDotWrap: {
+    width: 12,
+    height: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 10,
   },
-  onlineDot: {
+  onlineDotInner: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#4CAF50',
     position: 'absolute',
   },
-  pulseRing: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  onlinePulseRing: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#4CAF50',
     position: 'absolute',
   },
-  onlineCountText: {
+  onlineText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  onlineCountBold: {
     color: '#81C784',
     fontWeight: '800',
     fontSize: 13,
-    letterSpacing: 0.5,
-  },
-  onlineLabelText: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontWeight: '600',
-    fontSize: 11,
-    marginLeft: 4,
   },
   hero: {
     backgroundColor: colors.surface,
