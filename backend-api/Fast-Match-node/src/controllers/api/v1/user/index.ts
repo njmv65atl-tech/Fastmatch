@@ -448,10 +448,7 @@ class UserController extends ResponseHandler {
 
     async upgradePremiumMock(req: Request, res: Response) {
         try {
-            const currentUserId = req.user._id;
             return res.status(403).send(responseEncryptor(req, false, "Premium upgrade mock is disabled in production"));
-            ).select('-password -otps');
-            return res.status(200).send(responseEncryptor(req, true, "Upgraded to Premium Mock", updatedUser));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
