@@ -45,7 +45,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
 
     const interval = setInterval(() => {
       fetchUsers(false);
-    }, 10000);
+    }, 5000);
 
     if (Platform.OS === 'android') {
       const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {

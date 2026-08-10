@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { userSocketMap } from '../../../config/socket';
+import { userSocketMap } from '@config/socket';
 import { userConstant, authConstant, constants } from '@config/constant/index';
 import authServices from '@services/auth.services';
 import { ResponseHandler } from '@config/responseHandler';
@@ -308,33 +308,10 @@ class UserController extends ResponseHandler {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
     }
+
     async buyCoinsMock(req: Request, res: Response) {
         try {
-            const { amount } = req.body;
             return res.status(403).send(responseEncryptor(req, false, "Purchasing coins via mock is disabled in production"));
-            const currentUserId = req.user._id;
-            const user = await User.findById(currentUserId);
-            if (!user) return res.status(404).send(responseEncryptor(req, false, "User not found"));
-            
-            const maxWalletLimit = 50000;
-            const currentBalance = user.walletBalance || 0;
-            
-            if (currentBalance + amount > maxWalletLimit) {
-                return res.status(400).send(responseEncryptor(req, false, "Maximum only 50000 coins can be stored in your wallet."));
-            }
-
-            user.walletBalance = currentBalance + amount;
-            const updatedUser = await user.save();
-
-            await Transaction.create({
-                userId: currentUserId,
-                type: 'purchase',
-                amount: amount,
-                status: 'completed',
-                description: `Purchased ${amount} coins`
-            });
-            
-            return res.status(200).send(responseEncryptor(req, true, "Coins added successfully", updatedUser));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
