@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { userSocketMap } from '../../../config/socket';
 import { userConstant, authConstant, constants } from '@config/constant/index';
 import authServices from '@services/auth.services';
 import { ResponseHandler } from '@config/responseHandler';
@@ -281,8 +282,14 @@ class UserController extends ResponseHandler {
         try {
             // Fetch 20 random users (excluding self)
             const currentUserId = req.user._id;
+            
+            // Get all online user IDs except current user
+            const onlineUserIds = Array.from(userSocketMap.keys())
+                .filter(id => id !== currentUserId.toString())
+                .map(id => new Types.ObjectId(id));
+
             const users = await User.aggregate([
-                { $match: { _id: { $ne: currentUserId }, isBanned: false } },
+                { $match: { _id: { $in: onlineUserIds }, isBanned: false } },
                 { $sample: { size: 20 } },
                 { $project: { password: 0, otp: 0, walletBalance: 0, trustScore: 0, lastActive: 0, fcmToken: 0, deviceToken: 0, loginSessionId: 0 } }
             ]);

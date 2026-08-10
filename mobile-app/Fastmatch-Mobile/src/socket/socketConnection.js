@@ -42,8 +42,11 @@ const SocketConnection = ({ setView }) => {
         console.log("🔔 [Global] new-message-notification received, turning on red dot!");
         dispatch(setHasUnread(true));
       });
-
-
+      // Global match request events
+      socket.on("incoming-match-request", (payload) => {
+        console.log("🔔 [Global] incoming-match-request received:", payload);
+        dispatch(setIncomingMatchRequest(payload));
+      });
 
       socket.on("incoming-match-canceled", () => {
         console.log("🔔 [Global] incoming-match-canceled, clearing popup");

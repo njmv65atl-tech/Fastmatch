@@ -67,8 +67,8 @@ interface QueueUser {
 
 // ─── In-Memory State ──────────────────────────────────────────
 const matchmakingQueue: Map<string, QueueUser> = new Map();
-const onlineUsersMap: Map<string, any> = new Map(); // All connected users (app open)
-const userSocketMap: Map<string, string> = new Map();
+export const onlineUsersMap: Map<string, any> = new Map(); // All connected users (app open)
+export const userSocketMap: Map<string, string> = new Map();
 const socketUserMap: Map<string, string> = new Map();
 const activeCalls: Map<string, { user1Id: string; user2Id: string }> = new Map();
 const searchStartTimes: Map<string, number> = new Map();

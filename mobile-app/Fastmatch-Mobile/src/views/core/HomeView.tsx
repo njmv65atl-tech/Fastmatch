@@ -101,7 +101,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
   const [showDailyReward, setShowDailyReward] = React.useState(false);
   const [rewardMessage, setRewardMessage] = React.useState("You earned 10 coins for logging in today.");
   const [claimDailyRewardMutation] = useClaimDailyRewardMutation();
-  const { data: onlineData } = useOnlineCountQuery({}, { pollingInterval: 10000 });
+  const { data: onlineData } = useOnlineCountQuery({}, { pollingInterval: 3000 });
   const dispatch = useDispatch();
 
   React.useEffect(() => {
