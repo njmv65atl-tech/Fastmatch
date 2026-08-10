@@ -11,6 +11,7 @@ import {
   BackHandler,
   Platform,
   Dimensions,
+  RefreshControl,
 } from "react-native";
 import { MobileContainer, Header, Button } from "../../components/UIComponents";
 import { AppView, User } from "../../types";
@@ -33,26 +34,36 @@ interface DiscoverViewProps {
 }
 
 export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
+  const [refreshing, setRefreshing] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const token = useSelector(tokenSelector);
   const currentUser = useSelector(userSelector);
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(true);
+
+    const interval = setInterval(() => {
+      fetchUsers(false);
+    }, 10000);
 
     if (Platform.OS === 'android') {
       const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
         setView(AppView.HOME);
         return true;
       });
-      return () => backHandler.remove();
+      return () => {
+        backHandler.remove();
+        clearInterval(interval);
+      };
     }
-  }, [setView]);
+    
+    return () => clearInterval(interval);
+  }, [setView, token]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const res = await fetch(`${BASE_URL}user/discover`, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -65,10 +76,16 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
       setUsers(json.data);
     } catch (err: any) {
       console.warn("Discover error:", err);
-      ShowAlertMessage(err.message || "Failed to load discover users", popTypes.error);
+      if (showLoading) ShowAlertMessage(err.message || "Failed to load discover users", popTypes.error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchUsers(false);
   };
 
   const handleSuperMatch = (targetUser: any) => {
@@ -92,7 +109,17 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView 
+          contentContainerStyle={styles.container}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+        >
           <View style={styles.grid}>
             {users.map((u) => (
               <View key={u._id} style={styles.card}>

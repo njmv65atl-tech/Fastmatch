@@ -547,7 +547,7 @@ const App: React.FC = () => {
         <Modal
           transparent
           animationType="fade"
-          visible={!!incomingMatchRequest && view !== AppView.VIDEO_CHAT}
+          visible={!!incomingMatchRequest && currentView !== AppView.VIDEO_CHAT}
           onRequestClose={() => {
             if (incomingMatchRequest?.matchId) {
               socket.emit("match-response", { matchId: incomingMatchRequest.matchId, response: "declined" });
