@@ -119,12 +119,16 @@ export const deleteVerification = async (matchId: string) => {
 };
 
 export const getAllVerifications = async (): Promise<Map<string, any>> => {
-    const keys = await redisClient.keys('verif:*');
     const map = new Map();
-    for (const key of keys) {
-        const data = await redisClient.get(key);
-        if (data) map.set(key.replace('verif:', ''), JSON.parse(data));
-    }
+    let cursor = '0';
+    do {
+        const result = await redisClient.scan(cursor, 'MATCH', 'verif:*', 'COUNT', 100);
+        cursor = result[0];
+        for (const key of result[1]) {
+            const data = await redisClient.get(key);
+            if (data) map.set(key.replace('verif:', ''), JSON.parse(data));
+        }
+    } while (cursor !== '0');
     return map;
 };
 

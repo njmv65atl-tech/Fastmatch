@@ -118,7 +118,7 @@ const handleStage1Cleanup = async (io: Server, userId: string) => {
         const activeMatch = await matchService.getActiveMatch(new Types.ObjectId(userId));
         if (activeMatch && activeMatch.matchStatus === 'pending') {
             const otherUser = activeMatch.user1._id.toString() === userId ? activeMatch.user2 : activeMatch.user1;
-            const otherSid = userSocketMap.get(otherUser._id.toString());
+            const otherSid = otherUser._id.toString();
             await matchService.respondToMatch(activeMatch._id, new Types.ObjectId(userId), 'declined');
             if (otherSid) {
                 io.to(otherSid).emit('match-declined', { match: activeMatch });
@@ -537,7 +537,7 @@ export const initializeSocket = (io: Server): Server => {
                 
                 // Find the other (idle) user
                 const other = result.match.user1._id.toString() === userId ? result.match.user2 : result.match.user1;
-                const otherSid = userSocketMap.get(otherIdStr);
+                const otherSid = otherIdStr;
 
                 if (otherSid) {
                     // Send incoming-match-request to idle User 2 with searcher's profile
@@ -607,7 +607,7 @@ export const initializeSocket = (io: Server): Server => {
                 const result = await matchService.respondToMatch(match._id, sender._id, 'accepted');
 
                 // Notify target
-                const targetSid = userSocketMap.get(data.targetUserId);
+                const targetSid = data.targetUserId;
                 if (targetSid) {
                     const freshCurrentUser = await User.findById(userId).select('-password').lean();
                     io.to(targetSid).emit('incoming-match-request', {
@@ -684,7 +684,7 @@ export const initializeSocket = (io: Server): Server => {
                     await deleteVerification(data.matchId);
                     const other = result.match.user1._id.toString() === userId ? result.match.user2 : result.match.user1;
                     const otherIdStr = other._id.toString();
-                    const otherSid = userSocketMap.get(otherIdStr);
+                    const otherSid = otherIdStr;
 
                         // Add to searcher's skip list for THIS session
                     if (!skippedUsersMap.has(otherIdStr)) skippedUsersMap.set(otherIdStr, new Set());
@@ -722,8 +722,8 @@ export const initializeSocket = (io: Server): Server => {
                     const m = result.match;
                     const u1Id = m.user1._id.toString();
                     const u2Id = m.user2._id.toString();
-                    const s1 = userSocketMap.get(u1Id);
-                    const s2 = userSocketMap.get(u2Id);
+                    const s1 = u1Id;
+                    const s2 = u2Id;
 
                     // Remove searcher from queue
                     matchmakingQueue.delete(u1Id);
@@ -742,7 +742,7 @@ export const initializeSocket = (io: Server): Server => {
                     console.log(`[ accept ] ✅ Both accepted! ${m.user1.displayName} ↔ ${m.user2.displayName} → Call started!`);
                 } else {
                     const other = result.match.user1._id.toString() === userId ? result.match.user2 : result.match.user1;
-                    const otherSid = userSocketMap.get(other._id.toString());
+                    const otherSid = other._id.toString();
                     if (otherSid) io.to(otherSid).emit('partner-accepted', { match: result.match });
                 }
             } catch (e) { socket.emit('match-error', { message: 'Action failed' }); }
@@ -772,7 +772,7 @@ export const initializeSocket = (io: Server): Server => {
                 const call = await getCall(data.matchId);
                 if (call) {
                     const other = call.user1Id === userId ? call.user2Id : call.user1Id;
-                    const otherSid = userSocketMap.get(other);
+                    const otherSid = other;
                     if (otherSid) io.to(otherSid).emit('call-ended', { message: 'Partner left.', endedBy: userId });
                     await removeActiveCall(data.matchId);
                 }
@@ -793,7 +793,7 @@ export const initializeSocket = (io: Server): Server => {
                 
                 if (call) {
                     const other = call.user1Id === userId ? call.user2Id : call.user1Id;
-                    const otherSid = userSocketMap.get(other);
+                    const otherSid = other;
                     if (otherSid) io.to(otherSid).emit('call-ended', { match: m, endedBy: userId });
                     await removeActiveCall(data.matchId);
                     callStartTimes.delete(data.matchId);
@@ -876,7 +876,7 @@ export const initializeSocket = (io: Server): Server => {
 
         socket.on('send-icebreaker', async (data) => {
             const targetId = data.receiverId;
-            const targetSid = userSocketMap.get(targetId);
+            const targetSid = targetId;
             if (targetSid) {
                 io.to(targetSid).emit('icebreaker-received', { message: data.message, from: userId });
             }
@@ -884,7 +884,7 @@ export const initializeSocket = (io: Server): Server => {
 
         socket.on('send-reaction', async (data) => {
             const targetId = data.receiverId;
-            const targetSid = userSocketMap.get(targetId);
+            const targetSid = targetId;
             if (targetSid) {
                 io.to(targetSid).emit('reaction-received', { emoji: data.emoji, from: userId });
             }
@@ -944,7 +944,7 @@ export const initializeSocket = (io: Server): Server => {
                 }
 
                 // Notify receiver
-                const targetSid = userSocketMap.get(data.receiverId);
+                const targetSid = data.receiverId;
                 if (targetSid) {
                     io.to(targetSid).emit('gift-received', { from: userId, giftName: data.giftName, senderName: sender.displayName });
                 }
@@ -984,7 +984,7 @@ export const initializeSocket = (io: Server): Server => {
                         await setGhostCooldown(userId, 2 * 60 * 1000);
                     }
                     const otherId = call.user1Id === userId ? call.user2Id : call.user1Id;
-                    const otherSid = userSocketMap.get(otherId);
+                    const otherSid = otherId;
                     if (otherSid) {
                         io.to(otherSid).emit('call-ended', { match: null, endedBy: userId, message: 'Partner disconnected.' });
                     }
