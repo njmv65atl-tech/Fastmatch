@@ -240,9 +240,9 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         if (myCallBlockedList.includes(userId) || theirCallBlockedList.includes(currentUser.userId)) continue;
 
         // Gender preference check (Fix for 'other' gender)
-        const up = currentUser.preference || 'everyone';
+        const up = currentUser.isPremium ? (currentUser.preference || 'everyone') : 'everyone';
         const candidateGender = freshCandidate.gender || 'other';
-        const candidatePref = freshCandidate.preference || 'everyone';
+        const candidatePref = freshCandidate.isPremium ? (freshCandidate.preference || 'everyone') : 'everyone';
         const searcherGender = currentUser.gender || 'other';
         
         if (up !== 'everyone' && up !== candidateGender) continue;
@@ -258,7 +258,9 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
         }
         if (!isDesperate) {
             if (currentUser.user.language && freshCandidate.language && currentUser.user.language !== freshCandidate.language) continue;
-            if (currentUser.location && freshCandidate.location && currentUser.location !== freshCandidate.location) continue;
+            if (currentUser.location && freshCandidate.location && currentUser.location !== freshCandidate.location) {
+                if (currentUser.isPremium || freshCandidate.isPremium) continue;
+            }
         }
 
         let score = 0;

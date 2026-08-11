@@ -34,7 +34,8 @@ export const SubscriptionView: React.FC<{
   const [loading, setLoading] = React.useState(true);
   const features = [
     "50 Daily Free Coins",
-    "Unlimited Matches & Swipes",
+    "Unlimited Daily Matches",
+    "Gender & Location Preferences",
     "Ad-free Experience",
     "Elite Premium Profile Badge",
   ];
@@ -116,7 +117,7 @@ export const SubscriptionView: React.FC<{
         </View>
 
         <Text style={styles.title}>Go Premium</Text>
-        <Text style={styles.subtitle}>Unlock the ultimate experience.</Text>
+        <Text style={styles.subtitle}>Random chat is free. Premium gives you more control over who you meet.</Text>
 
         <View style={styles.featuresList}>
           {features.map((feat, i) => (

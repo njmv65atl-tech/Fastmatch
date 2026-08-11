@@ -54,17 +54,22 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 {
                   label: MATCH_FILTERS_TEXT.male,
                   value: Gender.MALE,
-                  free: true,
+                  free: false,
                 },
                 {
                   label: MATCH_FILTERS_TEXT.female,
                   value: Gender.FEMALE,
-                  free: true,
+                  free: false,
                 },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   onPress={() => {
+                    if (!option.free && user?.isPremium !== 'premium') {
+                      ShowAlertMessage("Premium required for Gender preference", popTypes.info);
+                      setView(AppView.SUBSCRIPTION);
+                      return;
+                    }
                     setSelectedGender(option.value);
                   }}
                   style={[
@@ -72,15 +77,22 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                     selectedGender === option.value && styles.optionBtnActive,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      selectedGender === option.value &&
-                        styles.optionTextActive,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedGender === option.value && styles.optionTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                    {!option.free && user?.isPremium !== 'premium' && (
+                      <View style={styles.lockBadge}>
+                        <Crown size={10} color={colors.goldStrong} />
+                        <Text style={styles.lockBadgeText}>PRO</Text>
+                      </View>
+                    )}
+                  </View>
 
                   <View style={styles.optionRight}>
                     <View
