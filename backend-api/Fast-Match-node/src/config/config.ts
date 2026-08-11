@@ -34,6 +34,7 @@ const appConfig = {
     appName: 'Fast-Match',
     streamApiKey: process.env.STREAM_API_KEY as string,
     streamApiSecret: process.env.STREAM_API_SECRET as string,
+    redisUrl: process.env.REDIS_URL as string,
 
     // In-App Purchase / Subscription
     appleSharedSecret: process.env.APPLE_SHARED_SECRET as string,
