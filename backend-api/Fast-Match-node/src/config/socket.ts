@@ -307,14 +307,12 @@ const findCompatibleOnlineUser = async (currentUser: any, candidates: any[]): Pr
 
 // ─── Main Logic ───────────────────────────────────────────────
 
-import { createAdapter } from '@socket.io/redis-adapter';
+import { createAdapter } from '@socket.io/redis-streams-adapter';
 import redisClient from '@services/redis.service';
 
 export const initializeSocket = (io: Server): Server => {
     // 🚨 Redis Adapter setup
-    const pubClient = redisClient;
-    const subClient = pubClient.duplicate();
-    io.adapter(createAdapter(pubClient, subClient));
+    io.adapter(createAdapter(redisClient));
 
     // 🚨 Authentication Middleware
     io.use(async (socket, next) => {
