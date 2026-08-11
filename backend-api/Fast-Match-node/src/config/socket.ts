@@ -9,6 +9,7 @@ import { FriendModel } from '@models/friend';
 import matchService from '@services/match.services';
 import chatService from '@services/chat.services';
 import blockService from '@services/block.service';
+import { enqueueUser, dequeueUser, hasGhostCooldown, getQueueSize, setGhostCooldown, addSkip, hasSkipped, setActiveCall, removeActiveCall, checkActiveCall, getCandidates, lockMatch, getActiveCallMatchId, getCall, setVerification, getVerification, deleteVerification, getAllVerifications } from '@services/redis.service';
 import mongoose, { Types } from 'mongoose';
 
 // ─── Socket Event Interfaces ──────────────────────────────────
@@ -70,7 +71,7 @@ const matchmakingQueue: Map<string, QueueUser> = new Map();
 export const onlineUsersMap: Map<string, any> = new Map(); // All connected users (app open)
 export const userSocketMap: Map<string, string> = new Map();
 const socketUserMap: Map<string, string> = new Map();
-const activeCalls: Map<string, { user1Id: string; user2Id: string }> = new Map();
+// removed activeCalls
 const searchStartTimes: Map<string, number> = new Map();
 const callStartTimes: Map<string, number> = new Map();
 const ghostCooldowns: Map<string, number> = new Map();
@@ -91,7 +92,7 @@ interface PendingVerification {
     u1Id: string;
     u2Id: string;
 }
-const activeVerifications: Map<string, PendingVerification> = new Map();
+// removed activeVerifications
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -129,12 +130,12 @@ const handleStage1Cleanup = async (io: Server, userId: string) => {
 
 const startActualCall = async (io: Server, matchId: string, u1Id: string, u2Id: string, s1: string, s2: string, match: any) => {
     try {
-        matchmakingQueue.delete(u1Id);
-        matchmakingQueue.delete(u2Id);
-        activeVerifications.delete(matchId);
-        activeCalls.set(matchId, { user1Id: u1Id, user2Id: u2Id });
+        await dequeueUser(u1Id);
+        await dequeueUser(u2Id);
+        await deleteVerification(matchId);
+        await setActiveCall(matchId, u1Id, u2Id);
         await createStreamCall(matchId, u1Id, [u1Id, u2Id]);
-        if (!activeCalls.has(matchId)) return;
+        if (!(await getCall(matchId))) return;
         const token1 = await generateStreamToken(u1Id);
         const token2 = await generateStreamToken(u2Id);
         io.to(s1).emit('call-start', { success: true, match, role: 'caller', remoteUser: match.user2, streamToken: { token: token1, apiKey: getStreamApiKey(), userId: u1Id }, callId: matchId });
@@ -174,7 +175,7 @@ const startActualCall = async (io: Server, matchId: string, u1Id: string, u2Id: 
         // 2-Minute Time Limit for Free Users
         if (match.user1.isPremium === 'free' && match.user2.isPremium === 'free') {
             setTimeout(async () => {
-                if (activeCalls.has(matchId)) {
+                if (await getCall(matchId)) {
                     io.to(s1).emit('call-limit-reached', { message: 'Time limit reached. Upgrade to Premium for unlimited calls!' });
                     io.to(s2).emit('call-limit-reached', { message: 'Time limit reached. Upgrade to Premium for unlimited calls!' });
                     
@@ -182,7 +183,7 @@ const startActualCall = async (io: Server, matchId: string, u1Id: string, u2Id: 
                     const m = await matchService.endCall(new Types.ObjectId(matchId), new Types.ObjectId(u1Id));
                     io.to(s1).emit('call-ended', { match: m, endedBy: 'system' });
                     io.to(s2).emit('call-ended', { match: m, endedBy: 'system' });
-                    activeCalls.delete(matchId);
+                    await removeActiveCall(matchId);
                 }
             }, 120000); // 120 seconds
         }
@@ -195,37 +196,37 @@ const hasNoInterests = (interests: string[]): boolean => {
     return !interests || interests.length === 0 || interests.every(i => !i.trim());
 };
 
-const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | null> => {
+const findCompatibleOnlineUser = async (currentUser: any, candidates: any[]): Promise<any | null> => {
     let bestMatch: any | null = null;
     let highestScore = -1;
     const myInterests = currentUser.interests.map((i: string) => i.toLowerCase().trim());
-    const mySkipped = skippedUsersMap.get(currentUser.userId) || new Set();
 
     // Expanding Search Radius logic
-    const waitTime = Date.now() - (searchStartTimes.get(currentUser.userId) || Date.now());
+    const waitTime = Date.now() - (currentUser.joinedAt || Date.now());
     const isRelaxed = waitTime > 10000; // >10s: drop interest requirements
     const isDesperate = waitTime > 20000; // >20s: drop location/language requirements
 
-    for (const [userId, freshCandidate] of matchmakingQueue.entries()) {
+    for (const freshCandidate of candidates) {
+        const userId = freshCandidate.userId;
         if (userId === currentUser.userId) continue;
 
-        // Skip if user is in active call (activeCalls keyed by matchId, not userId)
-        const isInCall = Array.from(activeCalls.values()).some(
-            (c) => c.user1Id === userId || c.user2Id === userId
-        );
-        if (isInCall) continue;
-        // Skip if user is already being matched (isMatching flag in queue)
+        // Skip if user is in active call
+        if (await checkActiveCall(userId)) continue;
+        
+        // Skip if user is already being matched
         if (freshCandidate.isMatching) continue;
         
         // Check if they are part of an active verification
         let inVerification = false;
-        for (const v of activeVerifications.values()) {
+        const allVerifs = await getAllVerifications();
+        for (const v of allVerifs.values()) {
             if (v.u1Id === userId || v.u2Id === userId) { inVerification = true; break; }
         }
         if (inVerification) continue;
 
-        // Skip if already skipped in this session (temporary skip)
-        if (mySkipped.has(userId)) continue;
+        // Skip if already skipped in this session
+        if (await hasSkipped(currentUser.userId, userId)) continue;
+        if (await hasSkipped(userId, currentUser.userId)) continue;
 
         // Skip rejected users (session only)
         if (rejectedUsersMap.get(currentUser.userId)?.has(userId)) continue;
@@ -295,6 +296,7 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
             bestMatch = {
                 matchedUserId: userId,
                 displayName: freshCandidate.user?.displayName || 'User',
+                socketId: freshCandidate.socketId,
                 isAlsoSearching: isAlsoSearching,
                 matchType: common.length > 0 ? 'interest' : 'random'
             };
@@ -305,7 +307,15 @@ const findCompatibleOnlineUser = async (currentUser: QueueUser): Promise<any | n
 
 // ─── Main Logic ───────────────────────────────────────────────
 
+import { createAdapter } from '@socket.io/redis-adapter';
+import redisClient from '@services/redis.service';
+
 export const initializeSocket = (io: Server): Server => {
+    // 🚨 Redis Adapter setup
+    const pubClient = redisClient;
+    const subClient = pubClient.duplicate();
+    io.adapter(createAdapter(pubClient, subClient));
+
     // 🚨 Authentication Middleware
     io.use(async (socket, next) => {
         try {
@@ -332,96 +342,82 @@ export const initializeSocket = (io: Server): Server => {
         isProcessingQueue = true;
 
         try {
-            // 📊 Smart Queue Logs
-            const currentNames = Array.from(matchmakingQueue.values()).map(u => u.user.displayName).sort().join(', ');
-            if (currentNames !== lastQueueNames) {
-                if (currentNames) {
-                    console.log(`[ matchmaking ] ⏳ Queue status changed: [${currentNames}]`);
-                } else if (lastQueueNames) {
-                    console.log(`[ matchmaking ] ⏳ Queue is now empty.`);
-                }
-                lastQueueNames = currentNames;
-            }
+            const candidates = await getCandidates(50); // Fetch top 50 candidates from Redis queue
 
-            if (matchmakingQueue.size < 1) {
+            if (candidates.length < 1) {
                 isProcessingQueue = false;
                 return;
             }
 
             // Timeout stale pending matches in activeVerifications
             const now = Date.now();
-            for (const [mid, v] of activeVerifications.entries()) {
-                if (now - (v.match?.matchedAt?.getTime() || now) > MATCH_TIMEOUT_MS) {
-                    clearTimeout(v.timeout);
-                    activeVerifications.delete(mid);
-                    [v.s1, v.s2].forEach(s => { io.to(s).emit('match-error', { message: 'Match timed out.' }); });
-                    // Re-queue both users
-                    const u1Entry = matchmakingQueue.get(v.u1Id);
-                    if (u1Entry) u1Entry.isMatching = false;
-                    const u2Entry = matchmakingQueue.get(v.u2Id);
-                    if (u2Entry) u2Entry.isMatching = false;
-                    console.log(`[ matchmaking ] ⏰ Match ${mid} timed out, users re-queued.`);
+            const MATCH_TIMEOUT_MS = 30000;
+            const verifications = await getAllVerifications();
+            for (const [mid, v] of verifications.entries()) {
+                if (now - (v.matchedAt || now) > MATCH_TIMEOUT_MS) {
+                    await deleteVerification(mid);
+                    [v.s1, v.s2].forEach(s => { if(s) io.to(s).emit('match-error', { message: 'Match timed out.' }); });
+                    console.log(`[ matchmaking ] ⏰ Match ${mid} timed out, verification cleared.`);
                 }
             }
 
-            // Sort the queue to prioritize premium users (VIP Priority Queue)
-            const sortedQueue = Array.from(matchmakingQueue.entries()).sort((a, b) => {
-                if (a[1].isPremium === b[1].isPremium) return a[1].joinedAt - b[1].joinedAt;
-                return a[1].isPremium ? -1 : 1;
-            });
-
+            const MATCHMAKING_BATCH_SIZE = 5;
             let processed = 0;
-            for (const [userId, user] of sortedQueue) {
+            
+            for (const user of candidates) {
                 if (processed >= MATCHMAKING_BATCH_SIZE) break;
-                if (user.isMatching) continue;
+                
+                // Try to acquire lock for this user so other servers don't pick them
+                const lockedUser = await lockMatch('user:' + user.userId, 2000);
+                if (!lockedUser) continue;
 
-                // Lock before async operation to prevent race conditions
-                user.isMatching = true;
-
-                const match = await findCompatibleOnlineUser(user);
+                const match = await findCompatibleOnlineUser(user, candidates);
                 if (match) {
-                    const otherQueueEntry = matchmakingQueue.get(match.matchedUserId);
-                    if (otherQueueEntry) otherQueueEntry.isMatching = true;
+                    // Try to acquire lock for the target match
+                    const lockedMatch = await lockMatch('user:' + match.matchedUserId, 2000);
+                    if (!lockedMatch) continue;
 
-                try {
-                    const m = await matchService.createMatch(
-                        new Types.ObjectId(userId),
-                        new Types.ObjectId(match.matchedUserId),
-                        user.preference,
-                        match.matchType || 'interest'
-                    );
-                    
-                    activeVerifications.set(m._id.toString(), { u1Id: userId, u2Id: match.matchedUserId } as any);
+                    try {
+                        const m = await matchService.createMatch(
+                            new Types.ObjectId(user.userId),
+                            new Types.ObjectId(match.matchedUserId),
+                            user.preference,
+                            match.matchType || 'interest'
+                        );
+                        
+                        await setVerification(m._id.toString(), {
+                            u1Id: user.userId,
+                            u2Id: match.matchedUserId,
+                            s1: user.socketId,
+                            s2: match.socketId,
+                            matchedAt: Date.now(),
+                            presenceCheck: { u1Ok: false, u2Ok: false, started: false, aborted: false }
+                        }, 30);
+                        await dequeueUser(user.userId);
+                        await dequeueUser(match.matchedUserId);
 
-                    const matchData = await matchService.getMatchDetails(m._id as Types.ObjectId);
+                        const matchData = await matchService.getMatchDetails(m._id as Types.ObjectId);
 
-                    const user1Details = matchData.user1;
-                    const user2Details = matchData.user2;
-                    const matchedUserForSearcher = matchData.user1._id.toString() === userId ? user2Details : user1Details;
-                    const searcherDetailsForOther = matchData.user1._id.toString() === userId ? user1Details : user2Details;
+                        const user1Details = matchData.user1;
+                        const user2Details = matchData.user2;
+                        const matchedUserForSearcher = matchData.user1._id.toString() === user.userId ? user2Details : user1Details;
+                        const searcherDetailsForOther = matchData.user1._id.toString() === user.userId ? user1Details : user2Details;
 
-                    // Always emit to the searcher
-                    io.to(user.socketId).emit('match-found', { success: true, match: matchData, matchedUser: matchedUserForSearcher, matchType: match.matchType || 'interest' });
+                        // Always emit to the searcher via their socket ID
+                        io.to(user.socketId).emit('match-found', { success: true, match: matchData, matchedUser: matchedUserForSearcher, matchType: match.matchType || 'interest' });
 
-                    // If matched user is ALSO searching, emit to them too
-                    if (match.isAlsoSearching) {
-                        const otherSid = userSocketMap.get(match.matchedUserId);
-                        if (otherSid) {
-                            io.to(otherSid).emit('match-found', { success: true, match: matchData, matchedUser: searcherDetailsForOther, matchType: match.matchType || 'interest' });
+                        // If matched user is ALSO searching, emit to them too
+                        if (match.isAlsoSearching && match.socketId) {
+                            io.to(match.socketId).emit('match-found', { success: true, match: matchData, matchedUser: searcherDetailsForOther, matchType: match.matchType || 'interest' });
+                            console.log(`[ loop ] ✅ Mutual match: ${user.user.displayName} ↔ ${match.displayName} (both searching, type: ${match.matchType})`);
+                        } else {
+                            console.log(`[ loop ] ✅ Found for ${user.user.displayName}: ${match.displayName} (online idle, type: ${match.matchType})`);
                         }
-                        console.log(`[ loop ] ✅ Mutual match: ${user.user.displayName} ↔ ${match.displayName} (both searching, type: ${match.matchType})`);
-                    } else {
-                        console.log(`[ loop ] ✅ Found for ${user.user.displayName}: ${match.displayName} (online idle, type: ${match.matchType})`);
+                    } catch (err) {
+                        console.error("Match error:", err);
                     }
-                } catch (err) {
-                    user.isMatching = false;
-                    if (otherQueueEntry) otherQueueEntry.isMatching = false;
-                    console.error("Match error:", err);
                 }
                 processed++;
-                } else {
-                    user.isMatching = false;
-                }
             }
         } catch (error) {
             console.error('[ matchmaking loop error ]', error);
@@ -457,7 +453,7 @@ export const initializeSocket = (io: Server): Server => {
         socket.emit('connected', { success: true, user: { _id: user._id, displayName: user.displayName } });
 
         socket.on('find-match', async (data: { preference?: string }) => {
-            if (ghostCooldowns.has(userId)) {
+            if (await hasGhostCooldown(userId)) {
                 return socket.emit('match-error', { message: 'You are on a 2-minute cooldown for dropping matches too quickly. Please wait.' });
             }
 
@@ -494,7 +490,7 @@ export const initializeSocket = (io: Server): Server => {
             // Update the socket's user object so other events also use fresh data
             (socket as any).user = freshUser;
 
-            matchmakingQueue.set(userId, {
+            await enqueueUser(userId, {
                 userId,
                 socketId: socket.id,
                 preference: finalPreference,
@@ -511,11 +507,13 @@ export const initializeSocket = (io: Server): Server => {
                     blockedCalls: freshUser.blockedCalls || []
                 }
             });
-            console.log(`[ search ] 📥 User ${freshUser.displayName} joined queue (Data Refreshed). Size: ${matchmakingQueue.size}`);
-            socket.emit('searching', { success: true, queuePosition: matchmakingQueue.size });
+            const queueSize = await getQueueSize();
+            console.log(`[ search ] 📥 User ${freshUser.displayName} joined queue (Data Refreshed). Size: ${queueSize}`);
+            socket.emit('searching', { success: true, queuePosition: queueSize });
         });
 
         socket.on('stop-search', async () => {
+            await dequeueUser(userId);
             matchmakingQueue.delete(userId);
             searchStartTimes.delete(userId);
             skippedUsersMap.delete(userId); // Clear skip list on stop
@@ -591,9 +589,7 @@ export const initializeSocket = (io: Server): Server => {
                 if (!callBlock.allowed) return socket.emit('match-error', { message: callBlock.reason });
 
                 // Prevent call if target is already in an active call
-                const isTargetInCall = Array.from(activeCalls.values()).some(
-                    (c) => c.user1Id === data.targetUserId || c.user2Id === data.targetUserId
-                );
+                const isTargetInCall = await checkActiveCall(data.targetUserId);
                 if (isTargetInCall) {
                     return socket.emit('super-request-error', { message: 'This person is already on a call with someone.' });
                 }
@@ -639,7 +635,7 @@ export const initializeSocket = (io: Server): Server => {
 
                 // Decline the current match in DB
                 await matchService.respondToMatch(new Types.ObjectId(data.matchId), user._id, 'declined');
-                activeVerifications.delete(data.matchId);
+                await deleteVerification(data.matchId);
                 
                 // Find the other user and add to skip list
                 const match = await matchService.getMatchDetails(new Types.ObjectId(data.matchId));
@@ -687,7 +683,7 @@ export const initializeSocket = (io: Server): Server => {
 
                 const result = await matchService.respondToMatch(new Types.ObjectId(data.matchId), user._id, data.response);
                 if (data.response === 'declined') {
-                    activeVerifications.delete(data.matchId);
+                    await deleteVerification(data.matchId);
                     const other = result.match.user1._id.toString() === userId ? result.match.user2 : result.match.user1;
                     const otherIdStr = other._id.toString();
                     const otherSid = userSocketMap.get(otherIdStr);
@@ -754,31 +750,33 @@ export const initializeSocket = (io: Server): Server => {
             } catch (e) { socket.emit('match-error', { message: 'Action failed' }); }
         });
 
-        socket.on('pong-presence', (data) => {
-            const v = activeVerifications.get(data.matchId);
+        socket.on('pong-presence', async (data) => {
+            const v = await getVerification(data.matchId);
             if (v) {
                 if (socket.id === v.s1) v.presenceCheck.u1Ok = true;
                 if (socket.id === v.s2) v.presenceCheck.u2Ok = true;
                 if (v.presenceCheck.u1Ok && v.presenceCheck.u2Ok && !v.presenceCheck.started) {
-                    v.presenceCheck.started = true; clearTimeout(v.timeout); activeVerifications.delete(data.matchId);
+                    v.presenceCheck.started = true; await deleteVerification(data.matchId);
                     startActualCall(io, data.matchId, v.u1Id, v.u2Id, v.s1, v.s2, v.match);
+                } else {
+                    await setVerification(data.matchId, v, 30);
                 }
             }
         });
 
         socket.on('match-cancel', async (data) => {
             try {
-                const v = activeVerifications.get(data.matchId);
+                const v = await getVerification(data.matchId);
                 if (v) {
-                    v.presenceCheck.aborted = true; clearTimeout(v.timeout); activeVerifications.delete(data.matchId);
+                    v.presenceCheck.aborted = true; await deleteVerification(data.matchId);
                     [v.s1, v.s2].forEach(s => { io.to(s).emit('match-error', { message: 'Partner cancelled.' }); io.to(s).emit('call-ended', { match: v.match, endedBy: userId }); });
                 }
-                const call = activeCalls.get(data.matchId);
+                const call = await getCall(data.matchId);
                 if (call) {
                     const other = call.user1Id === userId ? call.user2Id : call.user1Id;
                     const otherSid = userSocketMap.get(other);
                     if (otherSid) io.to(otherSid).emit('call-ended', { message: 'Partner left.', endedBy: userId });
-                    activeCalls.delete(data.matchId);
+                    await removeActiveCall(data.matchId);
                 }
                 await handleStage1Cleanup(io, userId);
             } catch (e) { console.error("match-cancel error:", e); }
@@ -788,19 +786,18 @@ export const initializeSocket = (io: Server): Server => {
             try {
                 if (mongoose.connection.readyState !== 1) return;
                 const m = await matchService.endCall(new Types.ObjectId(data.matchId), user._id);
-                const call = activeCalls.get(data.matchId);
+                const call = await getCall(data.matchId);
                 const startTime = callStartTimes.get(data.matchId);
                 if (startTime && Date.now() - startTime < 5000) {
                     // Ghost Penalty
-                    ghostCooldowns.set(userId, Date.now());
-                    setTimeout(() => ghostCooldowns.delete(userId), 2 * 60 * 1000);
+                    await setGhostCooldown(userId, 2 * 60 * 1000);
                 }
                 
                 if (call) {
                     const other = call.user1Id === userId ? call.user2Id : call.user1Id;
                     const otherSid = userSocketMap.get(other);
                     if (otherSid) io.to(otherSid).emit('call-ended', { match: m, endedBy: userId });
-                    activeCalls.delete(data.matchId);
+                    await removeActiveCall(data.matchId);
                     callStartTimes.delete(data.matchId);
                 }
                 socket.emit('call-ended', { match: m, endedBy: userId });
@@ -859,13 +856,7 @@ export const initializeSocket = (io: Server): Server => {
         socket.on('blockUser', async (data) => {
             try {
                 // Instantly end any active call
-                let foundMatchId = null;
-                for (const [mid, call] of activeCalls.entries()) {
-                    if (call.user1Id === userId || call.user2Id === userId) {
-                        foundMatchId = mid;
-                        break;
-                    }
-                }
+                let foundMatchId = await getActiveCallMatchId(userId);
                 
                 if (foundMatchId) {
                     const match = await matchService.getMatchDetails(new Types.ObjectId(foundMatchId));
@@ -875,7 +866,7 @@ export const initializeSocket = (io: Server): Server => {
                             io.to(userId).emit('match-ended', { matchId: foundMatchId, reason: 'blocked' });
                             io.to(targetId).emit('match-ended', { matchId: foundMatchId, reason: 'blocked' });
                             await matchService.endCall(new Types.ObjectId(foundMatchId), new Types.ObjectId(userId));
-                            activeCalls.delete(foundMatchId);
+                            await removeActiveCall(foundMatchId);
                         }
                     }
                 }
@@ -971,33 +962,35 @@ export const initializeSocket = (io: Server): Server => {
 
         socket.on('disconnect', async () => {
             onlineUsersMap.delete(userId);
+            await dequeueUser(userId);
             matchmakingQueue.delete(userId);
             searchStartTimes.delete(userId);
             skippedUsersMap.delete(userId);
             rejectedUsersMap.delete(userId); // 🚨 Clear skip list on disconnect
             await handleStage1Cleanup(io, userId);
-            for (const [mid, v] of activeVerifications.entries()) {
+            const verifications = await getAllVerifications();
+            for (const [mid, v] of verifications.entries()) {
                 if (v.u1Id === userId || v.u2Id === userId) {
-                    v.presenceCheck.aborted = true; clearTimeout(v.timeout); activeVerifications.delete(mid);
+                    v.presenceCheck.aborted = true; await deleteVerification(mid);
                     const other = v.u1Id === userId ? v.s2 : v.s1;
                     io.to(other).emit('match-error', { message: 'Partner left.' });
                 }
             }
             // Clean up any active call the user was in
-            for (const [mid, call] of activeCalls.entries()) {
-                if (call.user1Id === userId || call.user2Id === userId) {
+            const mid = await getActiveCallMatchId(userId);
+            if (mid) {
+                const call = await getCall(mid);
+                if (call) {
                     const startTime = callStartTimes.get(mid);
                     if (startTime && Date.now() - startTime < 5000) {
-                        // Ghost Penalty on disconnect
-                        ghostCooldowns.set(userId, Date.now());
-                        setTimeout(() => ghostCooldowns.delete(userId), 2 * 60 * 1000);
+                        await setGhostCooldown(userId, 2 * 60 * 1000);
                     }
                     const otherId = call.user1Id === userId ? call.user2Id : call.user1Id;
                     const otherSid = userSocketMap.get(otherId);
                     if (otherSid) {
                         io.to(otherSid).emit('call-ended', { match: null, endedBy: userId, message: 'Partner disconnected.' });
                     }
-                    activeCalls.delete(mid);
+                    await removeActiveCall(mid);
                     callStartTimes.delete(mid);
                 }
             }
