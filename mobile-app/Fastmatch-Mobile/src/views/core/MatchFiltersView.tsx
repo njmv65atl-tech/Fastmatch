@@ -33,7 +33,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
   useBackHandler(handleBack);
 
   const checkPremium = (isFreeFeature: boolean, featureName: string) => {
-    if (!isFreeFeature && !user?.isPremium) {
+    if (!isFreeFeature && user?.isPremium !== 'premium') {
       ShowAlertMessage(`Premium required for ${featureName} preference`, popTypes.info);
       setView(AppView.SUBSCRIPTION);
       return false;
@@ -64,7 +64,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           <Text style={[styles.optionText, isActive && styles.optionTextActive]}>
             {label}
           </Text>
-          {!isFree && !user?.isPremium && (
+          {!isFree && user?.isPremium !== 'premium' && (
             <View style={styles.lockBadge}>
               <Crown size={10} color={colors.goldStrong} />
               <Text style={styles.lockBadgeText}>PRO</Text>

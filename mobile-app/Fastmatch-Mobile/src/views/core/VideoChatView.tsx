@@ -937,7 +937,7 @@ export const VideoChatView: React.FC<CoreProps> = ({
 
   useEffect(() => {
     // Enforce 120s limit for Free users
-    const isAnyPremium = !!user?.isPremium || user?.role === UserRole.PREMIUM || !!matchData?.user1?.isPremium || !!matchData?.user2?.isPremium;
+    const isAnyPremium = user?.isPremium === 'premium' || user?.role === 'premium' || matchData?.user1?.isPremium === 'premium' || matchData?.user2?.isPremium === 'premium';
     if (!isAnyPremium && callDuration >= 120) {
       console.log("[VideoChatView] Free limit reached, ending call.");
       ShowAlertMessage("Free call limit reached. Upgrade to Premium for unlimited calls!", popTypes.error);
@@ -1132,7 +1132,7 @@ export const VideoChatView: React.FC<CoreProps> = ({
   // ─── Call UI ────────────────────────────────────
 
   const CallTimer = () => {
-    const isAnyPremium = !!user?.isPremium || user?.role === UserRole.PREMIUM || !!matchData?.user1?.isPremium || !!matchData?.user2?.isPremium;
+    const isAnyPremium = user?.isPremium === 'premium' || user?.role === 'premium' || matchData?.user1?.isPremium === 'premium' || matchData?.user2?.isPremium === 'premium';
     if (isAnyPremium) return null;
     const remaining = 120 - callDuration;
     if (remaining < 0) return null;
