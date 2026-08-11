@@ -18,6 +18,8 @@ import { IMAGE_URL } from '../../config/env';
 import { managerApiCall } from '../../helpers/managerApiCallFn';
 import { useDeleteAccountMutation } from '../../redux/services/auth';
 import { ShowAlertMessage, popTypes, onLogout } from '../../helpers/commonFunctions';
+import { Crown } from 'lucide-react-native';
+import { colors } from '../../utils/colors';
 
 const BASE_URL = IMAGE_URL;
 
@@ -159,6 +161,11 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
             {currentUser?.isVerified && (
               <View style={styles.verifiedBadge}>
                 <Text style={styles.verifiedIcon}>✓</Text>
+              </View>
+            )}
+            {currentUser?.isPremium === 'premium' && (
+              <View style={[styles.verifiedBadge, { backgroundColor: colors.goldSoft, borderRadius: 10, padding: 2, paddingHorizontal: 4 }]}>
+                <Crown size={12} color={colors.goldStrong} />
               </View>
             )}
           </View>

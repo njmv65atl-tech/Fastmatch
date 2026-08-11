@@ -1,9 +1,9 @@
 import * as React from "react";
 import { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { MobileContainer, Button, Header } from "../../components/UIComponents";
 import { AppView, UserRole, User, Gender } from "../../types";
-import { Sliders, Crown } from "lucide-react-native";
+import { Sliders, Crown, MapPin, Users, Globe } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { MATCH_FILTERS_TEXT } from "../../utils/commonText";
 import { fontFamily } from "../../assets/fonts/fontFamily";
@@ -22,12 +22,64 @@ interface CoreProps {
 
 export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
   const [selectedGender, setSelectedGender] = useState<Gender>(Gender.ANY);
+  const [selectedLocation, setSelectedLocation] = useState<'any' | 'my_country'>('any');
+  const [selectedLanguage, setSelectedLanguage] = useState<'any' | 'my_language'>('any');
+  const [selectedAge, setSelectedAge] = useState<'any' | '18-24' | '25-34' | '35+'>('any');
 
   const handleBack = React.useCallback(() => {
     setView(AppView.HOME);
   }, [setView]);
 
   useBackHandler(handleBack);
+
+  const checkPremium = (isFreeFeature: boolean, featureName: string) => {
+    if (!isFreeFeature && !user?.isPremium) {
+      ShowAlertMessage(`Premium required for ${featureName} preference`, popTypes.info);
+      setView(AppView.SUBSCRIPTION);
+      return false;
+    }
+    return true;
+  };
+
+  const renderOption = (
+    label: string, 
+    value: any, 
+    currentValue: any, 
+    setValue: (val: any) => void, 
+    isFree: boolean,
+    featureName: string
+  ) => {
+    const isActive = currentValue === value;
+    return (
+      <TouchableOpacity
+        key={value}
+        onPress={() => {
+          if (checkPremium(isFree, featureName)) {
+            setValue(value);
+          }
+        }}
+        style={[styles.optionBtn, isActive && styles.optionBtnActive]}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={[styles.optionText, isActive && styles.optionTextActive]}>
+            {label}
+          </Text>
+          {!isFree && !user?.isPremium && (
+            <View style={styles.lockBadge}>
+              <Crown size={10} color={colors.goldStrong} />
+              <Text style={styles.lockBadgeText}>PRO</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.optionRight}>
+          <View style={[styles.radio, isActive && styles.radioActive]}>
+            {isActive && <View style={styles.radioDot} />}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <MobileContainer>
@@ -35,124 +87,106 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           title={MATCH_FILTERS_TEXT.pageTitle}
           onBack={() => setView(AppView.HOME)}
         />
-        <View style={styles.filterContent}>
+        <ScrollView style={styles.filterContent} contentContainerStyle={{ paddingBottom: 40 }}>
+          
+          {/* GENDER SECTION */}
+          <View style={styles.filterSection}>
+            <View style={styles.filterHeader}>
+              <Users size={16} color={colors.textMuted} />
+              <Text style={styles.filterLabel}>GENDER</Text>
+            </View>
+            <View style={styles.optionsGrid}>
+              {renderOption(MATCH_FILTERS_TEXT.everyone, Gender.ANY, selectedGender, setSelectedGender, true, "Gender")}
+              {renderOption(MATCH_FILTERS_TEXT.male, Gender.MALE, selectedGender, setSelectedGender, false, "Gender")}
+              {renderOption(MATCH_FILTERS_TEXT.female, Gender.FEMALE, selectedGender, setSelectedGender, false, "Gender")}
+            </View>
+          </View>
+
+          {/* AGE SECTION */}
           <View style={styles.filterSection}>
             <View style={styles.filterHeader}>
               <Sliders size={16} color={colors.textMuted} />
-              <Text style={styles.filterLabel}>
-                {MATCH_FILTERS_TEXT.filterLabel}
-              </Text>
+              <Text style={styles.filterLabel}>AGE RANGE</Text>
             </View>
-
             <View style={styles.optionsGrid}>
-              {[
-                {
-                  label: MATCH_FILTERS_TEXT.everyone,
-                  value: Gender.ANY,
-                  free: true,
-                },
-                {
-                  label: MATCH_FILTERS_TEXT.male,
-                  value: Gender.MALE,
-                  free: false,
-                },
-                {
-                  label: MATCH_FILTERS_TEXT.female,
-                  value: Gender.FEMALE,
-                  free: false,
-                },
-              ].map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  onPress={() => {
-                    if (!option.free && user?.isPremium !== 'premium') {
-                      ShowAlertMessage("Premium required for Gender preference", popTypes.info);
-                      setView(AppView.SUBSCRIPTION);
-                      return;
-                    }
-                    setSelectedGender(option.value);
-                  }}
-                  style={[
-                    styles.optionBtn,
-                    selectedGender === option.value && styles.optionBtnActive,
-                  ]}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selectedGender === option.value && styles.optionTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                    {!option.free && user?.isPremium !== 'premium' && (
-                      <View style={styles.lockBadge}>
-                        <Crown size={10} color={colors.goldStrong} />
-                        <Text style={styles.lockBadgeText}>PRO</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  <View style={styles.optionRight}>
-                    <View
-                      style={[
-                        styles.radio,
-                        selectedGender === option.value && styles.radioActive,
-                      ]}
-                    >
-                      {selectedGender === option.value && (
-                        <View style={styles.radioDot} />
-                      )}
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {renderOption("Any Age", 'any', selectedAge, setSelectedAge, true, "Age Range")}
+              {renderOption("18 - 24", '18-24', selectedAge, setSelectedAge, false, "Age Range")}
+              {renderOption("25 - 34", '25-34', selectedAge, setSelectedAge, false, "Age Range")}
+              {renderOption("35+", '35+', selectedAge, setSelectedAge, false, "Age Range")}
             </View>
-            <Button
-              variant="primary"
-              onClick={async () => {
-                const state = await NetInfo.fetch();   // ✅ one-time check, no listener
-                if (state.isConnected) {
-                  let preference: 'everyone' | 'male' | 'female' = 'everyone';
-                  if (selectedGender === Gender.MALE) {
-                    preference = 'male';
-                  } else if (selectedGender === Gender.FEMALE) {
-                    preference = 'female';
-                  }
-
-                  console.log("🚀 [MatchFilters] Selected preference to emit:", preference);
-                  findMatch(preference);
-                  setView(AppView.MATCH_FOUND, { preference });
-                } else {
-                  ShowAlertMessage("Please check your internet connection", popTypes.error);
-                }
-              }}
-              style={styles.findBtn}
-            >
-              {MATCH_FILTERS_TEXT.findMatch}
-            </Button>
           </View>
-        </View>
+
+          {/* LOCATION SECTION */}
+          <View style={styles.filterSection}>
+            <View style={styles.filterHeader}>
+              <MapPin size={16} color={colors.textMuted} />
+              <Text style={styles.filterLabel}>LOCATION</Text>
+            </View>
+            <View style={styles.optionsGrid}>
+              {renderOption("Anywhere", 'any', selectedLocation, setSelectedLocation, true, "Location")}
+              {renderOption("My Country", 'my_country', selectedLocation, setSelectedLocation, false, "Location")}
+            </View>
+          </View>
+
+          {/* LANGUAGE SECTION */}
+          <View style={styles.filterSection}>
+            <View style={styles.filterHeader}>
+              <Globe size={16} color={colors.textMuted} />
+              <Text style={styles.filterLabel}>LANGUAGE</Text>
+            </View>
+            <View style={styles.optionsGrid}>
+              {renderOption("Any Language", 'any', selectedLanguage, setSelectedLanguage, true, "Language")}
+              {renderOption("My Language", 'my_language', selectedLanguage, setSelectedLanguage, true, "Language")}
+            </View>
+          </View>
+
+          <Button
+            variant="primary"
+            onClick={async () => {
+              const state = await NetInfo.fetch();
+              if (state.isConnected) {
+                let preference: 'everyone' | 'male' | 'female' = 'everyone';
+                if (selectedGender === Gender.MALE) preference = 'male';
+                else if (selectedGender === Gender.FEMALE) preference = 'female';
+
+                console.log("🚀 [MatchFilters] Selected preferences:", { preference, selectedLocation, selectedLanguage, selectedAge });
+                
+                findMatch({
+                    preference,
+                    locationMode: selectedLocation,
+                    languageMode: selectedLanguage,
+                    ageRange: selectedAge
+                });
+                setView(AppView.MATCH_FOUND, { preference });
+              } else {
+                ShowAlertMessage("Please check your internet connection", popTypes.error);
+              }
+            }}
+            style={styles.findBtn}
+          >
+            {MATCH_FILTERS_TEXT.findMatch}
+          </Button>
+
+        </ScrollView>
       </MobileContainer>
     </View>
   );
 };
 
-     
 const styles = StyleSheet.create({
   filterContent: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop: 10,
   },
   filterSection: {
-    flex: 1,
+    marginBottom: 24,
   },
   filterHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   filterLabel: {
     fontSize: 12,
@@ -162,15 +196,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   optionsGrid: {
-    gap: 12,
+    gap: 8,
   },
   optionBtn: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: colors.surfaceAlt,
   },
@@ -179,7 +213,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primarySofter,
   },
   optionText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: colors.textMuted,
   },
@@ -224,7 +258,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   findBtn: {
-    marginTop: 25,
-    //marginBottom: 350,
+    marginTop: 10,
+    marginBottom: 20,
   },
 });

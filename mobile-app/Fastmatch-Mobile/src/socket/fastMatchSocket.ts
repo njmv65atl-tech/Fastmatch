@@ -65,8 +65,13 @@ export const disconnectFastMatchSocket = () => {
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
-export const findMatch = (preference: 'everyone' | 'male' | 'female' = 'everyone') => {
-    socket?.emit('find-match', { preference });
+export const findMatch = (options: {
+    preference: 'everyone' | 'male' | 'female',
+    locationMode?: 'any' | 'my_country',
+    languageMode?: 'any' | 'my_language',
+    ageRange?: 'any' | '18-24' | '25-34' | '35+'
+}) => {
+    socket?.emit('find-match', options);
 };
 
 export const respondToMatch = (matchId: string, response: 'accepted' | 'declined') => {

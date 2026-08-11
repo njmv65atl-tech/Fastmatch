@@ -149,11 +149,13 @@ export const SETTINGS_TEXT = {
 export const SUBSCRIPTION_TEXT = {
   pageTitle: "Go Premium",
   pageSubtitle: "Unlock the ultimate experience.",
+  tagline: "Random chat is free. Premium gives you more control over who you meet.",
   features: [
-    "Filter matches by Gender",
+    "Filter matches by Gender, Age & Location",
+    "Unlimited Video Calls",
     "Unlimited Skips & Rewinds",
     "Ad-free Experience",
-    "Priority Matching",
+    "Priority VIP Matching",
   ],
   yearlyPlan: "YEARLY",
   yearlyPrice: "$49",

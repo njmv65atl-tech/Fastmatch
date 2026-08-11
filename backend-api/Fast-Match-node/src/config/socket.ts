@@ -253,15 +253,33 @@ const findCompatibleOnlineUser = async (currentUser: any, candidates: any[]): Pr
         const common = myInterests.filter((i: string) => theirInterests.includes(i));
         const isAlsoSearching = true;
 
-        // Strict Matching constraints
+        // Explicit Premium & Filter checks
+        // 1. Language Preference
+        const myLangMode = currentUser.languageMode || 'any';
+        if (myLangMode === 'my_language' && currentUser.language && freshCandidate.language) {
+            if (currentUser.language !== freshCandidate.language) continue;
+        }
+
+        // 2. Location Preference
+        const myLocMode = currentUser.locationMode || 'any';
+        if (myLocMode === 'my_country' && currentUser.location && freshCandidate.location) {
+            if (currentUser.location !== freshCandidate.location) continue;
+        }
+
+        // 3. Age Preference
+        const myAgeRange = currentUser.ageRange || 'any';
+        if (myAgeRange !== 'any' && freshCandidate.age) {
+            const candAge = parseInt(freshCandidate.age);
+            if (!isNaN(candAge)) {
+                if (myAgeRange === '18-24' && (candAge < 18 || candAge > 24)) continue;
+                if (myAgeRange === '25-34' && (candAge < 25 || candAge > 34)) continue;
+                if (myAgeRange === '35+' && candAge < 35) continue;
+            }
+        }
+
+        // Strict Matching constraints (Interests)
         if (!isRelaxed) {
             if (!hasNoInterests(myInterests) && !hasNoInterests(theirInterests) && common.length === 0) continue;
-        }
-        if (!isDesperate) {
-            if (currentUser.user.language && freshCandidate.language && currentUser.user.language !== freshCandidate.language) continue;
-            if (currentUser.location && freshCandidate.location && currentUser.location !== freshCandidate.location) {
-                if (currentUser.isPremium || freshCandidate.isPremium) continue;
-            }
         }
 
         let score = 0;
@@ -488,14 +506,22 @@ export const initializeSocket = (io: Server): Server => {
             // Update the socket's user object so other events also use fresh data
             (socket as any).user = freshUser;
 
+            const locationMode = (data as any)?.locationMode || 'any';
+            const languageMode = (data as any)?.languageMode || 'any';
+            const ageRange = (data as any)?.ageRange || 'any';
+
             await enqueueUser(userId, {
                 userId,
                 socketId: socket.id,
                 preference: finalPreference,
+                locationMode,
+                languageMode,
+                ageRange,
                 gender: freshUser.gender || 'other',
                 interests: freshUser.interests || [],
                 location: freshUser.location || '',
                 language: freshUser.language || '',
+                age: freshUser.age || '',
                 isPremium: freshUser.isPremium === 'premium',
                 joinedAt: Date.now(),
                 user: {
