@@ -13,6 +13,7 @@ import { Sidebar } from "./main/layout/sidebar";
 import { Header } from "./main/layout/header";
 import { DashboardOverview } from "./main/screens/DashboardOverview";
 import { UserManagement } from "./main/screens/UserManagement";
+import { UserReports } from "./main/screens/UserReports";
 import { ActivityMonitoring } from "./main/screens/ActivityMonitoring";
 import { Analytics } from "./main/screens/Analytics";
 import { SubscriptionManagement } from "./main/screens/SubscriptionManagement";
@@ -99,6 +100,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardOverview />} />
               <Route path="users" element={<UserManagement />} />
+              <Route path="reports" element={<UserReports />} />
               <Route path="activity" element={<ActivityMonitoring />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="subscriptions" element={<SubscriptionManagement />} />

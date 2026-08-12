@@ -65,6 +65,12 @@ export const banUser = (userId) =>
 export const unbanUser = (userId) =>
   apiMethods.POST(`admin/unban-user/${userId}`, {}, headers);
 
+export const deleteUser = (userId) =>
+  apiMethods.DELETE(`admin/users/${userId}`, {}, headers);
+
+export const getReports = (data) =>
+  apiMethods.GET("admin/reports", data, headers);
+
 // Subscriptions
 export const getSubscribers = (data) => apiMethods.GET("admin/subscribers", data, headers);
 export const grantPremium = (data) => apiMethods.POST("admin/grant-premium", data, headers);

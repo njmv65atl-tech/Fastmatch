@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { userManagement, banUser, unbanUser } from "../api";
+import { userManagement, banUser, unbanUser, getReports, deleteUser } from "../api";
 
 export const useUserManagement = (params) => {
     return useQuery({
@@ -23,6 +23,23 @@ export const useUnbanUser = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: unbanUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["userManagement"] });
+        },
+    });
+};
+
+export const useGetReports = (params) => {
+    return useQuery({
+        queryKey: ["reports", params],
+        queryFn: () => getReports(params),
+    });
+};
+
+export const useDeleteUser = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: deleteUser,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["userManagement"] });
         },

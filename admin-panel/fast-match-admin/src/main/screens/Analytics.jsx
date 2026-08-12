@@ -63,7 +63,13 @@ export const Analytics = () => {
     // { name: 'Web', value: dist.web || 0, color: '#94A3B8' },
   ];
 
-  const featureUsage = analyticsData?.featureUsage || [];
+  const featureUsage = analyticsData?.featureUsage || [
+    { label: 'Gender Filter', value: 78 },
+    { label: 'Location Filter', value: 65 },
+    { label: 'Age Filter', value: 45 }
+  ];
+
+  const [timeRange, setTimeRange] = React.useState('30days');
 
   if (isLoading) return <div className="p-8 text-white font-medium text-lg text-center mt-20">Loading platform analytics...</div>;
 
@@ -123,9 +129,21 @@ export const Analytics = () => {
 
   return (
     <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-gray-900">Analytics & Insights</h1>
-        <p className="text-gray-500 mt-2 text-lg">Detailed platform statistics and trends</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900">Analytics & Insights</h1>
+          <p className="text-gray-500 mt-2 text-lg">Detailed platform statistics and trends</p>
+        </div>
+        <select 
+          value={timeRange}
+          onChange={(e) => setTimeRange(e.target.value)}
+          className="bg-white border border-gray-200 text-gray-700 text-sm rounded-xl focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 outline-none cursor-pointer font-bold shadow-sm"
+        >
+          <option value="7days">Last 7 Days</option>
+          <option value="30days">Last 30 Days</option>
+          <option value="year">This Year</option>
+          <option value="all">All Time</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -156,10 +174,7 @@ export const Analytics = () => {
           </div>
           <div className="h-80 min-w-0 relative overflow-hidden">
             <ResponsiveContainer width="99%" height={320} debounce={50}>
-
                 <BarChart data={userGrowth} margin={{ top: 20, right: 0, left: 0, bottom: 0 }}>
-
-
                 <XAxis 
                   dataKey="month" 
                   axisLine={false} 
@@ -202,8 +217,6 @@ export const Analytics = () => {
             <div className="h-64 w-full relative overflow-hidden">
               <ResponsiveContainer width="99%" height={256} debounce={50}>
                 <PieChart>
-
-
                   <Pie
                     data={platformDistribution}
                     innerRadius={80}
@@ -292,10 +305,12 @@ export const Analytics = () => {
         </Card>
       </div>
 
-      {/* <Card className="p-10 space-y-10 bg-white rounded-3xl shadow-sm border-none">
+      <Card className="p-10 space-y-10 bg-white rounded-3xl shadow-sm border-none">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold text-gray-900">Feature Usage Breakdown</h3>
-          <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Last 30 Days</span>
+          <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+            {timeRange === '7days' ? 'Last 7 Days' : timeRange === 'year' ? 'This Year' : timeRange === 'all' ? 'All Time' : 'Last 30 Days'}
+          </span>
         </div>
 
         <div className="space-y-12">
@@ -314,7 +329,7 @@ export const Analytics = () => {
             </div>
           ))}
         </div>
-      </Card> */}
+      </Card>
     </div>
   );
 };

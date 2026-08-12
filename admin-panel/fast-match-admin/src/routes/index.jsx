@@ -6,12 +6,14 @@ import {
   UserCircle,
   Crown,
   MessageSquare,
-  Bell
+  Bell,
+  ShieldAlert
 } from 'lucide-react';
 
 export const NAVIGATION_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'User Management', icon: Users },
+  { id: 'reports', label: 'Reports', icon: ShieldAlert },
   { id: 'subscriptions', label: 'Subscriptions', icon: Crown },
   { id: 'content', label: 'Content Management', icon: MessageSquare },
   { id: 'announcements', label: 'Announcements', icon: Bell },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useUserManagement, useBanUser, useUnbanUser } from "../../reactQuery/hooks/userHook";
+import { useUserManagement, useBanUser, useUnbanUser, useDeleteUser } from "../../reactQuery/hooks/userHook";
+import { useGrantPremium, useRevokePremium } from "../../reactQuery/hooks/subscriptionHook";
 import {
   Ban,
   Search,
@@ -8,6 +9,9 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Trash2,
+  Crown,
+  ShieldOff
 } from "lucide-react";
 import { cn } from "../../utils/utils";
 import { motion, AnimatePresence } from "motion/react";
@@ -15,7 +19,7 @@ import { Card } from "../../components/common/card";
 import { Button } from "../../components/common/Button";
 import { imageUrl } from "../../reactQuery/api/apiClient";
 
-const UserProfileModal = ({ user, onClose }) => {
+const UserProfileModal = ({ user, onClose, onGrantPremium, onRevokePremium, onDeleteUser }) => {
   if (!user) return null;
 
   return (
@@ -146,6 +150,36 @@ const UserProfileModal = ({ user, onClose }) => {
               </p>
             </div>
           </div>
+          
+          <div className="pt-6 border-t border-gray-100 flex gap-4 justify-between">
+            <div className="flex gap-4">
+              {user.isPremium !== 'premium' ? (
+                <button
+                  onClick={() => onGrantPremium(user._id)}
+                  className="px-4 py-2 bg-amber-50 text-amber-700 text-sm font-bold rounded-xl hover:bg-amber-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                >
+                  <Crown size={16} />
+                  Grant Premium
+                </button>
+              ) : (
+                <button
+                  onClick={() => onRevokePremium(user._id)}
+                  className="px-4 py-2 bg-gray-50 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                >
+                  <ShieldOff size={16} />
+                  Revoke Premium
+                </button>
+              )}
+            </div>
+            
+            <button
+              onClick={() => onDeleteUser(user._id)}
+              className="px-4 py-2 bg-rose-50 text-rose-700 text-sm font-bold rounded-xl hover:bg-rose-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+            >
+              <Trash2 size={16} />
+              Delete User
+            </button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -191,6 +225,9 @@ export const UserManagement = () => {
 
   const { mutate: banUserMutate } = useBanUser();
   const { mutate: unbanUserMutate } = useUnbanUser();
+  const { mutate: deleteUserMutate } = useDeleteUser();
+  const { mutate: grantPremiumMutate } = useGrantPremium();
+  const { mutate: revokePremiumMutate } = useRevokePremium();
 
   const users = response?.data?.users || [];
   const pagination = response?.data?.pagination;
@@ -204,6 +241,27 @@ export const UserManagement = () => {
       </div>
     );
 
+  const handleGrantPremium = (userId) => {
+    if (window.confirm("Grant premium to this user for 1 month?")) {
+      grantPremiumMutate({ userId, plan: 'monthly' });
+      setSelectedUser(null);
+    }
+  };
+
+  const handleRevokePremium = (userId) => {
+    if (window.confirm("Revoke premium from this user?")) {
+      revokePremiumMutate(userId);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleDeleteUser = (userId) => {
+    if (window.confirm("WARNING: Are you sure you want to permanently delete this user? This cannot be undone.")) {
+      deleteUserMutate(userId);
+      setSelectedUser(null);
+    }
+  };
+
   return (
     <div className="p-10 space-y-10 min-h-screen">
       <AnimatePresence>
@@ -211,6 +269,9 @@ export const UserManagement = () => {
           <UserProfileModal
             user={selectedUser}
             onClose={() => setSelectedUser(null)}
+            onGrantPremium={handleGrantPremium}
+            onRevokePremium={handleRevokePremium}
+            onDeleteUser={handleDeleteUser}
           />
         )}
       </AnimatePresence>
