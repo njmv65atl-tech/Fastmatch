@@ -47,7 +47,7 @@ export interface clientEvents {
     'end-call': (data: { matchId: string }) => void;
     'send-message': (data: { receiverId: string; message: string }) => void;
     'send-gift': (data: { receiverId: string; giftName: string; coinCost: number }) => void;
-    'super-request': (data: { targetUserId: string; coinCost: number }) => void;
+    'super-request': (data: { targetUserId: string }) => void;
     disconnect: () => void;
 }
 
@@ -489,6 +489,9 @@ export const initializeSocket = (io: Server): Server => {
                 if (currentCount >= 10) {
                     return socket.emit('limit_exhausted', { message: 'You have exhausted your 10 free daily matches. Please upgrade to premium for unlimited matching.' });
                 }
+                
+                // Emit remaining count to the user
+                socket.emit('limit_info', { remaining: 10 - currentCount, total: 10 });
             }
 
             console.log(`[ find-match ] 📥 Raw Payload from ${freshUser.displayName}:`, JSON.stringify(data));
@@ -582,7 +585,7 @@ export const initializeSocket = (io: Server): Server => {
         });
 
         // 🆕 Super Match Request
-        socket.on('super-request', async (data: { targetUserId: string, coinCost: number }) => {
+        socket.on('super-request', async (data: { targetUserId: string }) => {
             try {
                 if (mongoose.connection.readyState !== 1) return socket.emit('match-error', { message: 'Database busy' });
 
@@ -590,7 +593,7 @@ export const initializeSocket = (io: Server): Server => {
                 const target = await User.findById(data.targetUserId);
 
                 if (!sender || !target) return socket.emit('match-error', { message: 'User not found' });
-                if ((sender.walletBalance || 0) < data.coinCost) return socket.emit('match-error', { message: 'Insufficient coins for Super Match' });
+                if (sender.isPremium !== 'premium') return socket.emit('match-error', { message: 'Super Match is a premium feature. Please upgrade your subscription.' });
 
                 // Enforce Daily Limit for Free Users
                 if (sender.isPremium !== 'premium') {
@@ -618,13 +621,6 @@ export const initializeSocket = (io: Server): Server => {
                     return socket.emit('super-request-error', { message: 'This person is already on a call with someone.' });
                 }
 
-                // Deduct coins & Log
-                sender.walletBalance = (sender.walletBalance || 0) - data.coinCost;
-                await sender.save();
-
-                await Transaction.create([
-                    { userId: sender._id, type: 'super_match', amount: -data.coinCost, relatedUserId: target._id, description: `Super Match sent` }
-                ]);
 
                 // Create match
                 const match = await matchService.createMatch(new Types.ObjectId(userId), new Types.ObjectId(data.targetUserId), 'everyone', 'super_match');

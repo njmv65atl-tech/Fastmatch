@@ -10,7 +10,7 @@ import {
   MobileContainer,
 } from "../../components/UIComponents";
 import { AppView, User, UserRole } from "../../types";
-import { Crown, Video, Zap } from "lucide-react-native";
+import { Crown, Video, Zap, AlertTriangle } from "lucide-react-native";
 import {
   ScrollView,
   StyleSheet,
@@ -21,6 +21,7 @@ import {
   Modal,
   Animated,
   Easing,
+  AppState,
 } from "react-native";
 
 
@@ -103,6 +104,33 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
   const [claimDailyRewardMutation] = useClaimDailyRewardMutation();
   const { data: onlineData } = useOnlineCountQuery({}, { pollingInterval: 3000 });
   const dispatch = useDispatch();
+  
+  // Safety Disclaimer State
+  const [showSafetyModal, setShowSafetyModal] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkDisclaimer = async () => {
+      try {
+        const hasSeen = await AsyncStorage.getItem('hasSeenSafetyDisclaimer');
+        if (!hasSeen) {
+          setShowSafetyModal(true);
+        }
+      } catch (e) {
+        console.log("Failed to check disclaimer:", e);
+      }
+    };
+    checkDisclaimer();
+  }, []);
+
+  const acknowledgeSafetyDisclaimer = async () => {
+    try {
+      await AsyncStorage.setItem('hasSeenSafetyDisclaimer', 'true');
+      setShowSafetyModal(false);
+    } catch (e) {
+      console.log("Failed to save disclaimer state:", e);
+      setShowSafetyModal(false);
+    }
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -124,7 +152,17 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
       }
     };
     checkDailyReward();
-    return () => { isMounted = false; };
+    
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        checkDailyReward();
+      }
+    });
+
+    return () => { 
+      isMounted = false; 
+      subscription.remove();
+    };
   }, []);
 
   const claimReward = () => {
@@ -273,6 +311,33 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
 
         <DailyRewardModal visible={showDailyReward} message={rewardMessage} onClaim={claimReward} />
 
+        {/* ── Safety Disclaimer Modal ── */}
+        <Modal
+          visible={showSafetyModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => {}}
+        >
+          <View style={styles.modalOverlayInt}>
+            <View style={styles.interestsModalContainer}>
+              <View style={{ alignItems: "center", marginBottom: 16 }}>
+                <AlertTriangle color="#f59e0b" size={48} />
+              </View>
+              <Text style={styles.interestsModalTitle}>Safety First</Text>
+              <Text style={{ color: "rgba(255,255,255,0.8)", textAlign: "center", marginBottom: 24, fontSize: 16, lineHeight: 24 }}>
+                For your safety, please do not share personal information (like your address, financial details, or phone number) during chats or calls. FastMatch is not responsible for any issues arising from sharing personal information. Stay safe and enjoy!
+              </Text>
+              
+              <TouchableOpacity
+                style={[styles.actionBtnInt, { backgroundColor: colors.primary, width: "100%", height: 50 }]}
+                onPress={acknowledgeSafetyDisclaimer}
+              >
+                <Text style={styles.acceptTextInt}>I Understand</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
       </MobileContainer>
     </View>
   );
@@ -336,6 +401,38 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: "600",
+  },
+  modalOverlayInt: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  interestsModalContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 24,
+    maxHeight: "80%",
+  },
+  interestsModalTitle: {
+    color: colors.white,
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  actionBtnInt: {
+    height: 52,
+    borderRadius: 26,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  acceptTextInt: {
+    color: colors.white,
+    fontWeight: "700",
+    fontSize: 16,
   },
   onlineRow: {
     flexDirection: 'row',

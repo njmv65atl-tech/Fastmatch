@@ -116,6 +116,20 @@ class UserController extends ResponseHandler {
         let profilePicture: string | undefined;
 
         if (file) {
+            // Compress with sharp
+            try {
+                const sharp = require('sharp');
+                const fs = require('fs');
+                const tempPath = file.path + '.tmp';
+                await sharp(file.path)
+                    .resize({ width: 600, withoutEnlargement: true })
+                    .jpeg({ quality: 80 })
+                    .toFile(tempPath);
+                fs.renameSync(tempPath, file.path);
+            } catch (e) {
+                console.error("Image compression error:", e);
+            }
+
             // Extract path after /public/ to make it accessible via URL
             const profilePicturePath = file.path.split('public')[1].replace(/\\/g, '/');
             profilePicture = `/public${profilePicturePath}`;
@@ -380,11 +394,22 @@ class UserController extends ResponseHandler {
             let streak = user.loginStreak || 0;
             
             if (lastClaim) {
-                const hoursSinceLastClaim = Math.abs(now.getTime() - lastClaim.getTime()) / 36e5;
-                if (hoursSinceLastClaim < 24) {
+                const isSameDate = lastClaim.getUTCFullYear() === now.getUTCFullYear() &&
+                                   lastClaim.getUTCMonth() === now.getUTCMonth() &&
+                                   lastClaim.getUTCDate() === now.getUTCDate();
+                
+                if (isSameDate) {
                     return res.status(400).send(responseEncryptor(req, false, "Reward already claimed today."));
-                } else if (hoursSinceLastClaim > 48) {
-                    streak = 0; // Reset streak if missed a day
+                }
+                
+                const yesterday = new Date(now);
+                yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+                const isYesterday = lastClaim.getUTCFullYear() === yesterday.getUTCFullYear() &&
+                                    lastClaim.getUTCMonth() === yesterday.getUTCMonth() &&
+                                    lastClaim.getUTCDate() === yesterday.getUTCDate();
+                                    
+                if (!isYesterday) {
+                    streak = 0; // Reset streak if missed yesterday
                 }
             }
 

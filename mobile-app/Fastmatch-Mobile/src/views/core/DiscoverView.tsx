@@ -89,13 +89,14 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
   };
 
   const handleSuperMatch = (targetUser: any) => {
-    if ((currentUser?.walletBalance || 0) < 50) {
-      ShowAlertMessage("Insufficient coins for Super Match (50 coins required). Get more in Wallet.", popTypes.error);
+    if (currentUser?.isPremium !== 'premium') {
+      ShowAlertMessage("Super Match is a premium feature. Please upgrade your subscription to use it.", popTypes.error);
+      setView(AppView.SUBSCRIPTION);
       return;
     }
     
-    // Emit super request
-    socket.emit("super-request", { targetUserId: targetUser._id, coinCost: 50 });
+    // Emit super request without coinCost
+    socket.emit("super-request", { targetUserId: targetUser._id });
     ShowAlertMessage(`Super Request sent to ${targetUser.displayName || 'user'}!`, popTypes.success);
     setView(AppView.HOME);
   };

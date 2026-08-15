@@ -173,7 +173,7 @@ class MatchService {
             if (pIdsArray.length > 0) {
                 await notificationServices.sendBulkNotification(
                     pIdsArray,
-                    'Partner Online',
+                    'User Online',
                     `${displayName} is now online. Say hi!`,
                     'ONLINE_STATUS',
                     { partnerId: userId.toString() }

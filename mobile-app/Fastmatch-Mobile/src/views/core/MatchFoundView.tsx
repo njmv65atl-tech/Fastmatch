@@ -63,6 +63,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
   const [showAllInterests, setShowAllInterests] = useState(false);
   const [matchType, setMatchType] = useState<string>('random');
   const [trustScore, setTrustScore] = useState<number>(100);
+  const [freeCallsRemaining, setFreeCallsRemaining] = useState<number | null>(null);
 
   const matchIdRef = useRef<string | null>(null);
   const remoteUserRef = useRef<any>(null);
@@ -231,6 +232,12 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
       console.log("ℹ️ [MatchFound] Received searching event, returning to radar animation");
       resetToSearching();
     };
+    
+    const onLimitInfo = (data: any) => {
+      if (data?.remaining !== undefined) {
+        setFreeCallsRemaining(data.remaining);
+      }
+    };
 
     socket.on("match-found", onMatchFound);
     socket.on("ping-presence", onPingPresence);
@@ -238,6 +245,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
     socket.on("match-declined", onMatchDeclined);
     socket.on("partner-accepted", onPartnerAccepted);
     socket.on("searching", onSearching);
+    socket.on("limit_info", onLimitInfo);
 
     return () => {
       // ✅ Screen Dispose/Unmount Scenario
@@ -247,11 +255,11 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
       appStateSub.remove();
       socket.off("connect", startSearching);
       socket.off("match-found", onMatchFound);
-      socket.off("ping-presence", onPingPresence);
       socket.off("call-start", onCallStart);
       socket.off("match-declined", onMatchDeclined);
       socket.off("partner-accepted", onPartnerAccepted);
       socket.off("searching", onSearching);
+      socket.off("limit_info", onLimitInfo);
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [socket, setView, handleGlobalStopSearch]);
@@ -352,6 +360,11 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
             </Animated.View>
             <Text style={styles.searchTitle}>Finding Your{"\n"}Match</Text>
             <Text style={styles.searchSubtitle}>Looking for someone to connect with...</Text>
+            {freeCallsRemaining !== null && (
+              <Text style={{ color: colors.tertiary, marginTop: 10, fontSize: 14 }}>
+                Remaining Free Calls Today: {freeCallsRemaining}/10
+              </Text>
+            )}
 
             {/* ✅ Cancel Button Scenario */}
             <TouchableOpacity onPress={handleGlobalStopSearch} style={styles.cancelBtn}>
