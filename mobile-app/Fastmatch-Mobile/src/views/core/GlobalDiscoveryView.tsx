@@ -15,7 +15,7 @@ import { ArrowLeft, Globe, Send, AlertTriangle } from "lucide-react-native";
 import { MobileContainer, Button } from "../../components/UIComponents";
 import { AppView } from "../../types";
 import { colors } from "../../utils/colors";
-import { RootState } from "../../redux/store";
+import { userSelector } from "../../redux/slices/persistedSlice";
 import {
   useGetGlobalUsersQuery,
   useSendFriendRequestMutation,
@@ -26,7 +26,7 @@ import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = ({
   setView,
 }) => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  const user = useSelector(userSelector);
   
   const [page, setPage] = React.useState(1);
   const { data, isLoading, isFetching } = useGetGlobalUsersQuery({
