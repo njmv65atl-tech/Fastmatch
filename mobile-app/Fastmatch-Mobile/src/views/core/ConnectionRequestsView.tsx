@@ -108,7 +108,7 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
     <MobileContainer>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => setView(AppView.HOME)} style={styles.backBtn}>
-          <ArrowLeft color={colors.text} size={24} />
+          <ArrowLeft color={colors.textPrimary} size={24} />
         </TouchableOpacity>
         <Inbox color={colors.primary} size={24} style={{ marginRight: 8 }} />
         <Text style={styles.headerTitle}>Requests</Text>
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textPrimary,
   },
   subtitle: {
     color: colors.textPlaceholder,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   subtext: {
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   messageText: {
-    color: colors.text,
+    color: colors.textPrimary,
     fontStyle: "italic",
     fontSize: 14,
   },

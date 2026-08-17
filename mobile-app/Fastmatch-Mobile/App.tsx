@@ -24,6 +24,7 @@ import {
   View,
   Image,
   ScrollView,
+  BackHandler,
 } from "react-native";
 import { AppView, Gender, User, UserRole } from "./src/types";
 import {
@@ -158,7 +159,51 @@ const App: React.FC = () => {
   }, 2000); // 2000ms = 2 seconds
 
   return () => clearTimeout(timer); // Cleanup timer on unmount
-}, );
+}, []);
+
+  React.useEffect(() => {
+    const onBackPress = () => {
+      // If we are at the root views, allow default behavior (exit app)
+      if (currentView === AppView.HOME || currentView === AppView.WELCOME || currentView === AppView.LOGIN || currentView === AppView.SIGNUP) {
+        return false;
+      }
+      
+      // If we are deep into the app, go back to HOME
+      if (
+        currentView === AppView.MATCH_FILTERS ||
+        currentView === AppView.DISCOVER ||
+        currentView === AppView.PROFILE ||
+        currentView === AppView.MONETIZATION ||
+        currentView === AppView.MY_GIFTS ||
+        currentView === AppView.GLOBAL_DISCOVERY ||
+        currentView === AppView.CONNECTION_REQUESTS ||
+        currentView === AppView.FRIENDS ||
+        currentView === AppView.CHAT_DETAIL
+      ) {
+        setCurrentView(AppView.HOME);
+        return true; // Prevent default behavior
+      }
+
+      // If we are deep in auth, go back to WELCOME
+      if (
+        currentView === AppView.FORGOT_PASSWORD ||
+        currentView === AppView.RESET_PASSWORD ||
+        currentView === AppView.OTP
+      ) {
+        setCurrentView(AppView.WELCOME);
+        return true;
+      }
+
+      return false; // Otherwise let default happen
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onBackPress
+    );
+
+    return () => backHandler.remove();
+  }, [currentView]);
 
   React.useEffect(() => {
     setDispatch(dispatch);

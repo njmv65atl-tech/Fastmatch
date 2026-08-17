@@ -108,7 +108,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => setView(AppView.HOME)} style={styles.backBtn}>
-          <ArrowLeft color={colors.text} size={24} />
+          <ArrowLeft color={colors.textPrimary} size={24} />
         </TouchableOpacity>
         <Globe color={colors.primary} size={24} style={{ marginRight: 8 }} />
         <Text style={styles.headerTitle}>Global Network</Text>
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textPrimary,
   },
   subtitle: {
     color: colors.textPlaceholder,
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textPrimary,
     marginBottom: 4,
   },
   subtext: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textPrimary,
     textAlign: "center",
     marginBottom: 8,
   },
