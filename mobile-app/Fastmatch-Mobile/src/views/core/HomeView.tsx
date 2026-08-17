@@ -248,54 +248,56 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
 
             {/* Secondary Actions Grid */}
             <View style={styles.gridContainer}>
-              {/* Super Match Card */}
-              <TouchableOpacity 
-                style={[styles.gridCard, { backgroundColor: "rgba(245, 158, 11, 0.1)", borderColor: "rgba(245, 158, 11, 0.2)", borderWidth: 1 }]} 
-                onPress={async () => {
-                  const state = await NetInfo.fetch();
-                  if (state.isConnected) {
-                    if (user?.isPremium === 'premium') {
-                      setView(AppView.DISCOVER);
+              <View style={styles.gridRow}>
+                {/* Super Match Card */}
+                <TouchableOpacity 
+                  style={[styles.gridCardHalf, { backgroundColor: "rgba(245, 158, 11, 0.1)", borderColor: "rgba(245, 158, 11, 0.2)" }]} 
+                  onPress={async () => {
+                    const state = await NetInfo.fetch();
+                    if (state.isConnected) {
+                      if (user?.isPremium === 'premium') {
+                        setView(AppView.DISCOVER);
+                      } else {
+                        ShowAlertMessage("Super Match is a premium feature. Please upgrade.", popTypes.info);
+                        setView(AppView.SUBSCRIPTION);
+                      }
                     } else {
-                      ShowAlertMessage("Super Match is a premium feature. Please upgrade.", popTypes.info);
-                      setView(AppView.SUBSCRIPTION);
+                      ShowAlertMessage("Please check your internet connection", popTypes.error);
                     }
-                  } else {
-                    ShowAlertMessage("Please check your internet connection", popTypes.error);
-                  }
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.gridIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.2)" }]}>
-                  <Crown color={colors.gold} size={28} />
-                </View>
-                <Text style={styles.gridTitle}>Super Match</Text>
-                <Text style={styles.gridSubtitle}>Find who's online</Text>
-              </TouchableOpacity>
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.gridIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.2)" }]}>
+                    <Crown color={colors.gold} size={28} />
+                  </View>
+                  <Text style={styles.gridTitle}>Super Match</Text>
+                  <Text style={styles.gridSubtitle}>Find who's online</Text>
+                </TouchableOpacity>
 
-              {/* Global Network Card */}
-              <TouchableOpacity 
-                style={[styles.gridCard, { backgroundColor: "rgba(59, 130, 246, 0.1)", borderColor: "rgba(59, 130, 246, 0.2)", borderWidth: 1 }]} 
-                onPress={async () => {
-                  const state = await NetInfo.fetch();
-                  if (state.isConnected) {
-                    setView(AppView.GLOBAL_DISCOVERY);
-                  } else {
-                    ShowAlertMessage("Please check your internet connection", popTypes.error);
-                  }
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.gridIconWrap, { backgroundColor: "rgba(59, 130, 246, 0.2)" }]}>
-                  <Globe color="#3b82f6" size={28} />
-                </View>
-                <Text style={styles.gridTitle}>Global Network</Text>
-                <Text style={styles.gridSubtitle}>Browse all users</Text>
-              </TouchableOpacity>
+                {/* Global Network Card */}
+                <TouchableOpacity 
+                  style={[styles.gridCardHalf, { backgroundColor: "rgba(59, 130, 246, 0.1)", borderColor: "rgba(59, 130, 246, 0.2)" }]} 
+                  onPress={async () => {
+                    const state = await NetInfo.fetch();
+                    if (state.isConnected) {
+                      setView(AppView.GLOBAL_DISCOVERY);
+                    } else {
+                      ShowAlertMessage("Please check your internet connection", popTypes.error);
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.gridIconWrap, { backgroundColor: "rgba(59, 130, 246, 0.2)" }]}>
+                    <Globe color="#3b82f6" size={28} />
+                  </View>
+                  <Text style={styles.gridTitle}>Global Network</Text>
+                  <Text style={styles.gridSubtitle}>Browse all users</Text>
+                </TouchableOpacity>
+              </View>
 
               {/* Connection Requests Card */}
               <TouchableOpacity 
-                style={[styles.gridCard, { backgroundColor: "rgba(16, 185, 129, 0.1)", borderColor: "rgba(16, 185, 129, 0.2)", borderWidth: 1 }]} 
+                style={[styles.gridCardFull, { backgroundColor: "rgba(16, 185, 129, 0.1)", borderColor: "rgba(16, 185, 129, 0.2)" }]} 
                 onPress={async () => {
                   const state = await NetInfo.fetch();
                   if (state.isConnected) {
@@ -306,11 +308,13 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                 }}
                 activeOpacity={0.8}
               >
-                <View style={[styles.gridIconWrap, { backgroundColor: "rgba(16, 185, 129, 0.2)" }]}>
+                <View style={[styles.gridIconWrap, { backgroundColor: "rgba(16, 185, 129, 0.2)", marginBottom: 0 }]}>
                   <Inbox color="#10b981" size={28} />
                 </View>
-                <Text style={styles.gridTitle}>Requests</Text>
-                <Text style={styles.gridSubtitle}>Manage invites</Text>
+                <View style={{ marginLeft: 16, flex: 1 }}>
+                  <Text style={[styles.gridTitle, { textAlign: 'left' }]}>Connection Requests</Text>
+                  <Text style={[styles.gridSubtitle, { textAlign: 'left' }]}>View & manage your invites</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
@@ -542,6 +546,51 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textMuted,
     marginTop: 4,
+  },
+  gridContainer: {
+    marginTop: 16,
+    gap: 12,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  gridCardHalf: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  gridCardFull: {
+    width: "100%",
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  gridIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  gridTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  gridSubtitle: {
+    color: colors.textPlaceholder,
+    fontSize: 12,
+    textAlign: "center",
   },
   mainAction: {
     paddingHorizontal: 24,

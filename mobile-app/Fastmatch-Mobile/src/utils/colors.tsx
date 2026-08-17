@@ -3,6 +3,8 @@ export const colors = {
 
   white: "#ffffff",
   black: "#000000",
+  textPrimary: "#ffffff",
+  text: "#ffffff",
   textMuted: "#94a3b8",
   textPlaceholder: "#64748b",
   textSubtle: "#475569",
