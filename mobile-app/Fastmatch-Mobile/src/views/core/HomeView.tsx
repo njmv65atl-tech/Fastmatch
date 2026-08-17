@@ -181,7 +181,6 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-
               {user?.role === UserRole.PREMIUM && (
                 <View style={styles.premiumBadge1}>
                   <LinearGradient
@@ -191,11 +190,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                     style={styles.premiumBadge}
                   >
                     <View style={styles.premiumBadgeInner}>
-                      <Crown
-                        size={12}
-                        strokeWidth={2}
-                        color={colors.background}
-                      />
+                      <Crown size={12} strokeWidth={2} color={colors.background} />
                       <Text style={styles.premiumText}>PREMIUM</Text>
                     </View>
                   </LinearGradient>
@@ -211,10 +206,10 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
               <Text style={styles.heroSubtitle}>{HOME_TEXT.readyQuestion}</Text>
             </View>
-
           </View>
 
           <View style={styles.mainAction}>
+            {/* Primary Action */}
             <View style={styles.actionCard}>
               <View style={styles.iconWrap}>
                 <Video color={colors.primary} size={40} />
@@ -234,13 +229,13 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                 <Button
                   variant="primary"
                   onClick={async () => {
-                    const state = await NetInfo.fetch();   // ✅ one-time check, no listener
+                    const state = await NetInfo.fetch();
                     if (state.isConnected) {
-                    setView(AppView.MATCH_FILTERS);
+                      setView(AppView.MATCH_FILTERS);
                     } else {
-                    ShowAlertMessage("Please check your internet connection", popTypes.error);
-                     }  
-                    }}
+                      ShowAlertMessage("Please check your internet connection", popTypes.error);
+                    }
+                  }}
                 >
                   {HOME_TEXT.startMatching}
                 </Button>
@@ -249,79 +244,75 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               {onlineData?.data?.onlineCount !== undefined && (
                 <OnlineCounter count={onlineData.data.onlineCount} />
               )}
-              
             </View>
 
-            {/* Super Match Card */}
-            <TouchableOpacity 
-              style={[styles.actionCard, { marginTop: 16, backgroundColor: "rgba(245, 158, 11, 0.1)" }]} 
-              onPress={async () => {
-                const state = await NetInfo.fetch();
-                if (state.isConnected) {
-                  if (user?.isPremium === 'premium') {
-                    setView(AppView.DISCOVER);
+            {/* Secondary Actions Grid */}
+            <View style={styles.gridContainer}>
+              {/* Super Match Card */}
+              <TouchableOpacity 
+                style={[styles.gridCard, { backgroundColor: "rgba(245, 158, 11, 0.1)", borderColor: "rgba(245, 158, 11, 0.2)", borderWidth: 1 }]} 
+                onPress={async () => {
+                  const state = await NetInfo.fetch();
+                  if (state.isConnected) {
+                    if (user?.isPremium === 'premium') {
+                      setView(AppView.DISCOVER);
+                    } else {
+                      ShowAlertMessage("Super Match is a premium feature. Please upgrade.", popTypes.info);
+                      setView(AppView.SUBSCRIPTION);
+                    }
                   } else {
-                    ShowAlertMessage("Super Match is a premium feature. Please upgrade.", popTypes.info);
-                    setView(AppView.SUBSCRIPTION);
+                    ShowAlertMessage("Please check your internet connection", popTypes.error);
                   }
-                } else {
-                  ShowAlertMessage("Please check your internet connection", popTypes.error);
-                }
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={styles.iconWrap}>
-                <Crown color={colors.gold} size={40} />
-              </View>
-              <View style={styles.actionDesc}>
-                <Text style={styles.actionTitle}>Super Match</Text>
-                <Text style={styles.actionSubtitle}>Find who's online & send Super Requests</Text>
-              </View>
-            </TouchableOpacity>
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.gridIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.2)" }]}>
+                  <Crown color={colors.gold} size={28} />
+                </View>
+                <Text style={styles.gridTitle}>Super Match</Text>
+                <Text style={styles.gridSubtitle}>Find who's online</Text>
+              </TouchableOpacity>
 
-            {/* Global Network Card */}
-            <TouchableOpacity 
-              style={[styles.actionCard, { marginTop: 16, backgroundColor: "rgba(59, 130, 246, 0.1)" }]} 
-              onPress={async () => {
-                const state = await NetInfo.fetch();
-                if (state.isConnected) {
-                  setView(AppView.GLOBAL_DISCOVERY);
-                } else {
-                  ShowAlertMessage("Please check your internet connection", popTypes.error);
-                }
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.iconWrap, { backgroundColor: "rgba(59, 130, 246, 0.2)" }]}>
-                <Globe color="#3b82f6" size={40} />
-              </View>
-              <View style={styles.actionDesc}>
-                <Text style={styles.actionTitle}>Global Network</Text>
-                <Text style={styles.actionSubtitle}>Browse all users and connect</Text>
-              </View>
-            </TouchableOpacity>
+              {/* Global Network Card */}
+              <TouchableOpacity 
+                style={[styles.gridCard, { backgroundColor: "rgba(59, 130, 246, 0.1)", borderColor: "rgba(59, 130, 246, 0.2)", borderWidth: 1 }]} 
+                onPress={async () => {
+                  const state = await NetInfo.fetch();
+                  if (state.isConnected) {
+                    setView(AppView.GLOBAL_DISCOVERY);
+                  } else {
+                    ShowAlertMessage("Please check your internet connection", popTypes.error);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.gridIconWrap, { backgroundColor: "rgba(59, 130, 246, 0.2)" }]}>
+                  <Globe color="#3b82f6" size={28} />
+                </View>
+                <Text style={styles.gridTitle}>Global Network</Text>
+                <Text style={styles.gridSubtitle}>Browse all users</Text>
+              </TouchableOpacity>
 
-            {/* Connection Requests Card */}
-            <TouchableOpacity 
-              style={[styles.actionCard, { marginTop: 16, backgroundColor: "rgba(16, 185, 129, 0.1)" }]} 
-              onPress={async () => {
-                const state = await NetInfo.fetch();
-                if (state.isConnected) {
-                  setView(AppView.CONNECTION_REQUESTS);
-                } else {
-                  ShowAlertMessage("Please check your internet connection", popTypes.error);
-                }
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.iconWrap, { backgroundColor: "rgba(16, 185, 129, 0.2)" }]}>
-                <Inbox color="#10b981" size={40} />
-              </View>
-              <View style={styles.actionDesc}>
-                <Text style={styles.actionTitle}>Connection Requests</Text>
-                <Text style={styles.actionSubtitle}>View and accept incoming requests</Text>
-              </View>
-            </TouchableOpacity>
+              {/* Connection Requests Card */}
+              <TouchableOpacity 
+                style={[styles.gridCard, { backgroundColor: "rgba(16, 185, 129, 0.1)", borderColor: "rgba(16, 185, 129, 0.2)", borderWidth: 1 }]} 
+                onPress={async () => {
+                  const state = await NetInfo.fetch();
+                  if (state.isConnected) {
+                    setView(AppView.CONNECTION_REQUESTS);
+                  } else {
+                    ShowAlertMessage("Please check your internet connection", popTypes.error);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.gridIconWrap, { backgroundColor: "rgba(16, 185, 129, 0.2)" }]}>
+                  <Inbox color="#10b981" size={28} />
+                </View>
+                <Text style={styles.gridTitle}>Requests</Text>
+                <Text style={styles.gridSubtitle}>Manage invites</Text>
+              </TouchableOpacity>
+            </View>
           </View>
           {user?.isPremium !== 'premium' && (
             <View style={styles.upgradeBorderWrapper}>
