@@ -11,6 +11,7 @@ import { responseEncryptor } from '@config/decryptor';
 import { User } from '@models/user';
 import { UserGift } from '@models/userGift';
 import { FriendModel } from '@models/friend';
+import { ChatMessageModel } from '@models/chat/schema';
 import { Transaction } from '@models/transaction';
 import { RekognitionClient, DetectModerationLabelsCommand } from "@aws-sdk/client-rekognition";
 import notificationServices from '@services/notification.services';
@@ -522,6 +523,18 @@ class UserController extends ResponseHandler {
 
             if (!request) return res.status(404).send(responseEncryptor(req, false, "Request not found"));
 
+            // Insert initial message into Chat if it exists
+            if (request.message && request.message.trim().length > 0) {
+                await ChatMessageModel.create({
+                    sender: request.requester,
+                    receiver: currentUserId,
+                    message: request.message,
+                    messageType: 'text',
+                    isRead: false,
+                    deliveredAt: new Date()
+                });
+            }
+
             // Emit socket event to the requester that the request was accepted
             (req as any).io.to(request.requester.toString()).emit('friend-request-accepted', { recipientId: currentUserId });
 
@@ -682,9 +695,17 @@ class UserController extends ResponseHandler {
             const currentUser = await User.findById(currentUserId).select('blockedUsers');
             const blockedUsers = currentUser?.blockedUsers || [];
 
-            // Fetch all users except current user and blocked users
+            // Find all existing friends and pending requests
+            const existingConnections = await FriendModel.find({
+                $or: [{ requester: currentUserId }, { recipient: currentUserId }]
+            });
+            const connectedUserIds = existingConnections.map(f => 
+                f.requester.toString() === currentUserId.toString() ? f.recipient : f.requester
+            );
+
+            // Fetch all users except current user, blocked users, and already connected users
             const query = {
-                _id: { $ne: currentUserId, $nin: blockedUsers },
+                _id: { $ne: currentUserId, $nin: [...blockedUsers, ...connectedUserIds] },
                 status: 'active'
             };
 

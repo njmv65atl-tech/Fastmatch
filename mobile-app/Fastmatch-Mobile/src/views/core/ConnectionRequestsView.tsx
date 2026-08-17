@@ -17,17 +17,21 @@ import {
   useAcceptFriendRequestMutation,
   useRejectFriendRequestMutation,
 } from "../../redux/services/auth";
-import { BASE_URL } from "../../redux/services/apiEndpoint";
+import { IMAGE_URL } from "../../config/env";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 
 export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }> = ({
   setView,
 }) => {
-  const { data, isLoading } = useFriendRequestsQuery({});
+  const { data, isLoading, refetch } = useFriendRequestsQuery({});
   const [acceptRequest, { isLoading: isAccepting }] = useAcceptFriendRequestMutation();
   const [rejectRequest, { isLoading: isRejecting }] = useRejectFriendRequestMutation();
 
   const requests = data?.data || [];
+
+  React.useEffect(() => {
+    refetch();
+  }, []);
 
   const handleAccept = async (requestId: string) => {
     try {
@@ -57,7 +61,7 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
         <View style={styles.headerRow}>
           {requester.profilePicture ? (
             <Image
-              source={{ uri: `${BASE_URL}/uploads/${requester.profilePicture}` }}
+              source={{ uri: `${IMAGE_URL}${requester.profilePicture}` }}
               style={styles.avatar}
             />
           ) : (

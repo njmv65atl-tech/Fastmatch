@@ -20,7 +20,7 @@ import {
   useGetGlobalUsersQuery,
   useSendFriendRequestMutation,
 } from "../../redux/services/auth";
-import { BASE_URL } from "../../redux/services/apiEndpoint";
+import { IMAGE_URL } from "../../config/env";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 
 export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = ({
@@ -73,7 +73,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
       <View style={styles.imageContainer}>
         {item.profilePicture ? (
           <Image
-            source={{ uri: `${BASE_URL}/uploads/${item.profilePicture}` }}
+            source={{ uri: `${IMAGE_URL}${item.profilePicture}` }}
             style={styles.image}
           />
         ) : (
@@ -154,7 +154,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             <View style={{ alignItems: "center", marginBottom: 16 }}>
               {selectedUser?.profilePicture ? (
                 <Image
-                  source={{ uri: `${BASE_URL}/uploads/${selectedUser.profilePicture}` }}
+                  source={{ uri: `${IMAGE_URL}${selectedUser.profilePicture}` }}
                   style={styles.modalImage}
                 />
               ) : (
