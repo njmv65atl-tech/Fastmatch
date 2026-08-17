@@ -38,4 +38,6 @@ export const apiEndPoints = {
   claimDailyReward: "user/claim-daily-reward",
   walletHistory: "user/wallet/history",
   onlineCount: "match/online-count",
+  globalUsers: "user/global-users",
+  rejectFriendRequest: "user/reject-friend-request",
 };

@@ -8,3 +8,5 @@ export * from './core/DiscoverView';
 export * from './core/ProfileView';
 export * from './core/MyGiftsView';
 export * from './core/MonetizationView';
+export * from './core/GlobalDiscoveryView';
+export * from './core/ConnectionRequestsView';

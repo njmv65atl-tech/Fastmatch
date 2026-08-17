@@ -10,7 +10,7 @@ import {
   MobileContainer,
 } from "../../components/UIComponents";
 import { AppView, User, UserRole } from "../../types";
-import { Crown, Video, Zap, AlertTriangle } from "lucide-react-native";
+import { Crown, Video, Zap, AlertTriangle, Globe, Inbox } from "lucide-react-native";
 import {
   ScrollView,
   StyleSheet,
@@ -252,7 +252,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               
             </View>
 
-            {/* Discover Card for Super Match */}
+            {/* Super Match Card */}
             <TouchableOpacity 
               style={[styles.actionCard, { marginTop: 16, backgroundColor: "rgba(245, 158, 11, 0.1)" }]} 
               onPress={async () => {
@@ -261,7 +261,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                   if (user?.isPremium === 'premium') {
                     setView(AppView.DISCOVER);
                   } else {
-                    ShowAlertMessage("Discover Matches is a premium feature. Please upgrade.", popTypes.info);
+                    ShowAlertMessage("Super Match is a premium feature. Please upgrade.", popTypes.info);
                     setView(AppView.SUBSCRIPTION);
                   }
                 } else {
@@ -274,8 +274,52 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                 <Crown color={colors.gold} size={40} />
               </View>
               <View style={styles.actionDesc}>
-                <Text style={styles.actionTitle}>Discover Matches</Text>
+                <Text style={styles.actionTitle}>Super Match</Text>
                 <Text style={styles.actionSubtitle}>Find who's online & send Super Requests</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Global Network Card */}
+            <TouchableOpacity 
+              style={[styles.actionCard, { marginTop: 16, backgroundColor: "rgba(59, 130, 246, 0.1)" }]} 
+              onPress={async () => {
+                const state = await NetInfo.fetch();
+                if (state.isConnected) {
+                  setView(AppView.GLOBAL_DISCOVERY);
+                } else {
+                  ShowAlertMessage("Please check your internet connection", popTypes.error);
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.iconWrap, { backgroundColor: "rgba(59, 130, 246, 0.2)" }]}>
+                <Globe color="#3b82f6" size={40} />
+              </View>
+              <View style={styles.actionDesc}>
+                <Text style={styles.actionTitle}>Global Network</Text>
+                <Text style={styles.actionSubtitle}>Browse all users and connect</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Connection Requests Card */}
+            <TouchableOpacity 
+              style={[styles.actionCard, { marginTop: 16, backgroundColor: "rgba(16, 185, 129, 0.1)" }]} 
+              onPress={async () => {
+                const state = await NetInfo.fetch();
+                if (state.isConnected) {
+                  setView(AppView.CONNECTION_REQUESTS);
+                } else {
+                  ShowAlertMessage("Please check your internet connection", popTypes.error);
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.iconWrap, { backgroundColor: "rgba(16, 185, 129, 0.2)" }]}>
+                <Inbox color="#10b981" size={40} />
+              </View>
+              <View style={styles.actionDesc}>
+                <Text style={styles.actionTitle}>Connection Requests</Text>
+                <Text style={styles.actionSubtitle}>View and accept incoming requests</Text>
               </View>
             </TouchableOpacity>
           </View>

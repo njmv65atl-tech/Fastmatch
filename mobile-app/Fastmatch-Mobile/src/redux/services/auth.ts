@@ -115,6 +115,30 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    rejectFriendRequest: builder.mutation({
+      query: (body) => ({
+        url: apiEndPoints.rejectFriendRequest,
+        method: "POST",
+        body,
+        headers: header1,
+      }),
+      async onQueryStarted({ requestId }, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          authApi.util.updateQueryData('friendRequests', undefined, (draft: any) => {
+            if (draft?.data) draft.data = draft.data.filter((r: any) => r._id !== requestId);
+          })
+        );
+        try { await queryFulfilled; } catch { patchResult.undo(); }
+      }
+    }),
+    getGlobalUsers: builder.query({
+      query: (params) => ({
+        url: apiEndPoints.globalUsers,
+        method: "GET",
+        params,
+        headers: header1,
+      }),
+    }),
     sentFriendRequests: builder.query({
       query: () => ({
         url: apiEndPoints.sentFriendRequests,
@@ -228,4 +252,6 @@ export const {
   useClaimDailyRewardMutation,
   useWalletHistoryQuery,
   useOnlineCountQuery,
+  useRejectFriendRequestMutation,
+  useGetGlobalUsersQuery,
 } = authApi;

@@ -48,6 +48,8 @@ import {
   DiscoverView,
   MyGiftsView,
   MonetizationView,
+  GlobalDiscoveryView,
+  ConnectionRequestsView,
 } from "./src/views/CoreViews";
 import { IMAGE_URL } from "./src/config/env";
 import { Provider, useDispatch, useSelector } from "react-redux";
@@ -485,6 +487,12 @@ const App: React.FC = () => {
 
       case AppView.FRIENDS:
         return <FriendsView setView={handleSetView} />;
+
+      case AppView.GLOBAL_DISCOVERY:
+        return <GlobalDiscoveryView setView={setCurrentView} />;
+
+      case AppView.CONNECTION_REQUESTS:
+        return <ConnectionRequestsView setView={setCurrentView} />;
 
       case AppView.DISCOVER:
         return <DiscoverView setView={setCurrentView} />;

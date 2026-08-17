@@ -5,6 +5,7 @@ const FriendSchema = new Schema<FriendInterface>({
     requester: { type: Schema.Types.ObjectId, ref: 'users', required: true, index: true },
     recipient: { type: Schema.Types.ObjectId, ref: 'users', required: true, index: true },
     status: { type: String, enum: ['pending', 'accepted', 'declined'], default: 'pending' },
+    message: { type: String, maxlength: 200, default: '' },
 }, {
     timestamps: true
 });

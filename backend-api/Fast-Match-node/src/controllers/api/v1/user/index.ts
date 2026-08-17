@@ -476,16 +476,22 @@ class UserController extends ResponseHandler {
     async sendFriendRequest(req: Request, res: Response) {
         try {
             const currentUserId = req.user._id;
-            const { targetUserId } = req.body;
+            const { targetUserId, message } = req.body;
             if (!targetUserId) return res.status(400).send(responseEncryptor(req, false, "Target user ID required"));
+
+            const currentUser = await User.findById(currentUserId).select('displayName role isPremium');
+            if (!currentUser) return res.status(404).send(responseEncryptor(req, false, "User not found"));
+
+            if (currentUser.isPremium !== 'premium' && currentUser.role !== 'admin') {
+                return res.status(403).send(responseEncryptor(req, false, "You must be a premium user to send a connection request."));
+            }
 
             const existing = await FriendModel.findOne({ requester: currentUserId, recipient: targetUserId });
             if (existing) return res.status(400).send(responseEncryptor(req, false, "Request already sent"));
 
-            const request = await FriendModel.create({ requester: currentUserId, recipient: targetUserId });
+            const request = await FriendModel.create({ requester: currentUserId, recipient: targetUserId, message: message || '' });
             
             // Send notification to recipient
-            const currentUser = await User.findById(currentUserId).select('displayName');
             if (currentUser) {
                 await notificationServices.sendNotification(
                     new Types.ObjectId(targetUserId),
@@ -662,6 +668,62 @@ class UserController extends ResponseHandler {
             return res.status(200).send(responseEncryptor(req, true, "Wallet history fetched", history));
         } catch (error: any) {
             console.error("Wallet History Error:", error);
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async getGlobalUsers(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const page = parseInt(req.query.page as string) || 1;
+            const limit = parseInt(req.query.limit as string) || 20;
+            const skip = (page - 1) * limit;
+
+            const currentUser = await User.findById(currentUserId).select('blockedUsers');
+            const blockedUsers = currentUser?.blockedUsers || [];
+
+            // Fetch all users except current user and blocked users
+            const query = {
+                _id: { $ne: currentUserId, $nin: blockedUsers },
+                status: 'active'
+            };
+
+            const users = await User.find(query)
+                .select('displayName profilePicture isOnline lastActive age gender location')
+                .sort({ lastActive: -1 })
+                .skip(skip)
+                .limit(limit);
+            
+            const total = await User.countDocuments(query);
+
+            return res.status(200).send(responseEncryptor(req, true, "Global users fetched", {
+                users,
+                total,
+                page,
+                pages: Math.ceil(total / limit)
+            }));
+        } catch (error: any) {
+            console.error("Global Users Error:", error);
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async rejectFriendRequest(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const { requestId } = req.body;
+            if (!requestId) return res.status(400).send(responseEncryptor(req, false, "Request ID required"));
+
+            const request = await FriendModel.findOneAndDelete({
+                _id: requestId,
+                recipient: currentUserId,
+                status: 'pending'
+            });
+
+            if (!request) return res.status(404).send(responseEncryptor(req, false, "Request not found or already processed"));
+
+            return res.status(200).send(responseEncryptor(req, true, "Friend request rejected"));
+        } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
     }
