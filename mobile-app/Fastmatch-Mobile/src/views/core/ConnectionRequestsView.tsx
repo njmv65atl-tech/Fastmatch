@@ -18,7 +18,7 @@ import {
   useRejectFriendRequestMutation,
 } from "../../redux/services/auth";
 import { BASE_URL } from "../../redux/services/apiEndpoint";
-import { ShowAlertMessage, popTypes } from "../../utils/ShowAlertMessage";
+import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 
 export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }> = ({
   setView,
