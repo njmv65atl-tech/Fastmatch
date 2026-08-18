@@ -365,12 +365,12 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
 
   React.useEffect(() => {
     const handleTyping = (data: any) => {
-      if (data.userId === userId) {
+      if (data.senderId === userId) {
         setIsTyping(true);
       }
     };
     const handleStopTyping = (data: any) => {
-      if (data.userId === userId) {
+      if (data.senderId === userId) {
         setIsTyping(false);
       }
     };

@@ -748,6 +748,48 @@ class UserController extends ResponseHandler {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
     }
+
+    async toggleFavorite(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const { targetUserId } = req.body;
+            if (!targetUserId) return res.status(400).send(responseEncryptor(req, false, "Target User ID required"));
+
+            const currentUser = await User.findById(currentUserId);
+            if (!currentUser) throw new Error("User not found");
+
+            const favIndex = currentUser.favoriteUsers?.indexOf(targetUserId);
+            let isFavorite = false;
+            if (favIndex > -1) {
+                currentUser.favoriteUsers.splice(favIndex, 1);
+            } else {
+                currentUser.favoriteUsers = currentUser.favoriteUsers || [];
+                currentUser.favoriteUsers.push(targetUserId);
+                isFavorite = true;
+            }
+            await currentUser.save();
+
+            return res.status(200).send(responseEncryptor(req, true, isFavorite ? "Added to favorites" : "Removed from favorites", { isFavorite }));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async getFavorites(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const currentUser = await User.findById(currentUserId).populate({
+                path: 'favoriteUsers',
+                select: 'fullName displayName profilePicture isOnline lastActive gender age location'
+            });
+
+            if (!currentUser) throw new Error("User not found");
+
+            return res.status(200).send(responseEncryptor(req, true, "Favorites fetched", currentUser.favoriteUsers || []));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
 }
 
 export default new UserController();

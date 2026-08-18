@@ -11,7 +11,7 @@ import {
   TextInput,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { ArrowLeft, Globe, Send, AlertTriangle } from "lucide-react-native";
+import { ArrowLeft, Globe, Heart } from "lucide-react-native";
 import { MobileContainer, Button } from "../../components/UIComponents";
 import { AppView } from "../../types";
 import { colors } from "../../utils/colors";
@@ -19,6 +19,8 @@ import { userSelector } from "../../redux/slices/persistedSlice";
 import {
   useGetGlobalUsersQuery,
   useSendFriendRequestMutation,
+  useToggleFavoriteMutation,
+  useGetFavoritesQuery,
 } from "../../redux/services/auth";
 import { IMAGE_URL } from "../../config/env";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
@@ -29,17 +31,29 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   const user = useSelector(userSelector);
   
   const [page, setPage] = React.useState(1);
-  const { data, isLoading, isFetching } = useGetGlobalUsersQuery({
+  const { data: globalUsersData, isLoading } = useGetGlobalUsersQuery({
     page,
     limit: 30,
   });
   
+  const { data: favData, refetch: refetchFav } = useGetFavoritesQuery({});
   const [sendFriendRequest, { isLoading: isSending }] = useSendFriendRequestMutation();
+  const [toggleFavorite] = useToggleFavoriteMutation();
 
   const [selectedUser, setSelectedUser] = React.useState<any>(null);
   const [message, setMessage] = React.useState("");
 
-  const users = data?.data?.users || [];
+  const users = globalUsersData?.data?.users || [];
+
+  const handleFavoriteToggle = async () => {
+    if (!selectedUser) return;
+    try {
+      await toggleFavorite({ targetUserId: selectedUser._id }).unwrap();
+      refetchFav();
+    } catch (error) {
+      console.log("Failed to toggle favorite", error);
+    }
+  };
 
   const handleSendRequest = async () => {
     if (!selectedUser) return;
@@ -166,7 +180,16 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
               )}
             </View>
             
-            <Text style={styles.modalTitle}>Connect with {selectedUser?.displayName}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <Text style={styles.modalTitle}>Connect with {selectedUser?.displayName}</Text>
+              <TouchableOpacity onPress={handleFavoriteToggle}>
+                <Heart 
+                  color={colors.primary} 
+                  fill={favData?.data?.some((f: any) => f._id === selectedUser?._id) ? colors.primary : "transparent"} 
+                  size={24} 
+                />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.modalSubtitle}>Include a personal message with your request (optional).</Text>
             
             <TextInput

@@ -40,4 +40,6 @@ export const apiEndPoints = {
   onlineCount: "match/online-count",
   globalUsers: "user/global-users",
   rejectFriendRequest: "user/reject-friend-request",
+  toggleFavorite: "user/favorite",
+  getFavorites: "user/favorites",
 };

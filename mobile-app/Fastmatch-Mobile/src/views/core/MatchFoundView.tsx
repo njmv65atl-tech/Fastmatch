@@ -26,6 +26,7 @@ import { saveUser } from "../../utils/storage";
 import { IMAGE_URL } from "../../config/env";
 import { useDispatch } from "react-redux";
 import { pushSkippedUser } from "../../redux/slices/globalSlice";
+import { useRateMatchMutation } from "../../redux/services/auth";
 
 const IMAGE_BASE_URL = IMAGE_URL;
 
@@ -58,6 +59,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
   const [buttonState, setButtonState] = useState<ButtonState>("Request");
   const [buttonClr, setButtonClr] = useState<ButtonClr>("#5B5FEF");
   const [rating, setRating] = useState<number>(0);
+  const [rateMatch] = useRateMatchMutation();
   const [ratingCount, setRatingCount] = useState<number>(0);
   const [matchInterests, setMatchInterests] = useState<string[]>([]);
   const [showAllInterests, setShowAllInterests] = useState(false);
@@ -393,12 +395,10 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
               onPress={async () => {
                 if (givenRating > 0 && lastMatchId) {
                   try {
-                    await fetch('/api/v1/match/rate', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${((socket.auth as any)?.token || '').split(' ')[1]}` },
-                      body: JSON.stringify({ matchId: lastMatchId, rating: givenRating })
-                    });
-                  } catch(e) {}
+                    await rateMatch({ matchId: lastMatchId, rating: givenRating }).unwrap();
+                  } catch(e) {
+                    console.log("Failed to rate match:", e);
+                  }
                 }
                 setRatingModalVisible(false);
                 // Trigger searching after modal closes

@@ -139,6 +139,21 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    toggleFavorite: builder.mutation({
+      query: (body) => ({
+        url: apiEndPoints.toggleFavorite,
+        method: "POST",
+        body,
+        headers: header1,
+      }),
+    }),
+    getFavorites: builder.query({
+      query: () => ({
+        url: apiEndPoints.getFavorites,
+        method: "GET",
+        headers: header1,
+      }),
+    }),
     sentFriendRequests: builder.query({
       query: () => ({
         url: apiEndPoints.sentFriendRequests,
@@ -254,4 +269,6 @@ export const {
   useOnlineCountQuery,
   useRejectFriendRequestMutation,
   useGetGlobalUsersQuery,
+  useToggleFavoriteMutation,
+  useGetFavoritesQuery,
 } = authApi;

@@ -54,5 +54,7 @@ router.get('/check-friend-status/:userId', verifyToken, tryCatchMiddleware(UserC
 router.post('/moderate-frame', verifyToken, tryCatchMiddleware(UserController.moderateFrame))
 router.get('/global-users', verifyToken, tryCatchMiddleware(UserController.getGlobalUsers))
 router.post('/reject-friend-request', verifyToken, tryCatchMiddleware(UserController.rejectFriendRequest))
+router.post('/favorite', verifyToken, tryCatchMiddleware(UserController.toggleFavorite))
+router.get('/favorites', verifyToken, tryCatchMiddleware(UserController.getFavorites))
 
 export default router;

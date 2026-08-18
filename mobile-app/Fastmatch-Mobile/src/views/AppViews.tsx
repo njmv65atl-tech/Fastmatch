@@ -1,4 +1,4 @@
-export * from "./app/AdminDashboard";
+
 export * from "./app/WalletView";
 export * from "./app/SubscriptionView";
 export * from "./app/ChatDetailView";
@@ -7,3 +7,4 @@ export * from "./app/SettingsView";
 export * from "./app/Privacy";
 export * from "./app/TermsOfService";
 export * from "./app/FriendsView";
+export * from "./app/FavoritesView";

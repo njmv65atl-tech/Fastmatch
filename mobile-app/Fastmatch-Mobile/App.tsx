@@ -1,8 +1,6 @@
-
 import * as React from "react";
 
 import {
-  AdminDashboard,
   ChatDetailView,
   ChatInboxView,
   Privacy,
@@ -11,6 +9,8 @@ import {
   TermsOfService,
   WalletView,
   FriendsView,
+  GlobalDiscoveryView,
+  FavoritesView,
 } from "./src/views/AppViews";
 import {
   Alert,
@@ -521,8 +521,7 @@ const App: React.FC = () => {
           />
         );
 
-      case AppView.ADMIN_DASHBOARD:
-        return <AdminDashboard setView={setCurrentView} />;
+
       
       case AppView.WALLET:
         return <WalletView setView={setCurrentView} />;
@@ -532,6 +531,9 @@ const App: React.FC = () => {
 
       case AppView.FRIENDS:
         return <FriendsView setView={handleSetView} />;
+
+      case AppView.FAVORITES:
+        return <FavoritesView setView={setCurrentView} />;
 
       case AppView.GLOBAL_DISCOVERY:
         return <GlobalDiscoveryView setView={setCurrentView} />;

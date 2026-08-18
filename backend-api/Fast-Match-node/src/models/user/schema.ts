@@ -66,6 +66,11 @@ export const UserSchema = new Schema<UserInterface>({
         ref: 'users',
         default: []
     },
+    favoriteUsers: {
+        type: [Schema.Types.ObjectId],
+        ref: 'users',
+        default: []
+    },
     age: stringType(false),
     location: stringType(false),
     language: stringType(false),

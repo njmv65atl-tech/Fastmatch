@@ -25,6 +25,7 @@ import {
   Settings,
   Info,
   Gift,
+  Heart,
 } from "lucide-react-native";
 import { AppIcon } from "../../assets/icons";
 import { getImageUrl, ShowAlertMessage , popTypes  } from "../../helpers/commonFunctions";
@@ -231,6 +232,26 @@ export const SettingsView: React.FC<SettingsProps> = ({
                     <Gift size={20} color="#EC4899" />
                   </View>
                   <Text style={styles.menuText}>My Gifts</Text>
+                </View>
+
+                <ChevronRight size={18} color="#475569" />
+              </View>
+            </Pressable>
+
+            {/* Favorites Button */}
+            <Pressable
+              onPress={() => setView(AppView.FAVORITES)}
+              style={({ pressed }) => [
+                styles.menuWrapper,
+                pressed && styles.slatePressed,
+              ]}
+            >
+              <View style={styles.slateMenuItem}>
+                <View style={styles.leftSection}>
+                  <View style={styles.slateIconBox}>
+                    <Heart size={20} color="#F43F5E" />
+                  </View>
+                  <Text style={styles.menuText}>Favorites</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />

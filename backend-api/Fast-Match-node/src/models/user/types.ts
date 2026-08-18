@@ -27,6 +27,7 @@ export interface UserInterface extends Document {
     deviceName?: string,
     platform?: 'android' | 'ios',
     blockedUsers: any[],
+    favoriteUsers: any[],
     age?: string,
     location?: string,
     language?: string,
