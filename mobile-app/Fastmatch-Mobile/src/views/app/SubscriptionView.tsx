@@ -36,7 +36,7 @@ export const SubscriptionView: React.FC<{
     "Unlimited Video Calls",
     "Filter matches by Gender, Age & Location",
     "Unlimited Skips & Rewinds",
-    "Ad-free Experience",
+    "Global Network Access",
     "Priority VIP Matching",
   ];
 

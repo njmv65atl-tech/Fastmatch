@@ -161,7 +161,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    paddingBottom: 60,
+    paddingBottom: 100,
   },
   balanceCard: {
     borderRadius: 20,

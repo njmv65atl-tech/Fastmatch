@@ -294,7 +294,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 24,
-    paddingBottom: 60,
+    paddingBottom: 100,
   },
   menuText: {
     fontWeight: "500",

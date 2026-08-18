@@ -87,7 +87,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           title={MATCH_FILTERS_TEXT.pageTitle}
           onBack={() => setView(AppView.HOME)}
         />
-        <ScrollView style={styles.filterContent} contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView style={styles.filterContent} contentContainerStyle={{ paddingBottom: 100 }}>
           
           {/* GENDER SECTION */}
           <View style={styles.filterSection}>

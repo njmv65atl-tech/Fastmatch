@@ -314,6 +314,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: scale(15),
+    paddingBottom: 100,
   },
   userCard: {
     flexDirection: "row",

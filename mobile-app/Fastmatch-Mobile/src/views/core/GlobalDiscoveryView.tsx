@@ -73,7 +73,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
       <View style={styles.imageContainer}>
         {item.profilePicture ? (
           <Image
-            source={{ uri: `${IMAGE_URL}${item.profilePicture}` }}
+            source={{ uri: `${IMAGE_URL}${item.profilePicture}`, cache: 'force-cache' }}
             style={styles.image}
           />
         ) : (
@@ -154,7 +154,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             <View style={{ alignItems: "center", marginBottom: 16 }}>
               {selectedUser?.profilePicture ? (
                 <Image
-                  source={{ uri: `${IMAGE_URL}${selectedUser.profilePicture}` }}
+                  source={{ uri: `${IMAGE_URL}${selectedUser.profilePicture}`, cache: 'force-cache' }}
                   style={styles.modalImage}
                 />
               ) : (
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   list: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   row: {
     justifyContent: "space-between",

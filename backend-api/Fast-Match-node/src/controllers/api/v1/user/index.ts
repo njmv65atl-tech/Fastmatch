@@ -711,7 +711,7 @@ class UserController extends ResponseHandler {
 
             const users = await User.find(query)
                 .select('displayName profilePicture isOnline lastActive age gender location')
-                .sort({ lastActive: -1 })
+                .sort({ isOnline: -1, lastActive: -1 })
                 .skip(skip)
                 .limit(limit);
             

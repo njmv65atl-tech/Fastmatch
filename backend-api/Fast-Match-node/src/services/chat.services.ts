@@ -1,5 +1,6 @@
 import { ChatMessageModel } from '@models/chat/schema';
 import { MatchHistory } from '@models/matchHistory';
+import { FriendModel } from '@models/friend';
 import { User } from '@models/user';
 import { Types } from 'mongoose';
 import notificationServices from './notification.services';
@@ -14,13 +15,33 @@ class ChatService {
         const userIdStr = userId.toString();
 
         // 1. Find matches that were accepted (call ongoing) or completed (call ended)
-        const connections = await MatchHistory.find({
+        const matchConnections = await MatchHistory.find({
             $or: [{ user1: userId }, { user2: userId }],
             matchStatus: { $in: ['accepted', 'completed'] }
         })
             .populate('user1 user2', 'displayName fullName profilePicture isOnline gender isVerified blockedUsers age trustScore ratingCount totalRatingScore lastActive updatedAt')
             .sort({ updatedAt: -1 })
             .lean();
+
+        // 1b. Find friends that are accepted
+        const friendConnectionsRaw = await FriendModel.find({
+            $or: [{ requester: userId }, { recipient: userId }],
+            status: 'accepted'
+        })
+            .populate('requester recipient', 'displayName fullName profilePicture isOnline gender isVerified blockedUsers age trustScore ratingCount totalRatingScore lastActive updatedAt')
+            .sort({ updatedAt: -1 })
+            .lean();
+            
+        // Map FriendModel structure to mimic MatchHistory structure so the rest of the logic works unmodified
+        const friendConnections = friendConnectionsRaw.map(f => ({
+            _id: f._id,
+            user1: f.requester,
+            user2: f.recipient,
+            createdAt: f.createdAt,
+            updatedAt: f.updatedAt
+        }));
+
+        const connections = [...matchConnections, ...friendConnections];
 
         // 2. Fetch current user's blocked lists
         const currentUser = await User.findById(userId).select('blockedUsers blockedCalls').lean();

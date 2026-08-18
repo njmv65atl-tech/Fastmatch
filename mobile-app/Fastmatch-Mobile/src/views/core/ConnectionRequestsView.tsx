@@ -61,7 +61,7 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
         <View style={styles.headerRow}>
           {requester.profilePicture ? (
             <Image
-              source={{ uri: `${IMAGE_URL}${requester.profilePicture}` }}
+              source={{ uri: `${IMAGE_URL}${requester.profilePicture}`, cache: 'force-cache' }}
               style={styles.avatar}
             />
           ) : (
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   list: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   card: {
     backgroundColor: colors.surface,
