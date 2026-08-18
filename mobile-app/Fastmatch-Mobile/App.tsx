@@ -9,7 +9,6 @@ import {
   TermsOfService,
   WalletView,
   FriendsView,
-  GlobalDiscoveryView,
   FavoritesView,
 } from "./src/views/AppViews";
 import {
