@@ -241,8 +241,6 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         type: "image/png",
         name: profileImage.split("/").pop(),
       } as any);
-    } else if (user?.profilePicture) {
-      formData.append("profilePicture", user.profilePicture);
     }
 
     managerApiCall(

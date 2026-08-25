@@ -24,6 +24,8 @@ router.get('/dashboard-stats', verifyAdminToken, cacheMiddleware(300), adminCont
 router.get('/users', verifyAdminToken, adminController.getUsers);
 router.patch('/update-user/:id', verifyAdminToken, adminController.updateUserDetails);
 router.delete('/delete-user/:id', verifyAdminToken, adminController.deleteTargetUser);
+router.post('/recover-user/:id', verifyAdminToken, adminController.recoverTargetUser);
+router.delete('/hard-delete-user/:id', verifyAdminToken, adminController.hardDeleteTargetUser);
 router.post('/ban-user/:id', verifyAdminToken, adminController.banUser);
 router.post('/unban-user/:id', verifyAdminToken, adminController.unbanUser);
 

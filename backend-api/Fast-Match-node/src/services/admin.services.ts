@@ -117,6 +117,14 @@ class AdminService {
     }
 
     async deleteUser(_id: string) {
+        return await adminRepos.updateUserStatus(_id, { deletedByAdminAt: new Date() });
+    }
+
+    async recoverUser(_id: string) {
+        return await adminRepos.updateUserStatus(_id, { deletedByAdminAt: null });
+    }
+
+    async hardDeleteUser(_id: string) {
         return await adminRepos.deleteUser(_id);
     }
 

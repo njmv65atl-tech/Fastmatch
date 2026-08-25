@@ -100,6 +100,7 @@ export const UserSchema = new Schema<UserInterface>({
         userId: { type: Schema.Types.ObjectId, ref: 'users' },
         skippedAt: { type: Date, default: Date.now }
     }],
+    deletedByAdminAt: { type: Date, default: null },
     walletBalance: { type: Number, default: 0 },
     trustScore: { type: Number, default: 100 },
     lastRewardClaimedAt: { type: Date },

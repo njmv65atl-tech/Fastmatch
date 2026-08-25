@@ -66,7 +66,13 @@ export const unbanUser = (userId) =>
   apiMethods.POST(`admin/unban-user/${userId}`, {}, headers);
 
 export const deleteUser = (userId) =>
-  apiMethods.DELETE(`admin/users/${userId}`, {}, headers);
+  apiMethods.DELETE(`admin/delete-user/${userId}`, {}, headers);
+
+export const recoverUser = (userId) =>
+  apiMethods.POST(`admin/recover-user/${userId}`, {}, headers);
+
+export const hardDeleteUser = (userId) =>
+  apiMethods.DELETE(`admin/hard-delete-user/${userId}`, {}, headers);
 
 export const getReports = (data) =>
   apiMethods.GET("admin/reports", data, headers);

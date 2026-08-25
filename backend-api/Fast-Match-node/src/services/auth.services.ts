@@ -112,6 +112,10 @@ class AuthService {
             throw new Error(message.invalidPassOrEmail);
         }
 
+        if (user.isBanned) {
+            throw new Error("You got blocked by admin, if you think this is a mistake contact admin.");
+        }
+
         if (!user.isVerified) {
             const error: any = new Error(message.invalidPassOrEmail);
             error.status = 403;

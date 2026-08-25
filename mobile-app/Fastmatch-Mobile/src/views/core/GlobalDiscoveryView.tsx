@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import { useSelector } from "react-redux";
 import { ArrowLeft, Globe, Heart } from "lucide-react-native";
@@ -31,7 +32,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   const user = useSelector(userSelector);
   
   const [page, setPage] = React.useState(1);
-  const { data: globalUsersData, isLoading } = useGetGlobalUsersQuery({
+  const { data: globalUsersData, isLoading, refetch: refetchGlobalUsers, isFetching } = useGetGlobalUsersQuery({
     page,
     limit: 30,
   });
@@ -144,6 +145,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={refetchGlobalUsers} />
+          }
           renderItem={renderUser}
           ListEmptyComponent={
             <Text style={styles.emptyText}>No users found.</Text>

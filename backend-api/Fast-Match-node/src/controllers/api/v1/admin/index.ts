@@ -61,7 +61,19 @@ export const updateUserDetails = tryCatchMiddleware(async (req: Request, res: Re
 export const deleteTargetUser = tryCatchMiddleware(async (req: Request, res: Response) => {
     const { id } = req.params;
     await adminServices.deleteUser(id as string);
-    res.status(constants.successCode).json(responseEncryptor(req, true, 'User deleted successfully'));
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'User scheduled for deletion (30 days to recover)'));
+});
+
+export const recoverTargetUser = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await adminServices.recoverUser(id as string);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'User recovered successfully'));
+});
+
+export const hardDeleteTargetUser = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await adminServices.hardDeleteUser(id as string);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'User permanently deleted'));
 });
 
 export const banUser = tryCatchMiddleware(async (req: Request, res: Response) => {

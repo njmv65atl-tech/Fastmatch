@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useUserManagement, useBanUser, useUnbanUser, useDeleteUser } from "../../reactQuery/hooks/userHook";
+import {
+  useUserManagement,
+  useBanUser,
+  useUnbanUser,
+  useDeleteUser,
+  useRecoverUser,
+  useHardDeleteUser,
+} from "../../reactQuery/hooks/userHook";
 import { useGrantPremium, useRevokePremium } from "../../reactQuery/hooks/subscriptionHook";
 import {
   Ban,
@@ -19,7 +26,7 @@ import { Card } from "../../components/common/card";
 import { Button } from "../../components/common/Button";
 import { imageUrl } from "../../reactQuery/api/apiClient";
 
-const UserProfileModal = ({ user, onClose, onGrantPremium, onRevokePremium, onDeleteUser }) => {
+const UserProfileModal = ({ user, onClose, onGrantPremium, onRevokePremium, onDeleteUser, onRecoverUser, onHardDeleteUser }) => {
   if (!user) return null;
 
   return (
@@ -172,13 +179,32 @@ const UserProfileModal = ({ user, onClose, onGrantPremium, onRevokePremium, onDe
               )}
             </div>
             
-            <button
-              onClick={() => onDeleteUser(user._id)}
-              className="px-4 py-2 bg-rose-50 text-rose-700 text-sm font-bold rounded-xl hover:bg-rose-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
-            >
-              <Trash2 size={16} />
-              Delete User
-            </button>
+            {user.deletedByAdminAt ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onRecoverUser(user._id)}
+                  className="px-4 py-2 bg-emerald-50 text-emerald-700 text-sm font-bold rounded-xl hover:bg-emerald-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                >
+                  <Eye size={16} />
+                  Recover
+                </button>
+                <button
+                  onClick={() => onHardDeleteUser(user._id)}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+                >
+                  <Trash2 size={16} />
+                  Hard Delete
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => onDeleteUser(user._id)}
+                className="px-4 py-2 bg-rose-50 text-rose-700 text-sm font-bold rounded-xl hover:bg-rose-100 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95"
+              >
+                <Trash2 size={16} />
+                Delete User
+              </button>
+            )}
           </div>
         </div>
       </motion.div>
@@ -226,6 +252,8 @@ export const UserManagement = () => {
   const { mutate: banUserMutate } = useBanUser();
   const { mutate: unbanUserMutate } = useUnbanUser();
   const { mutate: deleteUserMutate } = useDeleteUser();
+  const { mutate: recoverUserMutate } = useRecoverUser();
+  const { mutate: hardDeleteUserMutate } = useHardDeleteUser();
   const { mutate: grantPremiumMutate } = useGrantPremium();
   const { mutate: revokePremiumMutate } = useRevokePremium();
 
@@ -256,8 +284,22 @@ export const UserManagement = () => {
   };
 
   const handleDeleteUser = (userId) => {
-    if (window.confirm("WARNING: Are you sure you want to permanently delete this user? This cannot be undone.")) {
+    if (window.confirm("Schedule this user for deletion? (They can be recovered within 30 days)")) {
       deleteUserMutate(userId);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleRecoverUser = (userId) => {
+    if (window.confirm("Recover this user?")) {
+      recoverUserMutate(userId);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleHardDeleteUser = (userId) => {
+    if (window.confirm("WARNING: Are you sure you want to permanently delete this user? This cannot be undone.")) {
+      hardDeleteUserMutate(userId);
       setSelectedUser(null);
     }
   };
@@ -272,6 +314,8 @@ export const UserManagement = () => {
             onGrantPremium={handleGrantPremium}
             onRevokePremium={handleRevokePremium}
             onDeleteUser={handleDeleteUser}
+            onRecoverUser={handleRecoverUser}
+            onHardDeleteUser={handleHardDeleteUser}
           />
         )}
       </AnimatePresence>
@@ -350,9 +394,10 @@ export const UserManagement = () => {
                     <td className="px-10 py-8 text-center">
                       <span className={cn(
                         "inline-block min-w-[100px] py-2 rounded-xl text-sm font-bold",
+                        user.deletedByAdminAt ? "bg-red-100 text-red-600" :
                         user.status === "Active" ? "bg-[#d1fae5] text-[#059669]" : "bg-[#fee2e2] text-[#dc2626]"
                       )}>
-                        {user.status === "Active" ? "Verified" : user.status || "Inactive"}
+                        {user.deletedByAdminAt ? "Pending Delete" : user.status === "Active" ? "Verified" : user.status || "Inactive"}
                       </span>
                     </td>
                     <td className="px-10 py-8 text-center">

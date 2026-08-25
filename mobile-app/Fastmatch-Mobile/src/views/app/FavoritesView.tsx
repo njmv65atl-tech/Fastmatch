@@ -66,7 +66,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
           style={styles.removeBtn}
           onPress={() => handleRemoveFavorite(user._id)}
         >
-          <Heart size={20} color={colors.danger} fill={colors.danger} />
+          <Heart size={20} color={colors.danger} />
         </TouchableOpacity>
       </View>
     );

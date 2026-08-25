@@ -45,3 +45,23 @@ export const useDeleteUser = () => {
         },
     });
 };
+
+export const useRecoverUser = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: require("../api").recoverUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["userManagement"] });
+        },
+    });
+};
+
+export const useHardDeleteUser = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: require("../api").hardDeleteUser,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["userManagement"] });
+        },
+    });
+};

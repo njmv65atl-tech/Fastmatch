@@ -705,8 +705,8 @@ class UserController extends ResponseHandler {
 
             // Fetch all users except current user, blocked users, and already connected users
             const query = {
-                _id: { $ne: currentUserId, $nin: [...blockedUsers, ...connectedUserIds] },
-                status: 'active'
+                _id: { $nin: [currentUserId, ...blockedUsers, ...connectedUserIds] },
+                isBanned: { $ne: true }
             };
 
             const users = await User.find(query)

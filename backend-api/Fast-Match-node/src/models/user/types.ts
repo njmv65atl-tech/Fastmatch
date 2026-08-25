@@ -43,6 +43,7 @@ export interface UserInterface extends Document {
     isBanned: boolean,
     blockedCalls: any[],
     skippedUsers: Array<{ userId: any; skippedAt: Date }>,
+    deletedByAdminAt?: Date,
     walletBalance: number,
     trustScore: number,
     lastRewardClaimedAt?: Date,
