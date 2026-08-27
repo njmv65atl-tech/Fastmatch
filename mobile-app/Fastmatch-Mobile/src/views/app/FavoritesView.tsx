@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
   RefreshControl
 } from "react-native";
-import { ChevronLeft, Heart } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
+import Svg, { Path } from "react-native-svg";
 import { colors } from "../../utils/colors";
 import { scale, verticalScale, moderateScale } from "../../helpers/metrics";
 import { MobileContainer } from "../../components/UIComponents";
@@ -66,7 +67,9 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
           style={styles.removeBtn}
           onPress={() => handleRemoveFavorite(user._id)}
         >
-          <Heart size={20} color={colors.danger} />
+          <Svg width={20} height={20} viewBox="0 0 24 24" fill={colors.danger} stroke={colors.danger} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </Svg>
         </TouchableOpacity>
       </View>
     );
@@ -92,7 +95,9 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
           favData.data.map((user: any) => renderFavoriteItem(user))
         ) : (
           <View style={styles.emptyState}>
-            <Heart size={moderateScale(48)} color={colors.textMuted} />
+            <Svg width={moderateScale(48)} height={moderateScale(48)} viewBox="0 0 24 24" fill="none" stroke={colors.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </Svg>
             <Text style={styles.emptyTitle}>No favorites yet</Text>
             <Text style={styles.emptySubtitle}>Users you bookmark will appear here.</Text>
             <TouchableOpacity 
