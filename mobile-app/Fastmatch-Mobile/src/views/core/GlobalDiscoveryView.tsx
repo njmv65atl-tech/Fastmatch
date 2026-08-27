@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { ArrowLeft, Globe, Search, SlidersHorizontal, Grid3X3, List, X, ChevronDown } from "lucide-react-native";
+import { ArrowLeft, Globe, Search, SlidersHorizontal, X } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import { MobileContainer, Button } from "../../components/UIComponents";
 import { AppView } from "../../types";
@@ -35,7 +35,6 @@ const HORIZONTAL_PAD = 16;
 const CARD_WIDTH = (SCREEN_WIDTH - HORIZONTAL_PAD * 2 - CARD_GAP * 2) / 3;
 
 // ─── Filter types ────────────────────────────────────────────
-type ViewMode = "grid" | "list";
 type SortBy = "recent" | "newest" | "alphabetical";
 type GenderFilter = "all" | "male" | "female";
 type AgeFilter = "all" | "18-24" | "25-34" | "35-44" | "45+";
@@ -167,7 +166,6 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   const [message, setMessage] = React.useState("");
 
   // UI state
-  const [viewMode, setViewMode] = React.useState<ViewMode>("grid");
   const [searchText, setSearchText] = React.useState("");
   const [filters, setFilters] = React.useState<Filters>(DEFAULT_FILTERS);
   const [showFilterModal, setShowFilterModal] = React.useState(false);
@@ -342,18 +340,6 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
         </TouchableOpacity>
         <Globe color={colors.primary} size={20} style={{ marginRight: 6 }} />
         <Text style={styles.headerTitle}>Global Network</Text>
-        <View style={{ flex: 1 }} />
-        {/* View toggle */}
-        <TouchableOpacity
-          style={styles.viewToggle}
-          onPress={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-        >
-          {viewMode === "grid" ? (
-            <List color={colors.textMuted} size={18} />
-          ) : (
-            <Grid3X3 color={colors.textMuted} size={18} />
-          )}
-        </TouchableOpacity>
       </View>
 
       {/* ── Search + Filter Bar ── */}
@@ -393,7 +379,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      ) : viewMode === "grid" ? (
+      ) : (
         <FlatList
           data={users}
           keyExtractor={(item) => item._id}
@@ -415,21 +401,6 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
                   <Text style={styles.clearFiltersBtnText}>Clear Filters</Text>
                 </TouchableOpacity>
               )}
-            </View>
-          }
-        />
-      ) : (
-        <FlatList
-          data={users}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={isFetching} onRefresh={refetchGlobalUsers} />
-          }
-          renderItem={renderListItem}
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <Text style={styles.emptyText}>No users match your filters.</Text>
             </View>
           }
         />
@@ -623,14 +594,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 6, marginLeft: -6, marginRight: 6 },
   headerTitle: { fontSize: 20, fontWeight: "bold", color: colors.textPrimary },
-  viewToggle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+
 
   // ── Search + Filter ──
   searchRow: {
@@ -721,35 +685,6 @@ const styles = StyleSheet.create({
   gridName: { fontSize: 12, fontWeight: "700", color: colors.textPrimary, marginBottom: 1 },
   gridSub: { fontSize: 10, color: colors.textPlaceholder },
 
-  // ── List View ──
-  listRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  listAvatarWrap: { position: "relative", marginRight: 10 },
-  listAvatar: { width: 44, height: 44, borderRadius: 22 },
-  listFallbackText: { fontSize: 18, fontWeight: "bold", color: colors.textPlaceholder },
-  listOnlineDot: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.success,
-    borderWidth: 1.5,
-    borderColor: colors.surface,
-  },
-  listInfo: { flex: 1 },
-  listName: { fontSize: 14, fontWeight: "700", color: colors.textPrimary },
-  listSub: { fontSize: 12, color: colors.textPlaceholder, marginTop: 2 },
-  listFavBtn: { padding: 8 },
 
   // ── Empty ──
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
