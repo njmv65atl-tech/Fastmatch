@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Modal,
 } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
@@ -20,6 +21,7 @@ import {
 } from "../../redux/services/auth";
 import { AppView } from "../../types";
 import { IMG_URL } from "../../redux/services";
+import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 
 interface FavoritesViewProps {
   setView: (view: AppView, params?: any) => void;
@@ -28,13 +30,21 @@ interface FavoritesViewProps {
 export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
   const { data: favData, isLoading, refetch } = useGetFavoritesQuery({});
   const [toggleFavorite] = useToggleFavoriteMutation();
+  const [userToRemove, setUserToRemove] = useState<any | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const handleRemoveFavorite = async (userId: string) => {
     try {
+      setIsRemoving(true);
       await toggleFavorite({ targetUserId: userId }).unwrap();
+      ShowAlertMessage("Removed from favorites", popTypes.success);
       refetch();
     } catch (e) {
       console.warn("Failed to remove favorite:", e);
+      ShowAlertMessage("Failed to remove favorite", popTypes.error);
+    } finally {
+      setIsRemoving(false);
+      setUserToRemove(null);
     }
   };
 
@@ -59,16 +69,28 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
           </View>
           <View style={styles.friendDetails}>
             <Text style={styles.friendName}>{user.displayName || user.fullName}</Text>
-            <Text style={styles.friendSubtext}>{user.age ? `${user.age} • ` : ""}{user.gender || "Any"}</Text>
+            <Text style={styles.friendSubtext}>
+              {user.age ? `${user.age} • ` : ""}{user.gender || "Any"}
+            </Text>
           </View>
         </View>
 
+        {/* Pure Red Heart Icon - Transparent background, no square box */}
         <TouchableOpacity 
           style={styles.removeBtn}
-          onPress={() => handleRemoveFavorite(user._id)}
+          onPress={() => setUserToRemove(user)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill={colors.danger} stroke={colors.danger} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+            <Path 
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
+              fill="#EF4444" 
+              stroke="#EF4444" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+            />
           </Svg>
         </TouchableOpacity>
       </View>
@@ -95,8 +117,14 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
           favData.data.map((user: any) => renderFavoriteItem(user))
         ) : (
           <View style={styles.emptyState}>
-            <Svg width={moderateScale(48)} height={moderateScale(48)} viewBox="0 0 24 24" fill="none" stroke={colors.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            <Svg width={moderateScale(48)} height={moderateScale(48)} viewBox="0 0 24 24" fill="none">
+              <Path 
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
+                stroke={colors.textMuted} 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+              />
             </Svg>
             <Text style={styles.emptyTitle}>No favorites yet</Text>
             <Text style={styles.emptySubtitle}>Users you bookmark will appear here.</Text>
@@ -109,6 +137,70 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* ── Confirmation Modal ── */}
+      <Modal
+        visible={!!userToRemove}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!isRemoving) setUserToRemove(null);
+        }}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconWrap}>
+              <Svg width={32} height={32} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                  fill="#EF4444"
+                  stroke="#EF4444"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </View>
+
+            <Text style={styles.modalTitle}>Remove from Favorites?</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure you want to remove{" "}
+              <Text style={styles.modalHighlight}>
+                {userToRemove?.displayName || userToRemove?.fullName || "this user"}
+              </Text>{" "}
+              from your favorites list?
+            </Text>
+
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setUserToRemove(null)}
+                disabled={isRemoving}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.confirmRemoveBtn}
+                onPress={() => {
+                  if (userToRemove?._id) {
+                    handleRemoveFavorite(userToRemove._id);
+                  }
+                }}
+                disabled={isRemoving}
+                activeOpacity={0.7}
+              >
+                {isRemoving ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.confirmRemoveBtnText}>Remove</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </MobileContainer>
   );
 };
@@ -198,8 +290,9 @@ const styles = StyleSheet.create({
   },
   removeBtn: {
     padding: moderateScale(8),
-    backgroundColor: colors.danger + '15',
-    borderRadius: moderateScale(12),
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
   },
   emptyState: {
     alignItems: "center",
@@ -226,6 +319,81 @@ const styles = StyleSheet.create({
   },
   discoverBtnText: {
     color: colors.white,
+    fontWeight: "bold",
+  },
+
+  // ── Confirmation Modal Styles ──
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: scale(24),
+  },
+  modalContent: {
+    width: "100%",
+    backgroundColor: colors.surface,
+    borderRadius: moderateScale(20),
+    padding: moderateScale(24),
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  modalIconWrap: {
+    width: moderateScale(60),
+    height: moderateScale(60),
+    borderRadius: moderateScale(30),
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: verticalScale(16),
+  },
+  modalTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: "bold",
+    color: colors.textPrimary,
+    marginBottom: verticalScale(8),
+  },
+  modalMessage: {
+    fontSize: moderateScale(14),
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: moderateScale(20),
+    marginBottom: verticalScale(24),
+  },
+  modalHighlight: {
+    color: colors.textPrimary,
+    fontWeight: "600",
+  },
+  modalBtnRow: {
+    flexDirection: "row",
+    width: "100%",
+    gap: scale(12),
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(12),
+    backgroundColor: colors.surfaceAlt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelBtnText: {
+    color: colors.textPrimary,
+    fontSize: moderateScale(15),
+    fontWeight: "600",
+  },
+  confirmRemoveBtn: {
+    flex: 1,
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(12),
+    backgroundColor: "#EF4444",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmRemoveBtnText: {
+    color: "#FFFFFF",
+    fontSize: moderateScale(15),
     fontWeight: "bold",
   },
 });

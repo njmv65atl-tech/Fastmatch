@@ -17,7 +17,7 @@ export const colors = {
   gold: "#fbbf24",
   goldStrong: "#f59e0b",
   brown: "#78350f",
-  danger: "rgb(190, 45, 45)",
+  danger: "#EF4444",
   success: "#22c55e",
   successText: "#4ade80",
   successAlt: "#10b981",
