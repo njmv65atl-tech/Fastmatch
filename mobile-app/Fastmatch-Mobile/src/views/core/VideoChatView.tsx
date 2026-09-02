@@ -1,4 +1,4 @@
-
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   BackHandler,
@@ -12,12 +12,32 @@ import {
   TouchableOpacity,
   View,
   Animated,
+  Dimensions,
+  Image,
 } from "react-native";
-import { Shield, PhoneOff } from "lucide-react-native";
-
-import { AppView, User } from "../../types";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Shield,
+  PhoneOff,
+  Sparkles,
+  MessageCircle,
+  Gift as GiftIcon,
+  Smile,
+  SwitchCamera,
+  Mic,
+  MicOff,
+  Video as VideoIcon,
+  VideoOff,
+  Flag,
+  X,
+  Check,
+  Zap,
+  Clock,
+  Crown,
+  MoreHorizontal,
+  ChevronDown,
+} from "lucide-react-native";
+import LinearGradient from "react-native-linear-gradient";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   StreamVideo,
@@ -27,12 +47,11 @@ import {
   ToggleAudioPublishingButton,
   ToggleCameraFaceButton,
   ToggleVideoPublishingButton,
-  HangUpCallButton,
 } from "@stream-io/video-react-native-sdk";
 
 import { useSelector, useDispatch } from "react-redux";
 import { tokenSelector, setGlobalUser } from "../../redux/slices/persistedSlice";
-import { BASE_URL as API_BASE_URL } from "../../config/env";
+import { BASE_URL as API_BASE_URL, IMAGE_URL } from "../../config/env";
 
 import { colors } from "../../utils/colors";
 import { socket } from "../../socket/socket";
@@ -40,29 +59,40 @@ import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { useUserReportMutation } from "../../redux/services/auth";
 import { getUser } from "../../utils/storage";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
+import { AppView, User } from "../../types";
 
-// ─── Icebreaker Prompts ───────────────────────────────────────────────────────
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// ─── Constants & Data ─────────────────────────────────────────────────────────
 
 const ICEBREAKERS = [
-  "If you could travel anywhere right now, where would you go?",
-  "What's the best movie you've watched recently?",
-  "What's a hobby you've always wanted to try?",
-  "What's your favorite way to spend a weekend?",
-  "What's the most interesting place you've visited?",
-  "What kind of music have you been into lately?",
-  "What's a skill you'd love to learn?",
-  "If you could have dinner with anyone, who would it be?",
-  "What's your go-to comfort food?",
-  "What's the best book you've ever read?",
+  { id: 1, text: "If you could travel anywhere right now, where would you go?", category: "Travel ✈️" },
+  { id: 2, text: "What's the best movie or show you've watched recently?", category: "Fun 🍿" },
+  { id: 3, text: "What's a secret talent or hobby you have?", category: "Random 🎯" },
+  { id: 4, text: "What's your favorite way to spend a perfect weekend?", category: "Lifestyle ☀️" },
+  { id: 5, text: "What kind of music have you been obsessed with lately?", category: "Music 🎵" },
+  { id: 6, text: "If you could have dinner with anyone in the world, who would it be?", category: "Deep 💭" },
+  { id: 7, text: "What's your absolute go-to comfort food?", category: "Food 🍕" },
+  { id: 8, text: "Are you more of an early bird or a night owl?", category: "Lifestyle 🌙" },
+  { id: 9, text: "What's the best advice someone has ever given you?", category: "Deep 💡" },
+  { id: 10, text: "What's something on your bucket list this year?", category: "Goals 🚀" },
 ];
 
-const EMOJIS = ["❤️", "😂", "😍", "🔥", "🎉", "👍", "😮", "😢", "😡", "💀"];
+const EMOJIS = ["❤️", "🔥", "😍", "😂", "🎉", "👏", "😮", "💖", "✨", "👑"];
 
 const GIFTS = [
-  { id: "rose", name: "Rose", icon: "🌹", cost: 10 },
-  { id: "coffee", name: "Coffee", icon: "☕", cost: 25 },
-  { id: "crown", name: "Crown", icon: "👑", cost: 100 },
-  { id: "diamond", name: "Diamond", icon: "💎", cost: 500 },
+  { id: "rose", name: "Rose", icon: "🌹", cost: 10, desc: "A sweet gesture" },
+  { id: "coffee", name: "Coffee", icon: "☕", cost: 25, desc: "Warm & cozy" },
+  { id: "crown", name: "Crown", icon: "👑", cost: 100, desc: "Royal status" },
+  { id: "diamond", name: "Diamond", icon: "💎", cost: 500, desc: "Pure luxury" },
+];
+
+const REPORT_REASONS = [
+  { id: "inappropriate", label: "Inappropriate behavior", icon: "🚫" },
+  { id: "harassment",    label: "Harassment or bullying",  icon: "😠" },
+  { id: "spam",          label: "Spam or scam attempt",    icon: "⚠️" },
+  { id: "hate_speech",   label: "Hate speech / harassment",icon: "🛑" },
+  { id: "nudity",        label: "Nudity or sexual content",icon: "🔞" },
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -86,17 +116,1021 @@ interface CoreProps {
   preference?: 'everyone' | 'male' | 'female';
 }
 
-// ─── Report Reasons ───────────────────────────────────────────────────────────
+// ─── Floating Reaction Bubble Item ────────────────────────────────────────────
 
-const REPORT_REASONS = [
-  { id: "inappropriate", label: "Inappropriate behavior", icon: "🚫" },
-  { id: "harassment",    label: "Harassment or bullying",  icon: "😠" },
-  { id: "spam",          label: "Spam or scam",            icon: "⚠️" },
-  { id: "hate_speech",   label: "Hate speech",             icon: "🛑" },
-  { id: "nudity",        label: "Nudity or sexual content",icon: "🔞" },
-];
+interface FloatingReaction {
+  id: number;
+  emoji: string;
+  anim: Animated.Value;
+  xOffset: number;
+}
 
-// ─── Report Modal ─────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export const VideoChatView: React.FC<CoreProps> = ({
+  user,
+  setUser,
+  setView,
+  matchId,
+  callId,
+  role,
+  participantName,
+  participantImage,
+  matchData,
+  streamToken: streamTokenProp,
+  remoteUserId,
+  preference = 'everyone',
+}) => {
+  const insets = useSafeAreaInsets();
+  const clientRef = useRef<StreamVideoClient | null>(null);
+  const callRef = useRef<any>(null);
+  const joinedRef = useRef(false);
+  const hasLeftRef = useRef(false);
+
+  // States
+  const [call, setCall]                             = useState<any>(null);
+  const [isJoining, setIsJoining]                   = useState(true);
+  const [error, setError]                           = useState<string | null>(null);
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
+  
+  // Control Toggles & Sheets
+  const [showEmojiPicker, setShowEmojiPicker]       = useState(false);
+  const [showIcebreakers, setShowIcebreakers]       = useState(false);
+  const [showGiftPicker, setShowGiftPicker]         = useState(false);
+  const [showMoreActions, setShowMoreActions]       = useState(false);
+  const [reportVisible, setReportVisible]           = useState(false);
+
+  // Interactive Features
+  const [incomingIcebreaker, setIncomingIcebreaker] = useState<string | null>(null);
+  const [incomingGift, setIncomingGift]             = useState<any>(null);
+  const [myGifts, setMyGifts]                       = useState<any[]>([]);
+  const [giftTab, setGiftTab]                       = useState<'store' | 'inventory'>('store');
+  const [openedGift, setOpenedGift]                 = useState<boolean>(false);
+  const giftScale                                   = useRef(new Animated.Value(0)).current;
+  const giftOpacity                                 = useRef(new Animated.Value(1)).current;
+
+  // Safety & Timers
+  const [isBlurred, setIsBlurred]                   = useState(true);
+  const [blurCountdown, setBlurCountdown]           = useState(3);
+  const [callDuration, setCallDuration]             = useState(0);
+  const [isFilterActive, setIsFilterActive]         = useState(false);
+
+  // Floating Reactions
+  const [reactions, setReactions]                   = useState<FloatingReaction[]>([]);
+
+  // Redux & API
+  const token = useSelector(tokenSelector);
+  const dispatch = useDispatch();
+  const [userReport] = useUserReportMutation();
+
+  // ─── Call Duration Counter ──────────────────────────────────────────────────
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (call && !isJoining) {
+      interval = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [call, isJoining]);
+
+  // ─── 3-Second Safety Blur Countdown ─────────────────────────────────────────
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBlurCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsBlurred(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDuration = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // ─── Fetch Inventory Gifts ──────────────────────────────────────────────────
+  const fetchMyGifts = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}user/gifts`, {
+        method: 'GET',
+        headers: {
+          'x-access-token': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const json = await res.json();
+      if (json.success) {
+        setMyGifts(json.data || []);
+      }
+    } catch (e) {
+      console.error("[VideoChatView] Fetch gifts failed:", e);
+    }
+  }, [token]);
+
+  // ─── Trigger Floating Reaction Animation ─────────────────────────────────────
+  const triggerFloatingReaction = useCallback((emoji: string) => {
+    const anim = new Animated.Value(0);
+    const newReaction: FloatingReaction = {
+      id: Date.now() + Math.random(),
+      emoji,
+      anim,
+      xOffset: (Math.random() - 0.5) * 60,
+    };
+
+    setReactions((prev) => [...prev.slice(-10), newReaction]);
+
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 2200,
+      useNativeDriver: true,
+    }).start(() => {
+      setReactions((prev) => prev.filter((r) => r.id !== newReaction.id));
+    });
+  }, []);
+
+  // ─── Permissions ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const askPermissions = async () => {
+      if (Platform.OS === "android") {
+        const result = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        ]);
+
+        const cameraOk = result[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED;
+        const micOk = result[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
+        const ok = cameraOk && micOk;
+
+        if (!ok) {
+          setError("Camera & Microphone permissions are required to video call.");
+        }
+        setPermissionsGranted(ok);
+      } else {
+        try {
+          const { request, PERMISSIONS, RESULTS } = require('react-native-permissions');
+          const cameraStatus = await request(PERMISSIONS.IOS.CAMERA);
+          const micStatus = await request(PERMISSIONS.IOS.MICROPHONE);
+          const ok = cameraStatus === RESULTS.GRANTED && micStatus === RESULTS.GRANTED;
+
+          if (!ok) {
+            setError("Camera & Microphone permissions are required to video call.");
+            setPermissionsGranted(false);
+          } else {
+            setPermissionsGranted(true);
+          }
+        } catch (err) {
+          setPermissionsGranted(true);
+        }
+      }
+    };
+
+    askPermissions();
+  }, []);
+
+  // ─── Prevent Android Back Button During Active Call ──────────────────────────
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => true);
+    return () => sub.remove();
+  }, []);
+
+  // ─── Stream Call Setup ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const hasToken  = !!streamTokenProp?.token;
+    const hasApiKey = !!streamTokenProp?.apiKey;
+    const hasUserId = !!streamTokenProp?.userId;
+    const hasCallId = !!callId;
+
+    if (!hasToken || !hasApiKey || !hasUserId || !hasCallId) {
+      setError("Missing call credentials");
+      setIsJoining(false);
+      return;
+    }
+
+    if (!permissionsGranted) return;
+
+    const setup = async () => {
+      try {
+        const videoClient = StreamVideoClient.getOrCreateInstance({
+          apiKey: streamTokenProp!.apiKey,
+          user:  { id: streamTokenProp!.userId },
+          token: streamTokenProp!.token,
+        });
+
+        clientRef.current = videoClient;
+        const streamCall = videoClient.call("default", callId!);
+
+        await streamCall.join({ create: true });
+        await streamCall.microphone.enable();
+
+        callRef.current = streamCall;
+        joinedRef.current = true;
+        setCall(streamCall);
+      } catch (e: any) {
+        setError(e?.message || "Failed to join video call");
+      } finally {
+        setIsJoining(false);
+      }
+    };
+
+    setup();
+
+    return () => {
+      if (!hasLeftRef.current && joinedRef.current) {
+        callRef.current?.leave().catch(() => {});
+        clientRef.current?.disconnectUser().catch(() => {});
+      }
+    };
+  }, [
+    streamTokenProp?.token,
+    streamTokenProp?.apiKey,
+    streamTokenProp?.userId,
+    callId,
+    permissionsGranted,
+  ]);
+
+  // ─── End Call Action ─────────────────────────────────────────────────────────
+  const handleEndCall = useCallback(async () => {
+    if (hasLeftRef.current) return;
+    hasLeftRef.current = true;
+
+    try {
+      await callRef.current?.leave();
+    } catch (err) {}
+
+    try {
+      await clientRef.current?.disconnectUser();
+    } catch (err) {}
+
+    if (matchId) {
+      socket.emit("end-call", { matchId });
+    }
+
+    setView(AppView.MATCH_FOUND, {
+      preference,
+      showRatingModal: true,
+      lastMatchId: matchId,
+      lastPartnerName:
+        (matchData?.user1 as any)?._id === (user as any)?._id
+          ? matchData?.user2?.displayName
+          : matchData?.user1?.displayName || "your partner",
+    });
+  }, [matchId, setView, preference, matchData, user]);
+
+  // ─── Free Limit (120s) Enforcement ──────────────────────────────────────────
+  useEffect(() => {
+    const isAnyPremium =
+      user?.isPremium === 'premium' ||
+      user?.role === 'premium' ||
+      matchData?.user1?.isPremium === 'premium' ||
+      matchData?.user2?.isPremium === 'premium';
+
+    if (!isAnyPremium && callDuration >= 120) {
+      ShowAlertMessage("Free 2-minute call limit reached. Upgrade to Premium for unlimited calls!", popTypes.error);
+      handleEndCall();
+    }
+  }, [callDuration, user, matchData, handleEndCall]);
+
+  // ─── Socket Event Listeners ──────────────────────────────────────────────────
+  useEffect(() => {
+    const onCallEndedFallback = () => handleEndCall();
+
+    const onIcebreaker = (data: any) => {
+      setIncomingIcebreaker(data.message || data);
+      setTimeout(() => setIncomingIcebreaker(null), 8000);
+    };
+
+    const onReaction = (data: any) => {
+      triggerFloatingReaction(data.emoji);
+    };
+
+    const onGiftReceived = (data: any) => {
+      setIncomingGift(data);
+      setOpenedGift(false);
+      giftScale.setValue(0);
+      giftOpacity.setValue(1);
+      setTimeout(() => setIncomingGift(null), 15000);
+      fetchMyGifts();
+    };
+
+    const onGiftSentSuccess = (data: any) => {
+      ShowAlertMessage("Gift sent successfully! 🎁", popTypes.success);
+      if (data.newBalance !== undefined && setUser) {
+        setUser((prev: any) => prev ? { ...prev, walletBalance: data.newBalance } : prev);
+        dispatch(setGlobalUser({ ...user, walletBalance: data.newBalance }));
+      }
+    };
+
+    const onGiftError = (data: any) => {
+      ShowAlertMessage(data.message || "Failed to send gift", popTypes.error);
+    };
+
+    socket.on("call-ended", onCallEndedFallback);
+    socket.on("match-ended", onCallEndedFallback);
+    socket.on("user-disconnected", onCallEndedFallback);
+    socket.on("partner-disconnected", onCallEndedFallback);
+    socket.on("icebreaker-received", onIcebreaker);
+    socket.on("reaction-received", onReaction);
+    socket.on("gift-received", onGiftReceived);
+    socket.on("gift-sent-success", onGiftSentSuccess);
+    socket.on("gift-error", onGiftError);
+
+    let leaveTimeout: ReturnType<typeof setTimeout> | null = null;
+    if (call) {
+      const onParticipantLeft = () => {
+        if (leaveTimeout) clearTimeout(leaveTimeout);
+        leaveTimeout = setTimeout(() => {
+          if (!hasLeftRef.current) {
+            handleEndCall();
+          }
+        }, 3000);
+      };
+      call.on("call.session_participant_left", onParticipantLeft);
+    }
+
+    return () => {
+      socket.off("call-ended", onCallEndedFallback);
+      socket.off("match-ended", onCallEndedFallback);
+      socket.off("user-disconnected", onCallEndedFallback);
+      socket.off("partner-disconnected", onCallEndedFallback);
+      socket.off("icebreaker-received", onIcebreaker);
+      socket.off("reaction-received", onReaction);
+      socket.off("gift-received", onGiftReceived);
+      socket.off("gift-sent-success", onGiftSentSuccess);
+      socket.off("gift-error", onGiftError);
+      if (leaveTimeout) clearTimeout(leaveTimeout);
+      if (call) {
+        call.off("call.session_participant_left", () => {});
+      }
+    };
+  }, [call, handleEndCall, triggerFloatingReaction, fetchMyGifts, user, setUser, dispatch]);
+
+  // ─── Interactive Actions ─────────────────────────────────────────────────────
+  const sendReaction = (emoji: string) => {
+    if (remoteUserId) {
+      socket.emit("send-reaction", { receiverId: remoteUserId, emoji });
+      triggerFloatingReaction(emoji);
+    }
+    setShowEmojiPicker(false);
+  };
+
+  const sendGift = (gift: any, inventoryGiftId?: string) => {
+    if (!remoteUserId) return;
+    socket.emit("send-gift", {
+      receiverId: remoteUserId,
+      giftName: gift.name || gift.giftName,
+      coinCost: gift.cost || gift.coinValue,
+      inventoryGiftId,
+    });
+    setShowGiftPicker(false);
+  };
+
+  const sendIcebreaker = (message: string) => {
+    if (!remoteUserId) return;
+    socket.emit("send-icebreaker", { receiverId: remoteUserId, message });
+    setShowIcebreakers(false);
+    ShowAlertMessage("Icebreaker sent! 💬", popTypes.success);
+  };
+
+  // ─── Report & Block ─────────────────────────────────────────────────────────
+  const handleReportSubmit = useCallback(
+    async (selected: string[], note: string) => {
+      setReportVisible(false);
+      try {
+        await managerApiCall(
+          userReport,
+          {
+            category: selected,
+            message: note,
+            matchId: matchId,
+            reportedUser: matchData?.userId || matchData?.id || remoteUserId,
+          },
+          () => {
+            ShowAlertMessage("Report submitted successfully", popTypes.info);
+          }
+        );
+      } catch (err) {}
+      handleEndCall();
+    },
+    [matchId, matchData, remoteUserId, userReport, handleEndCall]
+  );
+
+  const handleBlockUser = useCallback(() => {
+    if (remoteUserId) {
+      socket.emit('blockUser', { targetId: remoteUserId });
+      ShowAlertMessage("User blocked", popTypes.info);
+      handleEndCall();
+    }
+  }, [remoteUserId, handleEndCall]);
+
+  // ─── Loading / Error View ───────────────────────────────────────────────────
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <LinearGradient colors={["#1E1B4B", "#090A0F"]} style={StyleSheet.absoluteFill} />
+        <View style={styles.errorCard}>
+          <Shield size={48} color="#EF4444" />
+          <Text style={styles.errorTitle}>Connection Error</Text>
+          <Text style={styles.errorSubtitle}>{error}</Text>
+          <TouchableOpacity style={styles.errorBtn} onPress={handleEndCall} activeOpacity={0.8}>
+            <Text style={styles.errorBtnText}>Return to Match</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (isJoining || !call || !clientRef.current) {
+    return (
+      <View style={styles.loadingContainer}>
+        <LinearGradient colors={["#1E1B4B", "#090A0F"]} style={StyleSheet.absoluteFill} />
+        <View style={styles.loadingPulseWrap}>
+          <View style={styles.loadingPulseOuter} />
+          <View style={styles.loadingPulseInner}>
+            <ActivityIndicator size="large" color="#6366F1" />
+          </View>
+        </View>
+        <Text style={styles.loadingTitle}>Connecting Video Call...</Text>
+        <Text style={styles.loadingSubtitle}>Securing your high-quality connection</Text>
+      </View>
+    );
+  }
+
+  // ─── Timer Calculation ──────────────────────────────────────────────────────
+  const isAnyPremium =
+    user?.isPremium === 'premium' ||
+    user?.role === 'premium' ||
+    matchData?.user1?.isPremium === 'premium' ||
+    matchData?.user2?.isPremium === 'premium';
+
+  const freeRemaining = Math.max(0, 120 - callDuration);
+  const isFreeUrgent = !isAnyPremium && freeRemaining <= 30;
+
+  // ─── Render Live Call UI ────────────────────────────────────────────────────
+  return (
+    <View style={styles.container}>
+      <StreamVideo client={clientRef.current}>
+        <StreamCall call={call}>
+          <View style={StyleSheet.absoluteFill}>
+            {/* ── CallContent (Stream Video Grid) ── */}
+            <CallContent
+              onHangupCallHandler={handleEndCall}
+              layout="grid"
+              CallControls={() => null} // Custom bottom dock rendered below
+            />
+
+            {/* ── Top Header Bar (Glassmorphic) ── */}
+            <View style={[styles.topHeader, { top: insets.top + 8 }]}>
+              {/* Partner Info Pill */}
+              <View style={styles.partnerInfoPill}>
+                <View style={styles.partnerAvatarWrap}>
+                  {participantImage ? (
+                    <Image source={{ uri: `${IMAGE_URL}${participantImage}` }} style={styles.partnerAvatar} />
+                  ) : (
+                    <View style={styles.partnerAvatarFallback}>
+                      <Text style={styles.partnerAvatarText}>
+                        {participantName?.charAt(0)?.toUpperCase() || "P"}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.onlineStatusDot} />
+                </View>
+
+                <View style={styles.partnerTextGroup}>
+                  <View style={styles.partnerNameRow}>
+                    <Text style={styles.partnerNameText} numberOfLines={1}>
+                      {participantName || "Partner"}
+                    </Text>
+                    {matchData?.isPremium === "premium" && (
+                      <LinearGradient colors={["#F59E0B", "#D97706"]} style={styles.vipBadge}>
+                        <Crown size={10} color="#FFF" />
+                        <Text style={styles.vipBadgeText}>VIP</Text>
+                      </LinearGradient>
+                    )}
+                  </View>
+                  <Text style={styles.liveCallStatus}>● Connected</Text>
+                </View>
+              </View>
+
+              {/* Timer Pill */}
+              <View style={[styles.timerPill, isFreeUrgent && styles.timerPillUrgent]}>
+                <Clock size={12} color={isFreeUrgent ? "#FFF" : colors.textMuted} />
+                <Text style={[styles.timerPillText, isFreeUrgent && styles.timerPillTextUrgent]}>
+                  {!isAnyPremium
+                    ? `${Math.floor(freeRemaining / 60)}:${(freeRemaining % 60).toString().padStart(2, '0')}`
+                    : formatDuration(callDuration)}
+                </Text>
+              </View>
+
+              {/* Quick Actions (Report/Shield & More) */}
+              <View style={styles.topActionGroup}>
+                <TouchableOpacity
+                  style={styles.topIconBtn}
+                  onPress={() => setShowMoreActions(true)}
+                  activeOpacity={0.8}
+                >
+                  <MoreHorizontal size={18} color="#FFF" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.topIconBtn, { backgroundColor: "rgba(239, 68, 68, 0.25)", borderColor: "rgba(239, 68, 68, 0.4)" }]}
+                  onPress={() => setReportVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <Shield size={16} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* ── Floating Reaction Bubbles ── */}
+            <View style={styles.reactionsContainer} pointerEvents="none">
+              {reactions.map((r) => {
+                const translateY = r.anim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -320],
+                });
+                const opacity = r.anim.interpolate({
+                  inputRange: [0, 0.1, 0.75, 1],
+                  outputRange: [0, 1, 0.9, 0],
+                });
+                const scale = r.anim.interpolate({
+                  inputRange: [0, 0.2, 0.8, 1],
+                  outputRange: [0.4, 1.3, 1, 0.7],
+                });
+
+                return (
+                  <Animated.View
+                    key={r.id}
+                    style={[
+                      styles.reactionBubble,
+                      {
+                        transform: [{ translateY }, { translateX: r.xOffset }, { scale }],
+                        opacity,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.reactionEmojiText}>{r.emoji}</Text>
+                  </Animated.View>
+                );
+              })}
+            </View>
+
+            {/* ── Incoming Icebreaker Floating Toast ── */}
+            {incomingIcebreaker && (
+              <View style={[styles.icebreakerToast, { top: insets.top + 70 }]}>
+                <LinearGradient
+                  colors={["rgba(99, 102, 241, 0.95)", "rgba(79, 70, 229, 0.95)"]}
+                  style={styles.icebreakerToastInner}
+                >
+                  <View style={styles.icebreakerToastIcon}>
+                    <MessageCircle size={18} color="#FFF" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.icebreakerToastHeader}>Conversation Starter</Text>
+                    <Text style={styles.icebreakerToastBody}>{incomingIcebreaker}</Text>
+                  </View>
+                </LinearGradient>
+              </View>
+            )}
+
+            {/* ── Incoming Gift Unboxing Overlay ── */}
+            {incomingGift && (
+              <View style={styles.giftAnimationContainer}>
+                {!openedGift ? (
+                  <TouchableOpacity
+                    style={styles.giftUnopenedBox}
+                    onPress={() => {
+                      setOpenedGift(true);
+                      Animated.spring(giftScale, {
+                        toValue: 1,
+                        friction: 4,
+                        useNativeDriver: true,
+                      }).start();
+
+                      setTimeout(() => {
+                        Animated.timing(giftOpacity, {
+                          toValue: 0,
+                          duration: 1000,
+                          useNativeDriver: true,
+                        }).start(() => setIncomingGift(null));
+                      }, 3500);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={["rgba(245, 158, 11, 0.9)", "rgba(217, 119, 6, 0.95)"]}
+                      style={styles.giftUnopenedGradient}
+                    >
+                      <Text style={styles.giftIconLarge}>🎁</Text>
+                      <Text style={styles.giftUnopenedTitle}>Gift Received!</Text>
+                      <Text style={styles.giftUnopenedSub}>
+                        Tap to unwrap gift from {incomingGift.senderName || "partner"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ) : (
+                  <Animated.View
+                    style={[
+                      styles.giftOpenedBox,
+                      { transform: [{ scale: giftScale }], opacity: giftOpacity },
+                    ]}
+                  >
+                    <LinearGradient
+                      colors={["rgba(30, 27, 75, 0.95)", "rgba(15, 23, 42, 0.95)"]}
+                      style={styles.giftOpenedGradient}
+                    >
+                      <Text style={styles.giftOpenedIcon}>
+                        {GIFTS.find((g) => g.name === incomingGift.giftName)?.icon || "🎁"}
+                      </Text>
+                      <Text style={styles.giftOpenedTitle}>{incomingGift.giftName}</Text>
+                      <Text style={styles.giftOpenedSender}>
+                        Sent by <Text style={{ color: "#F59E0B", fontWeight: "bold" }}>{incomingGift.senderName}</Text>
+                      </Text>
+                    </LinearGradient>
+                  </Animated.View>
+                )}
+              </View>
+            )}
+
+            {/* ── 3-Second Safety Blur Overlay ── */}
+            {isBlurred && (
+              <View style={styles.safetyBlurOverlay}>
+                <LinearGradient
+                  colors={["rgba(2, 6, 23, 0.95)", "rgba(15, 23, 42, 0.98)"]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.safetyShieldWrap}>
+                  <Shield size={44} color="#6366F1" />
+                </View>
+                <Text style={styles.safetyBlurTitle}>Safety Blur Active</Text>
+                <Text style={styles.safetyBlurSubtitle}>
+                  Ensuring a safe & respectful video environment
+                </Text>
+                <View style={styles.safetyCountdownPill}>
+                  <Text style={styles.safetyCountdownText}>Revealing in {blurCountdown}s</Text>
+                </View>
+              </View>
+            )}
+
+            {/* ── Modern Bottom Control Dock (Glassmorphic) ── */}
+            <View style={[styles.bottomDockWrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+              {/* Secondary floating utility pills */}
+              <View style={styles.utilityRow}>
+                <TouchableOpacity
+                  style={[styles.utilityPill, showGiftPicker && styles.utilityPillActive]}
+                  onPress={() => {
+                    fetchMyGifts();
+                    setShowGiftPicker(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <GiftIcon size={16} color={showGiftPicker ? "#EC4899" : "#FFF"} />
+                  <Text style={[styles.utilityPillText, showGiftPicker && { color: "#EC4899" }]}>
+                    Gift
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.utilityPill, showIcebreakers && styles.utilityPillActive]}
+                  onPress={() => setShowIcebreakers(true)}
+                  activeOpacity={0.8}
+                >
+                  <MessageCircle size={16} color={showIcebreakers ? "#6366F1" : "#FFF"} />
+                  <Text style={[styles.utilityPillText, showIcebreakers && { color: "#6366F1" }]}>
+                    Topic
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.utilityPill, showEmojiPicker && styles.utilityPillActive]}
+                  onPress={() => setShowEmojiPicker(true)}
+                  activeOpacity={0.8}
+                >
+                  <Smile size={16} color={showEmojiPicker ? "#F59E0B" : "#FFF"} />
+                  <Text style={[styles.utilityPillText, showEmojiPicker && { color: "#F59E0B" }]}>
+                    React
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.utilityPill, isFilterActive && styles.utilityPillActive]}
+                  onPress={() => {
+                    setIsFilterActive(!isFilterActive);
+                    ShowAlertMessage(isFilterActive ? "AR Beauty Off" : "AR Beauty On", popTypes.success);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Sparkles size={16} color={isFilterActive ? "#10B981" : "#FFF"} />
+                  <Text style={[styles.utilityPillText, isFilterActive && { color: "#10B981" }]}>
+                    Beauty
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Primary Call Action Dock */}
+              <View style={styles.mainControlDock}>
+                {/* Audio Publish Button */}
+                <View style={styles.streamBtnContainer}>
+                  {/* @ts-ignore */}
+                  <ToggleAudioPublishingButton />
+                </View>
+
+                {/* Video Publish Button */}
+                <View style={styles.streamBtnContainer}>
+                  {/* @ts-ignore */}
+                  <ToggleVideoPublishingButton />
+                </View>
+
+                {/* Flip Camera Button */}
+                <View style={styles.streamBtnContainer}>
+                  {/* @ts-ignore */}
+                  <ToggleCameraFaceButton />
+                </View>
+
+                {/* Prominent End Call Button */}
+                <TouchableOpacity
+                  style={styles.endCallBtn}
+                  onPress={handleEndCall}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={["#EF4444", "#DC2626"]}
+                    style={styles.endCallBtnGradient}
+                  >
+                    <PhoneOff size={22} color="#FFF" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </StreamCall>
+      </StreamVideo>
+
+      {/* ══════════════════════════════════════════════════════════
+           MORE ACTIONS MODAL (Glass Sheet)
+         ══════════════════════════════════════════════════════════ */}
+      <Modal
+        visible={showMoreActions}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMoreActions(false)}
+      >
+        <TouchableOpacity
+          style={modalStyles.backdrop}
+          activeOpacity={1}
+          onPress={() => setShowMoreActions(false)}
+        />
+        <View style={[modalStyles.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+          <View style={modalStyles.handle} />
+          <View style={modalStyles.header}>
+            <Text style={modalStyles.title}>Call Options</Text>
+            <Text style={modalStyles.subtitle}>Manage your live call experience</Text>
+          </View>
+
+          <View style={{ paddingHorizontal: 20, paddingTop: 16, gap: 10 }}>
+            <TouchableOpacity
+              style={styles.actionSheetItem}
+              onPress={() => {
+                setShowMoreActions(false);
+                setReportVisible(true);
+              }}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.actionSheetIconWrap, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}>
+                <Flag size={20} color="#EF4444" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.actionSheetItemTitle}>Report Participant</Text>
+                <Text style={styles.actionSheetItemSub}>Report inappropriate behavior or policy violation</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionSheetItem}
+              onPress={() => {
+                setShowMoreActions(false);
+                handleBlockUser();
+              }}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.actionSheetIconWrap, { backgroundColor: "rgba(239, 68, 68, 0.15)" }]}>
+                <Shield size={20} color="#EF4444" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.actionSheetItemTitle}>Block & Disconnect</Text>
+                <Text style={styles.actionSheetItemSub}>Permanently block this user and end call</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionSheetCancelBtn}
+              onPress={() => setShowMoreActions(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.actionSheetCancelText}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ══════════════════════════════════════════════════════════
+           EMOJI REACTION PICKER MODAL
+         ══════════════════════════════════════════════════════════ */}
+      <Modal
+        visible={showEmojiPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEmojiPicker(false)}
+      >
+        <TouchableOpacity
+          style={modalStyles.backdrop}
+          activeOpacity={1}
+          onPress={() => setShowEmojiPicker(false)}
+        />
+        <View style={[styles.floatingPickerSheet, { bottom: 100 + insets.bottom }]}>
+          <Text style={styles.pickerSheetTitle}>Send Reaction</Text>
+          <View style={styles.emojiGrid}>
+            {EMOJIS.map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={styles.emojiGridBtn}
+                onPress={() => sendReaction(emoji)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.emojiGridText}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ══════════════════════════════════════════════════════════
+           GIFT SHOP & INVENTORY MODAL
+         ══════════════════════════════════════════════════════════ */}
+      <Modal
+        visible={showGiftPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowGiftPicker(false)}
+      >
+        <TouchableOpacity
+          style={modalStyles.backdrop}
+          activeOpacity={1}
+          onPress={() => setShowGiftPicker(false)}
+        />
+        <View style={[modalStyles.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+          <View style={modalStyles.handle} />
+
+          {/* Header with Wallet Balance */}
+          <View style={styles.giftSheetHeader}>
+            <View>
+              <Text style={modalStyles.title}>Send a Gift</Text>
+              <Text style={modalStyles.subtitle}>Surprise your call partner</Text>
+            </View>
+
+            <View style={styles.walletBalanceBadge}>
+              <Text style={styles.walletCoinIcon}>🪙</Text>
+              <Text style={styles.walletBalanceText}>{user?.walletBalance ?? 0}</Text>
+            </View>
+          </View>
+
+          {/* Segment Tabs */}
+          <View style={styles.giftTabTrack}>
+            <TouchableOpacity
+              style={[styles.giftTabBtn, giftTab === "store" && styles.giftTabBtnActive]}
+              onPress={() => setGiftTab("store")}
+            >
+              <Text style={[styles.giftTabText, giftTab === "store" && styles.giftTabTextActive]}>
+                Gift Store
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.giftTabBtn, giftTab === "inventory" && styles.giftTabBtnActive]}
+              onPress={() => setGiftTab("inventory")}
+            >
+              <Text style={[styles.giftTabText, giftTab === "inventory" && styles.giftTabTextActive]}>
+                My Bag ({myGifts.length})
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Content */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 }}
+          >
+            {giftTab === "store" ? (
+              <View style={styles.giftCardGrid}>
+                {GIFTS.map((g) => (
+                  <TouchableOpacity
+                    key={g.id}
+                    style={styles.giftCard}
+                    onPress={() => sendGift(g)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.giftCardEmoji}>{g.icon}</Text>
+                    <Text style={styles.giftCardName}>{g.name}</Text>
+                    <View style={styles.giftPriceBadge}>
+                      <Text style={styles.giftPriceText}>🪙 {g.cost}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.giftCardGrid}>
+                {myGifts.length === 0 ? (
+                  <View style={styles.emptyInventoryWrap}>
+                    <Text style={styles.emptyInventoryIcon}>🎒</Text>
+                    <Text style={styles.emptyInventoryTitle}>No gifts in your bag</Text>
+                    <Text style={styles.emptyInventorySub}>Gifts you receive or purchase will appear here.</Text>
+                  </View>
+                ) : (
+                  myGifts.map((gift) => {
+                    const iconData = GIFTS.find((g) => g.name === gift.giftName)?.icon || "🎁";
+                    return (
+                      <TouchableOpacity
+                        key={gift._id}
+                        style={styles.giftCard}
+                        onPress={() => sendGift(gift, gift._id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.giftCardEmoji}>{iconData}</Text>
+                        <Text style={styles.giftCardName}>{gift.giftName}</Text>
+                        <View style={[styles.giftPriceBadge, { backgroundColor: "rgba(16, 185, 129, 0.15)", borderColor: "rgba(16, 185, 129, 0.3)" }]}>
+                          <Text style={[styles.giftPriceText, { color: "#10B981" }]}>Send Free</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* ══════════════════════════════════════════════════════════
+           ICEBREAKER CONVERSATION STARTERS MODAL
+         ══════════════════════════════════════════════════════════ */}
+      <Modal
+        visible={showIcebreakers}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowIcebreakers(false)}
+      >
+        <TouchableOpacity
+          style={modalStyles.backdrop}
+          activeOpacity={1}
+          onPress={() => setShowIcebreakers(false)}
+        />
+        <View style={[modalStyles.sheet, { maxHeight: "70%", paddingBottom: Math.max(insets.bottom, 20) }]}>
+          <View style={modalStyles.handle} />
+          <View style={modalStyles.header}>
+            <Text style={modalStyles.title}>Conversation Starters</Text>
+            <Text style={modalStyles.subtitle}>Pick a fun question to spark the conversation</Text>
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20, gap: 10 }}
+          >
+            {ICEBREAKERS.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.icebreakerCard}
+                onPress={() => sendIcebreaker(item.text)}
+                activeOpacity={0.75}
+              >
+                <View style={styles.icebreakerCategoryBadge}>
+                  <Text style={styles.icebreakerCategoryText}>{item.category}</Text>
+                </View>
+                <Text style={styles.icebreakerCardText}>{item.text}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* ══════════════════════════════════════════════════════════
+           REPORT MODAL
+         ══════════════════════════════════════════════════════════ */}
+      <ReportModal
+        visible={reportVisible}
+        onClose={() => setReportVisible(false)}
+        onSubmit={handleReportSubmit}
+      />
+    </View>
+  );
+};
+
+// ─── Modal Report Component ───────────────────────────────────────────────────
 
 interface ReportModalProps {
   visible: boolean;
@@ -105,28 +1139,23 @@ interface ReportModalProps {
 }
 
 const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit }) => {
+  const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<string[]>([]);
   const [note, setNote] = useState("");
 
   const toggleReason = (id: string) => {
-    setSelected((prev) => {
-      const updated = prev.includes(id)
-        ? prev.filter((r) => r !== id)
-        : [...prev, id];
-      console.log("[ReportModal] Selected reasons updated:", updated);
-      return updated;
-    });
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id]
+    );
   };
 
   const handleSubmit = () => {
-    console.log("[ReportModal] Submitting report — reasons:", selected, "| note:", note.trim());
     onSubmit(selected, note.trim());
     setSelected([]);
     setNote("");
   };
 
   const handleClose = () => {
-    console.log("[ReportModal] Modal closed by user");
     setSelected([]);
     setNote("");
     onClose();
@@ -142,20 +1171,13 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
       statusBarTranslucent
       onRequestClose={handleClose}
     >
-      <TouchableOpacity
-        style={modalStyles.backdrop}
-        activeOpacity={1}
-        onPress={handleClose}
-      />
-
-      <View style={modalStyles.sheet}>
+      <TouchableOpacity style={modalStyles.backdrop} activeOpacity={1} onPress={handleClose} />
+      <View style={[modalStyles.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
         <View style={modalStyles.handle} />
 
         <View style={modalStyles.header}>
-          <Text style={modalStyles.title}>Report User</Text>
-          <Text style={modalStyles.subtitle}>
-            Select all that apply, or write your own.
-          </Text>
+          <Text style={modalStyles.title}>Report Participant</Text>
+          <Text style={modalStyles.subtitle}>Help keep our community safe and respectful.</Text>
         </View>
 
         <ScrollView
@@ -179,7 +1201,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
                   </Text>
                   {isActive && (
                     <View style={modalStyles.checkBadge}>
-                      <Text style={modalStyles.checkMark}>✓</Text>
+                      <Check size={12} color="#FFF" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -189,14 +1211,14 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
 
           <View style={modalStyles.divider}>
             <View style={modalStyles.dividerLine} />
-            <Text style={modalStyles.dividerText}>or describe</Text>
+            <Text style={modalStyles.dividerText}>Additional Details</Text>
             <View style={modalStyles.dividerLine} />
           </View>
 
           <TextInput
             style={modalStyles.input}
-            placeholder="Describe the issue in your own words…"
-            placeholderTextColor="#555869"
+            placeholder="Describe what happened in detail..."
+            placeholderTextColor="#64748B"
             multiline
             numberOfLines={4}
             maxLength={500}
@@ -219,7 +1241,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
             activeOpacity={0.85}
           >
             <Text style={[modalStyles.submitText, !canSubmit && modalStyles.submitTextDisabled]}>
-              Submit Report
+              Submit & Leave
             </Text>
           </TouchableOpacity>
         </View>
@@ -228,1154 +1250,835 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Stylesheet ───────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: {
+  container: {
     flex: 1,
-    backgroundColor: colors.black,
+    backgroundColor: "#020617",
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    gap: 12,
+    backgroundColor: "#020617",
   },
-  topBarOverlay: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 10,
+  loadingPulseWrap: {
+    width: 100,
+    height: 100,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
   },
-  timerBadge: {
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  timerText: { color: '#FFF', fontWeight: 'bold' },
-  vipBadge: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  vipText: { color: '#000', fontWeight: 'bold', fontSize: 12 },
-  reportBlockBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E53935',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
-  },
-  reportBlockText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
-  loadingText: { color: colors.white, fontSize: 16 },
-  errorText: {
-    color: colors.white,
-    fontSize: 16,
-    textAlign: "center",
-    marginHorizontal: 32,
-  },
-  controls: {
+  loadingPulseOuter: {
     position: "absolute",
-    bottom: 20,
-    left: 10,
-    right: 10,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 12,
-    gap: 12,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 20,
-    zIndex: 999,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
   },
-  reportBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#1C1E22",
+  loadingPulseInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(99, 102, 241, 0.3)",
     justifyContent: "center",
     alignItems: "center",
   },
-  reportIcon: { fontSize: 22, color: "#FFFFFF" },
-  controlBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#1C1E22",
+  loadingTitle: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  loadingSubtitle: {
+    color: "#94A3B8",
+    fontSize: 13,
+  },
+
+  // ── Error State ──
+  errorContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 24,
+    backgroundColor: "#020617",
   },
-  controlBtnLabel: { fontSize: 22 },
-  icebreakerToast: {
-    position: "absolute",
-    top: 60,
-    left: 24,
-    right: 24,
-    backgroundColor: "rgba(15, 23, 42, 0.95)",
-    borderRadius: 16,
-    padding: 16,
+  errorCard: {
+    width: "100%",
+    backgroundColor: "rgba(15, 23, 42, 0.9)",
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.4)",
-    elevation: 20,
-    zIndex: 9999,
+    borderColor: "rgba(239, 68, 68, 0.3)",
   },
-  icebreakerToastText: { color: colors.white, fontSize: 15, textAlign: "center", lineHeight: 22 },
-  reactionToast: {
-    position: "absolute",
-    top: "30%",
-    alignSelf: "center",
-    backgroundColor: "transparent",
-    padding: 20,
-    elevation: 20,
-    zIndex: 9999,
-  },
-  reactionToastText: {
-    fontSize: 80,
-  },
-  emojiPickerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 20,
-    zIndex: 9999,
-  },
-  emojiPickerBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  emojiPickerContainer: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
-    width: "85%",
-  },
-  emojiPickerTitle: { color: colors.white, fontSize: 16, fontWeight: "600", textAlign: "center", marginBottom: 16 },
-  emojiGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8 },
-  emojiItem: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceAlt,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emojiText: { fontSize: 24 },
-  icebreakerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
-    elevation: 20,
-    zIndex: 9999,
-  },
-  icebreakerBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  giftItemCard: {
-    width: "45%",
-    backgroundColor: "rgba(30, 41, 59, 0.7)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-  },
-  giftIcon: {
-    fontSize: 40,
+  errorTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 16,
     marginBottom: 8,
   },
-  giftCost: {
-    color: "#F59E0B",
-    fontWeight: "700",
+  errorSubtitle: {
+    color: "#94A3B8",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  errorBtn: {
+    backgroundColor: "#6366F1",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 14,
+  },
+  errorBtnText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+
+  // ── Top Header Bar ──
+  topHeader: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    zIndex: 100,
+  },
+  partnerInfoPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    gap: 8,
+    maxWidth: "50%",
+  },
+  partnerAvatarWrap: {
+    position: "relative",
+  },
+  partnerAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  partnerAvatarFallback: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#6366F1",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  partnerAvatarText: {
+    color: "#FFF",
+    fontWeight: "bold",
     fontSize: 14,
   },
-  giftAnimationContainer: {
+  onlineStatusDot: {
     position: "absolute",
-    top: "30%",
-    left: 0,
-    right: 0,
+    bottom: -1,
+    right: -1,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: "#22C55E",
+    borderWidth: 1.5,
+    borderColor: "#0F172A",
+  },
+  partnerTextGroup: {
+    flex: 1,
+  },
+  partnerNameRow: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 4,
+  },
+  partnerNameText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  vipBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 6,
+    gap: 2,
+  },
+  vipBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 8,
+    fontWeight: "800",
+  },
+  liveCallStatus: {
+    color: "#22C55E",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+
+  // ── Timer Pill ──
+  timerPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    gap: 6,
+  },
+  timerPillUrgent: {
+    backgroundColor: "rgba(239, 68, 68, 0.9)",
+    borderColor: "#EF4444",
+  },
+  timerPillText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  timerPillTextUrgent: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  },
+
+  // ── Top Action Group ──
+  topActionGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  topIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
     justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+  },
+
+  // ── Floating Reactions ──
+  reactionsContainer: {
+    position: "absolute",
+    right: 24,
+    bottom: 140,
+    width: 100,
+    height: 350,
+    justifyContent: "flex-end",
+    alignItems: "center",
+    zIndex: 90,
+  },
+  reactionBubble: {
+    position: "absolute",
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    borderRadius: 25,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  reactionEmojiText: {
+    fontSize: 32,
+  },
+
+  // ── Floating Icebreaker Toast ──
+  icebreakerToast: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    zIndex: 110,
+  },
+  icebreakerToastInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    gap: 12,
+  },
+  icebreakerToastIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  icebreakerToastHeader: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  icebreakerToastBody: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 19,
+    marginTop: 2,
+  },
+
+  // ── Gift Animation Overlays ──
+  giftAnimationContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 120,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  giftUnopenedBox: {
+    width: "80%",
+    borderRadius: 24,
+    overflow: "hidden",
     elevation: 20,
-    zIndex: 9999,
+  },
+  giftUnopenedGradient: {
+    padding: 24,
+    alignItems: "center",
   },
   giftIconLarge: {
-    fontSize: 120,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 10,
-  },
-  giftText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: "800",
-    marginTop: 16,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  icebreakerContainer: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: 40,
-    maxHeight: "60%",
-  },
-  icebreakerTitle: { color: colors.white, fontSize: 17, fontWeight: "700", marginBottom: 16, textAlign: "center" },
-  icebreakerList: { flexGrow: 0 },
-  icebreakerItem: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: 12,
+    fontSize: 72,
     marginBottom: 8,
   },
-  icebreakerItemText: { color: colors.white, fontSize: 14, lineHeight: 20 },
+  giftUnopenedTitle: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  giftUnopenedSub: {
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: 13,
+    textAlign: "center",
+  },
+  giftOpenedBox: {
+    width: "80%",
+    borderRadius: 24,
+    overflow: "hidden",
+    elevation: 20,
+  },
+  giftOpenedGradient: {
+    padding: 28,
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "rgba(245, 158, 11, 0.5)",
+  },
+  giftOpenedIcon: {
+    fontSize: 80,
+    marginBottom: 10,
+  },
+  giftOpenedTitle: {
+    color: "#F59E0B",
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  giftOpenedSender: {
+    color: "#E2E8F0",
+    fontSize: 14,
+  },
+
+  // ── Safety Blur Overlay ──
+  safetyBlurOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 95,
+    paddingHorizontal: 32,
+  },
+  safetyShieldWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.3)",
+  },
+  safetyBlurTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  safetyBlurSubtitle: {
+    color: "#94A3B8",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  safetyCountdownPill: {
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.4)",
+  },
+  safetyCountdownText: {
+    color: "#818CF8",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+
+  // ── Bottom Dock Controls ──
+  bottomDockWrapper: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 0,
+    zIndex: 100,
+  },
+  utilityRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  utilityPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    gap: 6,
+  },
+  utilityPillActive: {
+    backgroundColor: "rgba(30, 41, 59, 0.95)",
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  utilityPillText: {
+    color: "#E2E8F0",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  mainControlDock: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-evenly",
+    backgroundColor: "rgba(15, 23, 42, 0.85)",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  streamBtnContainer: {
+    width: 48,
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  endCallBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    overflow: "hidden",
+  },
+  endCallBtnGradient: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // ── Floating Picker Sheets ──
+  floatingPickerSheet: {
+    position: "absolute",
+    alignSelf: "center",
+    width: SCREEN_WIDTH * 0.88,
+    backgroundColor: "#0F172A",
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    elevation: 25,
+  },
+  pickerSheetTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  emojiGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  emojiGridBtn: {
+    width: (SCREEN_WIDTH * 0.88 - 40 - 40) / 5,
+    height: (SCREEN_WIDTH * 0.88 - 40 - 40) / 5,
+    backgroundColor: "#1E293B",
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emojiGridText: {
+    fontSize: 26,
+  },
+
+  // ── Gift Shop Sheet ──
+  giftSheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  walletBalanceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.3)",
+    gap: 6,
+  },
+  walletCoinIcon: {
+    fontSize: 14,
+  },
+  walletBalanceText: {
+    color: "#F59E0B",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  giftTabTrack: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    backgroundColor: "#1E293B",
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 8,
+  },
+  giftTabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  giftTabBtnActive: {
+    backgroundColor: "#6366F1",
+  },
+  giftTabText: {
+    color: "#94A3B8",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  giftTabTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  },
+  giftCardGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  giftCard: {
+    width: "47%",
+    backgroundColor: "#1E293B",
+    borderRadius: 18,
+    padding: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+  },
+  giftCardEmoji: {
+    fontSize: 38,
+    marginBottom: 8,
+  },
+  giftCardName: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  giftPriceBadge: {
+    backgroundColor: "rgba(245, 158, 11, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.3)",
+  },
+  giftPriceText: {
+    color: "#F59E0B",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  emptyInventoryWrap: {
+    width: "100%",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyInventoryIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyInventoryTitle: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  emptyInventorySub: {
+    color: "#64748B",
+    fontSize: 13,
+    textAlign: "center",
+  },
+
+  // ── Icebreaker Cards ──
+  icebreakerCard: {
+    backgroundColor: "#1E293B",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+  },
+  icebreakerCategoryBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  icebreakerCategoryText: {
+    color: "#818CF8",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  icebreakerCardText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 20,
+  },
+
+  // ── More Actions Sheet ──
+  actionSheetItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1E293B",
+    padding: 16,
+    borderRadius: 16,
+    gap: 14,
+  },
+  actionSheetIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  actionSheetItemTitle: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
+  actionSheetItemSub: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
+  actionSheetCancelBtn: {
+    backgroundColor: "#0F172A",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  actionSheetCancelText: {
+    color: "#94A3B8",
+    fontSize: 14,
+    fontWeight: "700",
+  },
 });
+
+// ─── Modal Sheet Common Styles ────────────────────────────────────────────────
 
 const modalStyles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.65)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
   sheet: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#13151A",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 36,
-    maxHeight: "85%",
+    backgroundColor: "#0F172A",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    elevation: 30,
   },
   handle: {
-    width: 40,
+    width: 44,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#2E3140",
+    backgroundColor: "#334155",
     alignSelf: "center",
     marginTop: 12,
     marginBottom: 4,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1E2130",
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 10,
   },
   title: {
     color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+    fontSize: 18,
+    fontWeight: "bold",
   },
   subtitle: {
-    color: "#6B7280",
+    color: "#94A3B8",
     fontSize: 13,
-    marginTop: 4,
+    marginTop: 3,
   },
   scroll: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 12,
   },
-  reasonsGrid: { gap: 10 },
+  reasonsGrid: {
+    gap: 8,
+  },
   reasonChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1C1E26",
+    backgroundColor: "#1E293B",
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "#2A2D3A",
-    paddingVertical: 13,
+    borderColor: "#334155",
+    paddingVertical: 12,
     paddingHorizontal: 16,
     gap: 12,
   },
   reasonChipActive: {
-    backgroundColor: "#1A2235",
-    borderColor: "#3B82F6",
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    borderColor: "#6366F1",
   },
-  reasonIcon: { fontSize: 18, lineHeight: 22 },
+  reasonIcon: {
+    fontSize: 18,
+  },
   reasonLabel: {
     flex: 1,
-    color: "#9CA3AF",
+    color: "#94A3B8",
     fontSize: 14,
     fontWeight: "500",
   },
-  reasonLabelActive: { color: "#E5E7EB" },
+  reasonLabelActive: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
   checkBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#3B82F6",
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#6366F1",
     justifyContent: "center",
     alignItems: "center",
   },
-  checkMark: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 18,
+    marginVertical: 16,
     gap: 10,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#1E2130" },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#334155",
+  },
   dividerText: {
-    color: "#4B5563",
+    color: "#64748B",
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: "#1C1E26",
+    backgroundColor: "#1E293B",
     borderWidth: 1.5,
-    borderColor: "#2A2D3A",
+    borderColor: "#334155",
     borderRadius: 14,
-    color: "#E5E7EB",
+    color: "#FFFFFF",
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 20,
     padding: 14,
-    minHeight: 100,
+    minHeight: 90,
   },
   charCount: {
-    color: "#4B5563",
+    color: "#64748B",
     fontSize: 11,
     textAlign: "right",
-    marginTop: 6,
-    marginBottom: 4,
+    marginTop: 4,
   },
   actions: {
     flexDirection: "row",
-    gap: 12,
+    gap: 10,
     paddingHorizontal: 20,
     paddingTop: 16,
   },
   cancelBtn: {
     flex: 1,
-    height: 50,
+    height: 48,
     borderRadius: 14,
-    backgroundColor: "#1C1E26",
-    borderWidth: 1.5,
-    borderColor: "#2A2D3A",
+    backgroundColor: "#1E293B",
+    borderWidth: 1,
+    borderColor: "#334155",
     justifyContent: "center",
     alignItems: "center",
   },
-  cancelText: { color: "#9CA3AF", fontSize: 15, fontWeight: "600" },
+  cancelText: {
+    color: "#94A3B8",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   submitBtn: {
     flex: 2,
-    height: 50,
+    height: 48,
     borderRadius: 14,
     backgroundColor: "#EF4444",
     justifyContent: "center",
     alignItems: "center",
   },
-  submitBtnDisabled: { backgroundColor: "#2A2D3A" },
+  submitBtnDisabled: {
+    backgroundColor: "#334155",
+  },
   submitText: {
     color: "#FFFFFF",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
-    letterSpacing: 0.3,
   },
-  submitTextDisabled: { color: "#4B5563" },
+  submitTextDisabled: {
+    color: "#64748B",
+  },
 });
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export const VideoChatView: React.FC<CoreProps> = ({
-  user,
-  setUser,
-  setView,
-  matchId,
-  callId,
-  role,
-  participantName,
-  participantImage,
-  matchData,
-  streamToken: streamTokenProp,
-  remoteUserId,
-  preference = 'everyone',
-}) => {
-  const clientRef  = useRef<StreamVideoClient | null>(null);
-  const callRef    = useRef<any>(null);
-  const joinedRef  = useRef(false);
-  const hasLeftRef = useRef(false);
-
-  const [call, setCall]                             = useState<any>(null);
-  const [isJoining, setIsJoining]                   = useState(true);
-  const [error, setError]                           = useState<string | null>(null);
-  const [permissionsGranted, setPermissionsGranted] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker]       = useState(false);
-  const [showIcebreakers, setShowIcebreakers]       = useState(false);
-  const [showGiftPicker, setShowGiftPicker]         = useState(false);
-  const [incomingIcebreaker, setIncomingIcebreaker] = useState<string | null>(null);
-  const [incomingGift, setIncomingGift]             = useState<any>(null);
-  const [myGifts, setMyGifts]                       = useState<any[]>([]);
-  const [giftTab, setGiftTab]                       = useState<'store' | 'inventory'>('store');
-  const [openedGift, setOpenedGift]                 = useState<boolean>(false);
-  const giftScale = useRef(new Animated.Value(0)).current;
-  const giftOpacity = useRef(new Animated.Value(1)).current;
-  const [reportVisible, setReportVisible]           = useState(false);
-  const [userReport]                                = useUserReportMutation();
-  const [isBlurred, setIsBlurred]                   = useState(true);
-  const token = useSelector(tokenSelector);
-  const dispatch = useDispatch();
-  const [isTranslated, setIsTranslated]             = useState(false);
-  const [isFilterActive, setIsFilterActive]         = useState(false);
-  const [callDuration, setCallDuration]             = useState(0);
-  const [isFrontCamera, setIsFrontCamera]           = useState(true);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (call && !isJoining) {
-      interval = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [call, isJoining]);
-
-
-
-  const formatDuration = (secs: number) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, '0');
-    const s = (secs % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  const fetchMyGifts = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}user/gifts`, {
-        method: 'GET',
-        headers: {
-          'x-access-token': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      const json = await res.json();
-      if (json.success) {
-        setMyGifts(json.data || []);
-      } else {
-        console.error("Fetch gifts failed", json.message);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    // 3-second mandatory blur protection
-    const timer = setTimeout(() => setIsBlurred(false), 3000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  console.log(
-    "[VideoChatView] render — callId:", callId,
-    "| matchId:", matchId,
-    "| role:", role,
-    "| isJoining:", isJoining,
-    "| permissionsGranted:", permissionsGranted
-  );
-
-  // ─── Report handlers ─────────────────────────────
-
-  const handleReport = useCallback(() => {
-    console.log("[VideoChatView] 📋 Report button pressed — opening modal");
-    setReportVisible(true);
-  }, []);
-
-  const handleReportClose = useCallback(() => {
-    console.log("[VideoChatView] Report modal dismissed without submitting");
-    setReportVisible(false);
-  }, []);
-
-  const handleReportSubmit = useCallback(
-    async (selected: string[], note: string) => {
-      console.log(
-        "[VideoChatView] 📤 Report submit — reasons:", selected,
-        "| note:", note,
-        "| matchId:", matchId,
-        "| reportedUser:", matchData?.userId || matchData?.id
-      );
-      setReportVisible(false);
-
-      try {
-        const { _userId } = await getUser();
-        console.log("[VideoChatView] Reporting as userId:", _userId);
-
-        await managerApiCall(
-          userReport,
-          {
-            category: selected,
-            message: note,
-            matchId: matchId,
-            reportedUser: matchData?.userId || matchData?.id,
-          },
-          (res: any) => {
-            console.log("[VideoChatView] ✅ Report API success:", JSON.stringify(res, null, 2));
-            ShowAlertMessage("Reported successfully" , popTypes.info)
-          }
-        );
-      } catch (err) {
-        console.error("[VideoChatView] ❌ Report API error:", err);
-      }
-
-      handleEndCall();
-    },
-    [matchId, matchData]
-  );
-
-  // ─── Block hardware back ─────────────────────────
-
-  useEffect(() => {
-    console.log("[VideoChatView] Registering hardware back press block");
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
-      console.log("[VideoChatView] Hardware back press intercepted and blocked");
-      return true;
-    });
-    return () => {
-      console.log("[VideoChatView] Removing hardware back press block");
-      sub.remove();
-    };
-  }, []);
-
-  // ─── Permissions ────────────────────────────────
-
-  useEffect(() => {
-    const ask = async () => {
-      console.log("[VideoChatView] Requesting A/V permissions — platform:", Platform.OS);
-
-      if (Platform.OS === "android") {
-        const result = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        ]);
-
-        console.log("[VideoChatView] Android permission results:", JSON.stringify(result, null, 2));
-
-        const cameraOk = result[PermissionsAndroid.PERMISSIONS.CAMERA]       === PermissionsAndroid.RESULTS.GRANTED;
-        const micOk    = result[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
-        const ok       = cameraOk && micOk;
-
-        console.log("[VideoChatView] Camera granted:", cameraOk, "| Mic granted:", micOk);
-
-        if (!ok) {
-          console.warn("[VideoChatView] ⚠️ Permission denied — camera:", cameraOk, "| mic:", micOk);
-          setError("Camera & Mic permissions required");
-        } else {
-          console.log("[VideoChatView] ✅ All Android permissions granted");
-        }
-
-        setPermissionsGranted(ok);
-      } else {
-        console.log("[VideoChatView] Requesting iOS permissions");
-        try {
-          const { request, PERMISSIONS, RESULTS } = require('react-native-permissions');
-          const cameraStatus = await request(PERMISSIONS.IOS.CAMERA);
-          const micStatus = await request(PERMISSIONS.IOS.MICROPHONE);
-          
-          const cameraOk = cameraStatus === RESULTS.GRANTED;
-          const micOk = micStatus === RESULTS.GRANTED;
-          
-          if (!cameraOk || !micOk) {
-            console.warn("[VideoChatView] ⚠️ Permission denied on iOS — camera:", cameraOk, "| mic:", micOk);
-            setError("Camera & Mic permissions required");
-            setPermissionsGranted(false);
-          } else {
-            console.log("[VideoChatView] ✅ All iOS permissions granted");
-            setPermissionsGranted(true);
-          }
-        } catch (err) {
-          console.error("Error requesting iOS permissions:", err);
-          setPermissionsGranted(true); // Fallback
-        }
-      }
-    };
-
-    ask();
-  }, []);
-
-  // ─── Init Call ──────────────────────────────────
-
-  useEffect(() => {
-    const hasToken  = !!streamTokenProp?.token;
-    const hasApiKey = !!streamTokenProp?.apiKey;
-    const hasUserId = !!streamTokenProp?.userId;
-    const hasCallId = !!callId;
-
-    console.log(
-      "[VideoChatView] Init call effect — permissionsGranted:", permissionsGranted,
-      "| hasToken:", hasToken,
-      "| hasApiKey:", hasApiKey,
-      "| hasUserId:", hasUserId,
-      "| hasCallId:", hasCallId
-    );
-
-    if (!hasToken || !hasApiKey || !hasUserId || !hasCallId) {
-      console.error("[VideoChatView] ❌ Missing call credentials — aborting setup");
-      setError("Missing call credentials");
-      setIsJoining(false);
-      return;
-    }
-
-    if (!permissionsGranted) {
-      console.log("[VideoChatView] Permissions not yet granted — waiting…");
-      return;
-    }
-
-    const setup = async () => {
-      console.log(
-        "[VideoChatView] 🔧 Creating StreamVideoClient — apiKey:", streamTokenProp!.apiKey,
-        "| userId:", streamTokenProp!.userId
-      );
-
-      try {
-        const videoClient = StreamVideoClient.getOrCreateInstance({
-          apiKey: streamTokenProp!.apiKey,
-          user:  { id: streamTokenProp!.userId },
-          token: streamTokenProp!.token,
-        });
-
-        console.log("[VideoChatView] ✅ StreamVideoClient ready");
-        clientRef.current = videoClient;
-
-        console.log("[VideoChatView] 📞 Calling videoClient.call('default',", callId, ")");
-        const streamCall = videoClient.call("default", callId!);
-
-        console.log("[VideoChatView] Joining call with create: true…");
-        await streamCall.join({ create: true });
-        await streamCall.microphone.enable(); // Issue 8 fix: explicitly enable mic
-
-        console.log("[VideoChatView] ✅ Joined call successfully — callId:", callId);
-        callRef.current   = streamCall;
-        joinedRef.current = true;
-        setCall(streamCall);
-      } catch (e: any) {
-        console.error("[VideoChatView] ❌ Call join failed:", e?.message, "\nFull error:", e);
-        setError(e?.message || "Join failed");
-      } finally {
-        setIsJoining(false);
-        console.log("[VideoChatView] isJoining set to false");
-      }
-    };
-
-    setup();
-
-    return () => {
-      console.log(
-        "[VideoChatView] Init effect cleanup — hasLeft:", hasLeftRef.current,
-        "| joined:", joinedRef.current
-      );
-      if (!hasLeftRef.current && joinedRef.current) {
-        console.log("[VideoChatView] Cleanup: leaving call and disconnecting client");
-        callRef.current?.leave().catch((err: any) =>
-          console.warn("[VideoChatView] leave() error during cleanup:", err)
-        );
-        clientRef.current?.disconnectUser().catch((err: any) =>
-          console.warn("[VideoChatView] disconnectUser() error during cleanup:", err)
-        );
-      }
-    };
-  }, [
-    streamTokenProp?.token,
-    streamTokenProp?.apiKey,
-    streamTokenProp?.userId,
-    callId,
-    permissionsGranted,
-  ]);
-
-  // ─── Event & Participant listeners ────────────────────────
-
-  const handleEndCall = useCallback(async () => {
-    console.log("[VideoChatView] 📵 handleEndCall triggered — hasLeft:", hasLeftRef.current);
-
-    if (hasLeftRef.current) {
-      console.log("[VideoChatView] Already left — ignoring duplicate end call");
-      return;
-    }
-
-    hasLeftRef.current = true;
-
-    try {
-      await callRef.current?.leave();
-      console.log("[VideoChatView] ✅ call.leave() completed");
-    } catch (err) {
-      console.warn("[VideoChatView] call.leave() threw:", err);
-    }
-
-    try {
-      await clientRef.current?.disconnectUser();
-      console.log("[VideoChatView] ✅ disconnectUser() completed");
-    } catch (err) {
-      console.warn("[VideoChatView] disconnectUser() threw:", err);
-    }
-
-    if (matchId) {
-      console.log("[VideoChatView] 📡 Emitting socket end-call — matchId:", matchId);
-      socket.emit("end-call", { matchId });
-    } else {
-      console.warn("[VideoChatView] No matchId — skipping end-call socket emit");
-    }
-
-    console.log("[VideoChatView] Navigating to AppView.MATCH_FOUND to search again");
-    setView(AppView.MATCH_FOUND, { 
-      preference,
-      showRatingModal: true,
-      lastMatchId: matchId,
-      lastPartnerName: (matchData?.user1 as any)?._id === (user as any)?._id ? matchData?.user2?.displayName : matchData?.user1?.displayName || "your partner"
-    });
-  }, [matchId, setView, preference]);
-
-  useEffect(() => {
-    // Enforce 120s limit for Free users
-    const isAnyPremium = user?.isPremium === 'premium' || user?.role === 'premium' || matchData?.user1?.isPremium === 'premium' || matchData?.user2?.isPremium === 'premium';
-    if (!isAnyPremium && callDuration >= 120) {
-      console.log("[VideoChatView] Free limit reached, ending call.");
-      ShowAlertMessage("Free call limit reached. Upgrade to Premium for unlimited calls!", popTypes.error);
-      handleEndCall();
-    }
-  }, [callDuration, user.role, handleEndCall]);
-
-  useEffect(() => {
-    console.log("[VideoChatView] dY`? Attaching socket event listeners");
-
-    const onCallEndedFallback = (data: any) => {
-      console.log("[VideoChatView] 🛑 Socket event received: call-ended/partner-disconnected", data);
-      handleEndCall();
-    };
-
-    const onIcebreaker = (data: any) => {
-      console.log("[VideoChatView] 🧊 Icebreaker received:", data);
-      setIncomingIcebreaker(data.message || data);
-      setTimeout(() => setIncomingIcebreaker(null), 8000);
-    };
-
-    const onReaction = (data: any) => {
-      console.log("[VideoChatView] 😀 Reaction received:", data);
-      setIncomingReaction({ emoji: data.emoji, id: Date.now() });
-    };
-
-    const onGiftReceived = (data: any) => {
-      console.log("[VideoChatView] 🎁 Gift received:", data);
-      setIncomingGift(data);
-      setOpenedGift(false);
-      giftScale.setValue(0);
-      giftOpacity.setValue(1);
-      setTimeout(() => setIncomingGift(null), 15000); // Hide after 15s if not tapped
-      fetchMyGifts(); // Fetch new gifts to update inventory
-    };
-
-    const onGiftSentSuccess = (data: any) => {
-      ShowAlertMessage("Gift sent successfully!", popTypes.success);
-      if (data.newBalance !== undefined && setUser) {
-         setUser((prev: any) => prev ? { ...prev, walletBalance: data.newBalance } : prev);
-         dispatch(setGlobalUser({ ...user, walletBalance: data.newBalance }));
-      }
-    };
-
-    const onGiftError = (data: any) => {
-      ShowAlertMessage(data.message || "Failed to send gift", popTypes.error);
-    };
-
-    socket.on("call-ended", onCallEndedFallback);
-    socket.on("match-ended", onCallEndedFallback);
-    socket.on("user-disconnected", onCallEndedFallback);
-    socket.on("partner-disconnected", onCallEndedFallback);
-    socket.on("icebreaker-received", onIcebreaker);
-    socket.on("reaction-received", onReaction);
-    socket.on("gift-received", onGiftReceived);
-    socket.on("gift-sent-success", onGiftSentSuccess);
-    socket.on("gift-error", onGiftError);
-
-    if (!call) {
-      return () => {
-        socket.off("call-ended", onCallEndedFallback);
-        socket.off("match-ended", onCallEndedFallback);
-        socket.off("user-disconnected", onCallEndedFallback);
-        socket.off("partner-disconnected", onCallEndedFallback);
-        socket.off("icebreaker-received", onIcebreaker);
-        socket.off("reaction-received", onReaction);
-        socket.off("gift-received", onGiftReceived);
-        socket.off("gift-sent-success", onGiftSentSuccess);
-        socket.off("gift-error", onGiftError);
-      };
-    };
-
-    console.log("[VideoChatView] 👀 Attaching Stream participant event listeners — callId:", callId);
-
-    let leaveTimeout: ReturnType<typeof setTimeout> | null = null;
-
-    const onParticipantJoined = (event: any) => {
-      console.log("[VideoChatView] 🟢 Participant joined event");
-      if (leaveTimeout) {
-        clearTimeout(leaveTimeout);
-        leaveTimeout = null;
-      }
-    };
-
-    const onParticipantLeft = (event: any) => {
-      console.log("[VideoChatView] 🔴 Participant left event from Stream");
-      
-      if (leaveTimeout) clearTimeout(leaveTimeout);
-      
-      // If a participant leaves in a 1-1 app, the call is over.
-      leaveTimeout = setTimeout(() => {
-        if (!hasLeftRef.current) {
-          console.log("[VideoChatView] 🚪 remote user left Stream call — ending call");
-          handleEndCall();
-        }
-      }, 3000);
-    };
-
-    call.on("call.session_participant_joined", onParticipantJoined);
-    call.on("call.session_participant_left",   onParticipantLeft);
-
-    return () => {
-      socket.off("call-ended", onCallEndedFallback);
-      socket.off("match-ended", onCallEndedFallback);
-      socket.off("user-disconnected", onCallEndedFallback);
-      socket.off("partner-disconnected", onCallEndedFallback);
-      socket.off("icebreaker-received", onIcebreaker);
-      socket.off("reaction-received", onReaction);
-      socket.off("gift-received", onGiftReceived);
-      socket.off("gift-sent-success", onGiftSentSuccess);
-      socket.off("gift-error", onGiftError);
-
-      console.log("[VideoChatView] Detaching participant listeners");
-      if (leaveTimeout) clearTimeout(leaveTimeout);
-      call.off("call.session_participant_joined", onParticipantJoined);
-      call.off("call.session_participant_left",   onParticipantLeft);
-    };
-  }, [call, handleEndCall]);
-
-  // ─── End call ───────────────────────────────────
-
-  const [incomingReaction, setIncomingReaction] = useState<{ emoji: string; id: number } | null>(null);
-
-  useEffect(() => {
-    if (incomingReaction) {
-      const timer = setTimeout(() => setIncomingReaction(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [incomingReaction]);
-
-  const sendReaction = useCallback(async (emoji: string) => {
-    const receiverId = remoteUserId;
-    if (receiverId) {
-      socket.emit("send-reaction", { receiverId, emoji });
-      // Show it to ourselves too
-      setIncomingReaction({ emoji, id: Date.now() });
-    }
-    setShowEmojiPicker(false);
-  }, [remoteUserId]);
-
-  const sendGift = useCallback((gift: any, inventoryGiftId?: string) => {
-    const receiverId = remoteUserId;
-    if (!receiverId) return;
-    socket.emit("send-gift", { receiverId, giftName: gift.name || gift.giftName, coinCost: gift.cost || gift.coinValue, inventoryGiftId });
-    setShowGiftPicker(false);
-  }, [remoteUserId]);
-
-  React.useEffect(() => {
-    if (showGiftPicker) {
-      fetchMyGifts();
-    }
-  }, [showGiftPicker, fetchMyGifts]);
-
-  const sendIcebreaker = useCallback((message: string) => {
-    const receiverId = remoteUserId;
-    if (!receiverId) return;
-    socket.emit("send-icebreaker", { receiverId, message });
-    setShowIcebreakers(false);
-  }, [remoteUserId]);
-
-
-  // ─── UI states ──────────────────────────────────
-
-  if (error) {
-    console.error("[VideoChatView] Rendering error screen:", error);
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={{ marginTop: 20, padding: 12, paddingHorizontal: 24, backgroundColor: colors.surfaceAlt, borderRadius: 10 }} onPress={handleEndCall}>
-          <Text style={{ color: colors.white, fontWeight: 'bold', fontSize: 16 }}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (isJoining || !call || !clientRef.current) {
-    console.log(
-      "[VideoChatView] Rendering loading screen — isJoining:", isJoining,
-      "| call ready:", !!call,
-      "| client ready:", !!clientRef.current
-    );
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.success} />
-        <Text style={styles.loadingText}>Connecting call...</Text>
-      </View>
-    );
-  }
-
-  console.log("[VideoChatView] ✅ Rendering live call UI — callId:", callId);
-
-  // ─── Call UI ────────────────────────────────────
-
-  const CallTimer = () => {
-    const isAnyPremium = user?.isPremium === 'premium' || user?.role === 'premium' || matchData?.user1?.isPremium === 'premium' || matchData?.user2?.isPremium === 'premium';
-    if (isAnyPremium) return null;
-    const remaining = 120 - callDuration;
-    if (remaining < 0) return null;
-    
-    const minutes = Math.floor(remaining / 60);
-    const seconds = remaining % 60;
-    const isUrgent = remaining <= 30;
-
-    return (
-      <View style={{
-        position: 'absolute',
-        top: 60,
-        alignSelf: 'center',
-        backgroundColor: isUrgent ? 'rgba(239, 68, 68, 0.9)' : 'rgba(0,0,0,0.6)',
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: 20,
-        zIndex: 100,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8
-      }}>
-        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>
-          Free Limit: {minutes}:{seconds.toString().padStart(2, '0')}
-        </Text>
-      </View>
-    );
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StreamVideo client={clientRef.current}>
-        <StreamCall call={call}>
-          <View style={StyleSheet.absoluteFill}>
-            <CallTimer />
-            <View style={styles.topBarOverlay}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
-                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>{participantName || 'Partner'}</Text>
-                {matchData?.isPremium === 'premium' && (
-                  <View style={styles.vipBadge}>
-                    <Text style={styles.vipText}>VIP</Text>
-                  </View>
-                )}
-              </View>
-              <TouchableOpacity style={styles.reportBlockBtn} onPress={() => {
-                socket.emit('blockUser', { targetId: remoteUserId });
-                handleEndCall();
-              }}>
-                <Shield size={14} color="#FFF" />
-                <Text style={styles.reportBlockText}>Report & Block</Text>
-              </TouchableOpacity>
-            </View>
-            <CallContent
-              onHangupCallHandler={handleEndCall}
-              layout="grid"
-              CallControls={() => (
-                <View style={styles.controls}>
-                  {/* @ts-ignore */}
-                  <ToggleAudioPublishingButton />
-                  {/* @ts-ignore */}
-                  <ToggleVideoPublishingButton />
-                  
-                  <View onTouchEnd={() => {
-                    setIsFrontCamera(prev => !prev);
-                  }}>
-                    {/* @ts-ignore */}
-                    <ToggleCameraFaceButton />
-                  </View>
-
-                  <TouchableOpacity style={styles.controlBtn} onPress={() => setShowEmojiPicker(true)}>
-                    <Text style={styles.controlBtnLabel}>😊</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.controlBtn} onPress={() => setShowGiftPicker(true)}>
-                    <Text style={styles.controlBtnLabel}>🎁</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.controlBtn} onPress={() => setShowIcebreakers(true)}>
-                    <Text style={styles.controlBtnLabel}>💬</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.controlBtn} onPress={() => {
-                    setIsFilterActive(!isFilterActive);
-                    ShowAlertMessage(isFilterActive ? "AR Filter Off" : "AR Filter On", popTypes.success);
-                  }}>
-                    <Text style={[styles.controlBtnLabel, { opacity: isFilterActive ? 1 : 0.5 }]}>🎭</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.reportBtn} onPress={handleReport}>
-                    <Text style={styles.reportIcon}>⚑</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={[styles.controlBtn, { backgroundColor: "#EF4444", width: 90, borderRadius: 26, flexDirection: 'row', gap: 6 }]} onPress={handleEndCall}>
-                    <PhoneOff size={20} color="#FFF" />
-                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 14 }}>End</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            />
-            {/* Blur Protection Overlay */}
-            {isBlurred && (
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.95)", justifyContent: "center", alignItems: "center", zIndex: 10 }]}>
-                <Shield color="#6366F1" size={48} />
-                <Text style={{ color: "#FFF", fontSize: 18, fontWeight: "700", marginTop: 16 }}>Safety Blur Active</Text>
-                <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, marginTop: 8 }}>Revealing video in 3 seconds...</Text>
-              </View>
-            )}
-          </View>
-        </StreamCall>
-      </StreamVideo>
-
-      {incomingReaction && (
-        <View style={styles.reactionToast}>
-          <Text style={styles.reactionToastText}>{incomingReaction.emoji}</Text>
-        </View>
-      )}
-
-      {incomingIcebreaker && (
-        <View style={styles.icebreakerToast}>
-          <Text style={styles.icebreakerToastText}>{incomingIcebreaker}</Text>
-        </View>
-      )}
-
-      {incomingGift && (
-        <View style={[styles.giftAnimationContainer, { padding: 0, backgroundColor: 'transparent' }]}>
-          {!openedGift ? (
-            <TouchableOpacity 
-              style={{ backgroundColor: 'rgba(0,0,0,0.8)', padding: 20, borderRadius: 20, alignItems: 'center' }}
-              onPress={() => {
-                setOpenedGift(true);
-                Animated.spring(giftScale, {
-                  toValue: 1,
-                  friction: 4,
-                  useNativeDriver: true
-                }).start();
-                
-                setTimeout(() => {
-                  Animated.timing(giftOpacity, {
-                    toValue: 0,
-                    duration: 1000,
-                    useNativeDriver: true
-                  }).start(() => {
-                    setIncomingGift(null);
-                  });
-                }, 3000);
-              }}
-            >
-              <Text style={styles.giftIconLarge}>🎁</Text>
-              <Text style={styles.giftText}>Tap to open gift from {incomingGift.senderName}!</Text>
-            </TouchableOpacity>
-          ) : (
-            <Animated.View style={{ backgroundColor: 'rgba(0,0,0,0.85)', padding: 30, borderRadius: 30, alignItems: 'center', transform: [{ scale: giftScale }], opacity: giftOpacity }}>
-               <Text style={{ fontSize: 90, marginBottom: 15 }}>{
-                  GIFTS.find(g => g.name === incomingGift.giftName)?.icon || '🎁'
-               }</Text>
-               <Text style={[styles.giftText, { fontSize: 20, color: '#FFD700', fontWeight: 'bold' }]}>{incomingGift.senderName} sent you a {incomingGift.giftName}!</Text>
-            </Animated.View>
-          )}
-        </View>
-      )}
-
-      {showEmojiPicker && (
-        <View style={styles.emojiPickerOverlay}>
-          <TouchableOpacity style={styles.emojiPickerBg} onPress={() => setShowEmojiPicker(false)} />
-          <View style={styles.emojiPickerContainer}>
-            <Text style={styles.emojiPickerTitle}>Send a reaction</Text>
-            <View style={styles.emojiGrid}>
-              {EMOJIS.map((emoji) => (
-                <TouchableOpacity key={emoji} style={styles.emojiItem} onPress={() => sendReaction(emoji)}>
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
-      )}
-
-      {showIcebreakers && (
-        <View style={styles.icebreakerOverlay}>
-          <TouchableOpacity style={styles.icebreakerBg} onPress={() => setShowIcebreakers(false)} />
-          <View style={styles.icebreakerContainer}>
-            <Text style={styles.icebreakerTitle}>Conversation starters</Text>
-            <ScrollView style={styles.icebreakerList}>
-              {ICEBREAKERS.map((q, i) => (
-                <TouchableOpacity key={i} style={styles.icebreakerItem} onPress={() => sendIcebreaker(q)}>
-                  <Text style={styles.icebreakerItemText}>{q}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      )}
-
-      {showGiftPicker && (
-        <View style={styles.emojiPickerOverlay}>
-          <TouchableOpacity style={styles.emojiPickerBg} onPress={() => setShowGiftPicker(false)} />
-          <View style={[styles.emojiPickerContainer, { maxHeight: '60%' }]}>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16, gap: 10 }}>
-              <TouchableOpacity onPress={() => setGiftTab('store')} style={{ paddingBottom: 5, borderBottomWidth: giftTab === 'store' ? 2 : 0, borderBottomColor: '#EC4899' }}>
-                <Text style={{ color: giftTab === 'store' ? '#EC4899' : colors.white, fontWeight: 'bold' }}>Store</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setGiftTab('inventory')} style={{ paddingBottom: 5, borderBottomWidth: giftTab === 'inventory' ? 2 : 0, borderBottomColor: '#EC4899' }}>
-                <Text style={{ color: giftTab === 'inventory' ? '#EC4899' : colors.white, fontWeight: 'bold' }}>My Inventory</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView contentContainerStyle={{ paddingBottom: 10 }}>
-              {giftTab === 'store' ? (
-                <View style={styles.emojiGrid}>
-                  {GIFTS.map((gift) => (
-                    <TouchableOpacity key={gift.id} style={styles.giftItemCard} onPress={() => sendGift(gift)}>
-                      <Text style={styles.giftIcon}>{gift.icon}</Text>
-                      <Text style={styles.giftCost}>{gift.cost} Coins</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.emojiGrid}>
-                  {myGifts.length === 0 ? (
-                    <Text style={{ color: colors.textMuted, textAlign: 'center', marginTop: 20 }}>No gifts in inventory.</Text>
-                  ) : (
-                    myGifts.map((gift) => {
-                      const iconData = GIFTS.find(g => g.name === gift.giftName)?.icon || 'dYZ?';
-                      return (
-                        <TouchableOpacity key={gift._id} style={styles.giftItemCard} onPress={() => sendGift(gift, gift._id)}>
-                          <Text style={styles.giftIcon}>{iconData}</Text>
-                          <Text style={styles.giftCost}>Send Free</Text>
-                        </TouchableOpacity>
-                      );
-                    })
-                  )}
-                </View>
-              )}
-            </ScrollView>
-          </View>
-        </View>
-      )}
-
-      <ReportModal
-        visible={reportVisible}
-        onClose={handleReportClose}
-        onSubmit={handleReportSubmit}
-      />
-    </SafeAreaView>
-  );
-};
