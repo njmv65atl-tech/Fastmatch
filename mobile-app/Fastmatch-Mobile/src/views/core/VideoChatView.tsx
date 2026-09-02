@@ -572,6 +572,32 @@ export const VideoChatView: React.FC<CoreProps> = ({
   const freeRemaining = Math.max(0, 120 - callDuration);
   const isFreeUrgent = !isAnyPremium && freeRemaining <= 30;
 
+  // ─── Resolve Partner Details (Photo & Name) ─────────────────────────────────
+  const getAvatarUri = (img?: string | null) => {
+    if (!img) return null;
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    const cleanPath = img.startsWith("/") ? img.substring(1) : img;
+    return `${IMAGE_URL}/${cleanPath}`;
+  };
+
+  const partnerRawPhoto =
+    participantImage ||
+    (matchData?.user1?._id === user?._id
+      ? matchData?.user2?.profilePicture
+      : matchData?.user1?.profilePicture) ||
+    matchData?.remoteUser?.profilePicture;
+
+  const partnerAvatarUri = getAvatarUri(partnerRawPhoto);
+
+  const partnerDisplayName =
+    participantName ||
+    (matchData?.user1?._id === user?._id
+      ? (matchData?.user2?.displayName || matchData?.user2?.fullName)
+      : (matchData?.user1?.displayName || matchData?.user1?.fullName)) ||
+    matchData?.remoteUser?.displayName ||
+    matchData?.remoteUser?.fullName ||
+    "Partner";
+
   // ─── Render Live Call UI ────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
@@ -590,12 +616,15 @@ export const VideoChatView: React.FC<CoreProps> = ({
               {/* Partner Info Pill */}
               <View style={styles.partnerInfoPill}>
                 <View style={styles.partnerAvatarWrap}>
-                  {participantImage ? (
-                    <Image source={{ uri: `${IMAGE_URL}${participantImage}` }} style={styles.partnerAvatar} />
+                  {partnerAvatarUri ? (
+                    <Image
+                      source={{ uri: partnerAvatarUri, cache: "force-cache" }}
+                      style={styles.partnerAvatar}
+                    />
                   ) : (
                     <View style={styles.partnerAvatarFallback}>
                       <Text style={styles.partnerAvatarText}>
-                        {participantName?.charAt(0)?.toUpperCase() || "P"}
+                        {partnerDisplayName?.charAt(0)?.toUpperCase() || "P"}
                       </Text>
                     </View>
                   )}
@@ -605,7 +634,7 @@ export const VideoChatView: React.FC<CoreProps> = ({
                 <View style={styles.partnerTextGroup}>
                   <View style={styles.partnerNameRow}>
                     <Text style={styles.partnerNameText} numberOfLines={1}>
-                      {participantName || "Partner"}
+                      {partnerDisplayName}
                     </Text>
                     {matchData?.isPremium === "premium" && (
                       <LinearGradient colors={["#F59E0B", "#D97706"]} style={styles.vipBadge}>
@@ -1352,27 +1381,28 @@ const styles = StyleSheet.create({
   partnerInfoPill: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    backgroundColor: "rgba(15, 23, 42, 0.8)",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 24,
+    borderRadius: 26,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
     gap: 8,
-    maxWidth: "50%",
+    maxWidth: "58%",
   },
   partnerAvatarWrap: {
     position: "relative",
   },
   partnerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#1E293B",
   },
   partnerAvatarFallback: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#6366F1",
     justifyContent: "center",
     alignItems: "center",
@@ -1380,7 +1410,7 @@ const styles = StyleSheet.create({
   partnerAvatarText: {
     color: "#FFF",
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 15,
   },
   onlineStatusDot: {
     position: "absolute",
