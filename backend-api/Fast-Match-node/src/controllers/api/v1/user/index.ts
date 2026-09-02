@@ -689,28 +689,21 @@ class UserController extends ResponseHandler {
         try {
             const currentUserId = req.user._id;
             const page = parseInt(req.query.page as string) || 1;
-            const limit = parseInt(req.query.limit as string) || 20;
+            const limit = parseInt(req.query.limit as string) || 100;
             const skip = (page - 1) * limit;
 
             const currentUser = await User.findById(currentUserId).select('blockedUsers');
             const blockedUsers = currentUser?.blockedUsers || [];
 
-            // Find all existing friends and pending requests
-            const existingConnections = await FriendModel.find({
-                $or: [{ requester: currentUserId }, { recipient: currentUserId }]
-            });
-            const connectedUserIds = existingConnections.map(f => 
-                f.requester.toString() === currentUserId.toString() ? f.recipient : f.requester
-            );
-
-            // Fetch all users except current user, blocked users, and already connected users
-            const query = {
-                _id: { $nin: [currentUserId, ...blockedUsers, ...connectedUserIds] },
-                isBanned: { $ne: true }
+            // Fetch all registered users except current user, user's blocked users, and admin banned/deleted accounts
+            const query: any = {
+                _id: { $nin: [currentUserId, ...blockedUsers] },
+                isBanned: { $ne: true },
+                deletedByAdminAt: null
             };
 
             const users = await User.find(query)
-                .select('displayName profilePicture isOnline lastActive age gender location interests language createdAt')
+                .select('displayName fullName profilePicture isOnline lastActive age gender location interests language createdAt')
                 .sort({ isOnline: -1, lastActive: -1 })
                 .skip(skip)
                 .limit(limit);

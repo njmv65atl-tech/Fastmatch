@@ -20,8 +20,8 @@ import {
   useToggleFavoriteMutation
 } from "../../redux/services/auth";
 import { AppView } from "../../types";
-import { IMG_URL } from "../../redux/services";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
+import { UserAvatar } from "../../components/UserAvatar";
 
 interface FavoritesViewProps {
   setView: (view: AppView, params?: any) => void;
@@ -53,18 +53,13 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
       <View key={user._id} style={styles.friendCard}>
         <View style={styles.friendInfo}>
           <View style={styles.avatarContainer}>
-            {user.profilePicture ? (
-              <Image 
-                source={{ uri: `${IMG_URL}${user.profilePicture}`, cache: 'force-cache' }} 
-                style={styles.avatar} 
-              />
-            ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarFallbackText}>
-                  {user.displayName?.[0]?.toUpperCase() || user.fullName?.[0]?.toUpperCase()}
-                </Text>
-              </View>
-            )}
+            <UserAvatar
+              uri={user.profilePicture}
+              gender={user.gender}
+              name={user.displayName || user.fullName}
+              size={moderateScale(50)}
+              borderRadius={moderateScale(25)}
+            />
             {user.isOnline && <View style={styles.onlineBadge} />}
           </View>
           <View style={styles.friendDetails}>

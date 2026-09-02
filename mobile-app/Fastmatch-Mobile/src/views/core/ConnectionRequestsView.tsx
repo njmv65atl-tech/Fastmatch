@@ -17,8 +17,8 @@ import {
   useAcceptFriendRequestMutation,
   useRejectFriendRequestMutation,
 } from "../../redux/services/auth";
-import { IMAGE_URL } from "../../config/env";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
+import { UserAvatar } from "../../components/UserAvatar";
 
 export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }> = ({
   setView,
@@ -59,18 +59,13 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
     return (
       <View style={styles.card}>
         <View style={styles.headerRow}>
-          {requester.profilePicture ? (
-            <Image
-              source={{ uri: `${IMAGE_URL}${requester.profilePicture}`, cache: 'force-cache' }}
-              style={styles.avatar}
-            />
-          ) : (
-            <View style={[styles.avatar, styles.fallbackImage]}>
-              <Text style={styles.fallbackText}>
-                {requester.displayName?.charAt(0)?.toUpperCase()}
-              </Text>
-            </View>
-          )}
+          <UserAvatar
+            uri={requester.profilePicture}
+            gender={requester.gender}
+            name={requester.displayName}
+            size={48}
+            borderRadius={24}
+          />
           <View style={styles.info}>
             <Text style={styles.name}>{requester.displayName}</Text>
             <Text style={styles.subtext}>

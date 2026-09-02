@@ -160,40 +160,46 @@ const App: React.FC = () => {
   return () => clearTimeout(timer); // Cleanup timer on unmount
 }, []);
 
+  const [viewHistory, setViewHistory] = useState<AppView[]>(() => {
+    const initial = user?.role === UserRole.ADMIN ? AppView.ADMIN_DASHBOARD : user ? AppView.HOME : AppView.WELCOME;
+    return [initial];
+  });
+
+  const handleGoBack = React.useCallback(() => {
+    // If in active video chat, handled by video chat component
+    if (currentView === AppView.VIDEO_CHAT) {
+      return true;
+    }
+
+    if (viewHistory.length > 1) {
+      const nextHistory = [...viewHistory];
+      nextHistory.pop(); // remove current view
+      const prevView = nextHistory[nextHistory.length - 1];
+      setViewHistory(nextHistory);
+      setCurrentView(prevView);
+      return true; // handled
+    }
+
+    // If at root view (HOME, WELCOME, LOGIN, SIGNUP), allow default app exit
+    if (
+      currentView === AppView.HOME ||
+      currentView === AppView.WELCOME ||
+      currentView === AppView.LOGIN ||
+      currentView === AppView.SIGNUP ||
+      currentView === AppView.ADMIN_DASHBOARD
+    ) {
+      return false;
+    }
+
+    // Fallback if history became empty but on inner view -> go to HOME
+    setCurrentView(AppView.HOME);
+    setViewHistory([AppView.HOME]);
+    return true;
+  }, [currentView, viewHistory]);
+
   React.useEffect(() => {
     const onBackPress = () => {
-      // If we are at the root views, allow default behavior (exit app)
-      if (currentView === AppView.HOME || currentView === AppView.WELCOME || currentView === AppView.LOGIN || currentView === AppView.SIGNUP) {
-        return false;
-      }
-      
-      // If we are deep into the app, go back to HOME
-      if (
-        currentView === AppView.MATCH_FILTERS ||
-        currentView === AppView.DISCOVER ||
-        currentView === AppView.PROFILE ||
-        currentView === AppView.MONETIZATION ||
-        currentView === AppView.MY_GIFTS ||
-        currentView === AppView.GLOBAL_DISCOVERY ||
-        currentView === AppView.CONNECTION_REQUESTS ||
-        currentView === AppView.FRIENDS ||
-        currentView === AppView.CHAT_DETAIL
-      ) {
-        setCurrentView(AppView.HOME);
-        return true; // Prevent default behavior
-      }
-
-      // If we are deep in auth, go back to WELCOME
-      if (
-        currentView === AppView.FORGOT_PASSWORD ||
-        currentView === AppView.RESET_PASSWORD ||
-        currentView === AppView.OTP
-      ) {
-        setCurrentView(AppView.WELCOME);
-        return true;
-      }
-
-      return false; // Otherwise let default happen
+      return handleGoBack();
     };
 
     const backHandler = BackHandler.addEventListener(
@@ -202,7 +208,7 @@ const App: React.FC = () => {
     );
 
     return () => backHandler.remove();
-  }, [currentView]);
+  }, [handleGoBack]);
 
   React.useEffect(() => {
     setDispatch(dispatch);
@@ -282,20 +288,28 @@ const App: React.FC = () => {
     }
     
     if (view === AppView.CHAT_DETAIL && params?.userId) {
-      // ✅ FIX: Chat params go into dedicated chat state — NOT into activeCallParams.
-      // Previously (File 2), chat params were written into activeCallParams, which
-      // would be spread into <VideoChatView> and corrupt video call props.
       setSelectedChatUserId(params.userId);
       setSelectedChatUserName(params.userName || "Unknown User");
       setSelectedChatUserAvatar(params.userAvatar || null);
       setSelectedChatUnreadCount(params.unreadCount || 0);
       setSelectedChatUser(params.item || null);
     } else if (params) {
-      // Only non-chat navigations (e.g. VIDEO_CHAT) update activeCallParams.
       setActiveCallParams(params);
     } else {
       setActiveCallParams(null);
     }
+
+    setViewHistory((prev) => {
+      // If navigating to HOME from auth views, reset stack
+      if (view === AppView.HOME && (prev[prev.length - 1] === AppView.LOGIN || prev[prev.length - 1] === AppView.SIGNUP || prev[prev.length - 1] === AppView.WELCOME)) {
+        return [AppView.HOME];
+      }
+      if (prev[prev.length - 1] === view) {
+        return prev;
+      }
+      return [...prev, view];
+    });
+
     setCurrentView(view);
   };
 
@@ -478,24 +492,23 @@ const App: React.FC = () => {
       case AppView.PRIVACY:
         return (
           <Privacy
-            goBack={() => setCurrentView(AppView.SETTINGS)}
-            onAgree={() => setCurrentView(AppView.SETTINGS)}
-            
+            goBack={handleGoBack}
+            onAgree={handleGoBack}
           />
         );
         
-        case AppView.TERMS:
+      case AppView.TERMS:
         return (
           <TermsOfService
-            goBack={() => setCurrentView(AppView.SETTINGS)}
-            onAgree={() => setCurrentView(AppView.SETTINGS)}
+            goBack={handleGoBack}
+            onAgree={handleGoBack}
           />
         );
 
       case AppView.SUBSCRIPTION:
         return (
           <SubscriptionView
-            setView={setCurrentView}
+            setView={handleSetView}
             onUpgrade={handleUpgrade}
           />
         );
@@ -505,14 +518,10 @@ const App: React.FC = () => {
           <SettingsView
             user={user}
             currentView={currentView}
-            setView={setCurrentView}
+            setView={handleSetView}
             onLogout={() => {
-
-              
-
-
               setUser(null);
-              setCurrentView(AppView.WELCOME);
+              handleSetView(AppView.WELCOME);
               dispatch(resetPersistStore());
               dispatch(resetGlobalStore());
               DataManager.clearDataManager();
@@ -520,38 +529,36 @@ const App: React.FC = () => {
           />
         );
 
-
-      
       case AppView.WALLET:
-        return <WalletView setView={setCurrentView} />;
+        return <WalletView setView={handleSetView} />;
 
       case AppView.MONETIZATION:
-        return <MonetizationView setView={setCurrentView} />;
+        return <MonetizationView setView={handleSetView} />;
 
       case AppView.FRIENDS:
         return <FriendsView setView={handleSetView} />;
 
       case AppView.FAVORITES:
-        return <FavoritesView setView={setCurrentView} />;
+        return <FavoritesView setView={handleSetView} />;
 
       case AppView.GLOBAL_DISCOVERY:
-        return <GlobalDiscoveryView setView={setCurrentView} />;
+        return <GlobalDiscoveryView setView={handleSetView} />;
 
       case AppView.CONNECTION_REQUESTS:
-        return <ConnectionRequestsView setView={setCurrentView} />;
+        return <ConnectionRequestsView setView={handleSetView} />;
 
       case AppView.DISCOVER:
-        return <DiscoverView setView={setCurrentView} />;
+        return <DiscoverView setView={handleSetView} />;
 
       case AppView.MY_GIFTS:
-        return <MyGiftsView user={user as User} setView={setCurrentView} setUser={setUser} />;
+        return <MyGiftsView user={user as User} setView={handleSetView} setUser={setUser} />;
 
       case AppView.PROFILE:
         return (
           <ProfileScreen
             user={user}
-            setCancel={() => setCurrentView(AppView.SETTINGS)}
-            setView={setCurrentView}
+            setCancel={handleGoBack}
+            setView={handleSetView}
           />
         );
 

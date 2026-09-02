@@ -17,9 +17,9 @@ import { scale } from '../../helpers/metrics';
 import { IMAGE_URL } from '../../config/env';
 import { managerApiCall } from '../../helpers/managerApiCallFn';
 import { useDeleteAccountMutation } from '../../redux/services/auth';
-import { ShowAlertMessage, popTypes, onLogout } from '../../helpers/commonFunctions';
 import { Crown } from 'lucide-react-native';
 import { colors } from '../../utils/colors';
+import { UserAvatar } from '../../components/UserAvatar';
 
 const BASE_URL = IMAGE_URL;
 
@@ -144,17 +144,15 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
             <Text style={styles.closeIcon}>✕</Text>
           </TouchableOpacity>
 
-          {avatarUrl ? (
-            <Image 
-              source={{ uri: avatarUrl, cache: 'force-cache' }} 
-              style={styles.avatar} 
-              resizeMode="cover"
+          <View style={{ marginBottom: 12 }}>
+            <UserAvatar
+              uri={currentUser?.profilePicture}
+              gender={currentUser?.gender}
+              name={currentUser?.displayName}
+              size={scale(100)}
+              borderRadius={scale(50)}
             />
-          ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarInitials}>{initials}</Text>
-            </View>
-          )}
+          </View>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
             <Text style={styles.displayName}>{currentUser?.displayName}</Text>

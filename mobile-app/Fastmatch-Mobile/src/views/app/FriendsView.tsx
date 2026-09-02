@@ -25,6 +25,7 @@ import { AppView } from "../../types";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
 import { IMG_URL } from "../../redux/services";
+import { UserAvatar } from "../../components/UserAvatar";
 
 interface FriendsViewProps {
   setView: (view: AppView, params?: any) => void;
@@ -88,15 +89,12 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           });
         }}
       >
-        <Image
-          source={{ 
-            uri: friendObj.profilePicture
-              ? friendObj.profilePicture.startsWith("http") ? friendObj.profilePicture : `${IMG_URL}${friendObj.profilePicture}`
-              : "https://i.pravatar.cc/150",
-            cache: 'force-cache' 
-          }}
-          style={styles.avatar}
-          resizeMode="cover"
+        <UserAvatar
+          uri={friendObj.profilePicture}
+          gender={friendObj.gender}
+          name={friendObj.displayName || friendObj.fullName || friendObj.name}
+          size={moderateScale(50)}
+          borderRadius={moderateScale(25)}
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{friendObj.displayName || friendObj.fullName || friendObj.name || "Unknown"}</Text>
@@ -115,15 +113,12 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
 
     return (
       <View key={item._id} style={styles.userCard}>
-        <Image
-          source={{ 
-            uri: requester.profilePicture
-              ? requester.profilePicture.startsWith("http") ? requester.profilePicture : `${IMG_URL}${requester.profilePicture}`
-              : "https://i.pravatar.cc/150",
-            cache: 'force-cache' 
-          }}
-          style={styles.avatar}
-          resizeMode="cover"
+        <UserAvatar
+          uri={requester.profilePicture}
+          gender={requester.gender}
+          name={requester.displayName || requester.fullName || requester.name}
+          size={moderateScale(50)}
+          borderRadius={moderateScale(25)}
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{requester.displayName || requester.fullName || requester.name || "Unknown"}</Text>
@@ -157,15 +152,12 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
 
     return (
       <View key={item._id} style={styles.userCard}>
-        <Image
-          source={{ 
-            uri: recipient.profilePicture
-              ? recipient.profilePicture.startsWith("http") ? recipient.profilePicture : `${IMG_URL}${recipient.profilePicture}`
-              : "https://i.pravatar.cc/150",
-            cache: 'force-cache' 
-          }}
-          style={styles.avatar}
-          resizeMode="cover"
+        <UserAvatar
+          uri={recipient.profilePicture}
+          gender={recipient.gender}
+          name={recipient.displayName || recipient.fullName || recipient.name}
+          size={moderateScale(50)}
+          borderRadius={moderateScale(25)}
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{recipient.displayName || recipient.fullName || recipient.name || "Unknown"}</Text>
@@ -213,7 +205,8 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
       </View>
 
       <ScrollView 
-        style={styles.contentContainer}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: scale(15), paddingBottom: 130 }}
         refreshControl={
           <RefreshControl
             refreshing={activeTab === 'friends' ? isLoadingFriends : isLoadingReqs}

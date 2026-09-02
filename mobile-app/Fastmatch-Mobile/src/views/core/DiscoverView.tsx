@@ -25,6 +25,7 @@ import { tokenSelector, userSelector } from "../../redux/slices/persistedSlice";
 import LinearGradient from "react-native-linear-gradient";
 import { socket } from "../../socket/socket";
 import { BASE_URL, IMAGE_URL } from "../../config/env";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 8;
@@ -227,18 +228,14 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
       onPress={() => setSelectedUser(item)}
     >
       <View style={styles.gridImageWrap}>
-        {item.profilePicture ? (
-          <Image
-            source={{ uri: `${IMAGE_URL}${item.profilePicture}`, cache: "force-cache" }}
-            style={styles.gridImage}
-          />
-        ) : (
-          <View style={[styles.gridImage, styles.fallbackImage]}>
-            <Text style={styles.fallbackText}>
-              {item.displayName?.charAt(0)?.toUpperCase() || item.fullName?.charAt(0)?.toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <UserAvatar
+          uri={item.profilePicture}
+          gender={item.gender}
+          name={item.displayName || item.fullName}
+          size={CARD_WIDTH}
+          style={styles.gridImage}
+          borderRadius={10}
+        />
 
         {/* Super Match Crown badge */}
         <View style={styles.superBadge}>
@@ -351,18 +348,13 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
             </TouchableOpacity>
 
             <View style={styles.profileImageLargeWrap}>
-              {selectedUser?.profilePicture ? (
-                <Image
-                  source={{ uri: `${IMAGE_URL}${selectedUser.profilePicture}` }}
-                  style={styles.profileImageLarge}
-                />
-              ) : (
-                <View style={[styles.profileImageLarge, styles.fallbackImage]}>
-                  <Text style={{ fontSize: 40, fontWeight: "bold", color: colors.textPlaceholder }}>
-                    {selectedUser?.displayName?.charAt(0)?.toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <UserAvatar
+                uri={selectedUser?.profilePicture}
+                gender={selectedUser?.gender}
+                name={selectedUser?.displayName}
+                size={100}
+                borderRadius={50}
+              />
               {selectedUser?.isOnline && <View style={styles.modalOnlineDot} />}
             </View>
 

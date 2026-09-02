@@ -34,6 +34,7 @@ import { useSelector } from "react-redux";
 import { userSelector } from "../../redux/slices/persistedSlice";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { useUserLogoutMutation } from "../../redux/services/auth";
+import { UserAvatar } from "../../components/UserAvatar";
 
 
 interface SettingsProps {
@@ -99,15 +100,12 @@ export const SettingsView: React.FC<SettingsProps> = ({
                 style={styles.avatarWrapper}
               > */}
               <View style={[styles.avatarInner, { marginTop: 4 }]}>
-                <Image
-                  source={{
-                    uri:
-                      `${IMG_URL}${user?.profilePicture}` ||
-                      "https://picsum.photos/200/200",
-                    cache: 'force-cache'
-                  }}
-                  style={styles.avatar}
-                  resizeMode="cover"
+                <UserAvatar
+                  uri={user?.profilePicture}
+                  gender={user?.gender}
+                  name={user?.displayName}
+                  size={64}
+                  borderRadius={32}
                 />
               </View>
               {/* </LinearGradient> */}

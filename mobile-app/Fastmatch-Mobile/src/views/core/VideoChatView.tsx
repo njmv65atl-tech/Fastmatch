@@ -38,6 +38,7 @@ import {
 } from "lucide-react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { UserAvatar } from "../../components/UserAvatar";
 
 import {
   StreamVideo,
@@ -598,6 +599,12 @@ export const VideoChatView: React.FC<CoreProps> = ({
     matchData?.remoteUser?.fullName ||
     "Partner";
 
+  const partnerGender =
+    (matchData?.user1?._id === user?._id
+      ? matchData?.user2?.gender
+      : matchData?.user1?.gender) ||
+    matchData?.remoteUser?.gender;
+
   // ─── Render Live Call UI ────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
@@ -616,18 +623,13 @@ export const VideoChatView: React.FC<CoreProps> = ({
               {/* Partner Info Pill */}
               <View style={styles.partnerInfoPill}>
                 <View style={styles.partnerAvatarWrap}>
-                  {partnerAvatarUri ? (
-                    <Image
-                      source={{ uri: partnerAvatarUri, cache: "force-cache" }}
-                      style={styles.partnerAvatar}
-                    />
-                  ) : (
-                    <View style={styles.partnerAvatarFallback}>
-                      <Text style={styles.partnerAvatarText}>
-                        {partnerDisplayName?.charAt(0)?.toUpperCase() || "P"}
-                      </Text>
-                    </View>
-                  )}
+                  <UserAvatar
+                    uri={partnerAvatarUri}
+                    gender={partnerGender}
+                    name={partnerDisplayName}
+                    size={36}
+                    borderRadius={18}
+                  />
                   <View style={styles.onlineStatusDot} />
                 </View>
 

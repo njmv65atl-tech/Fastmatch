@@ -27,8 +27,8 @@ import { saveUser } from "../../utils/storage";
 import { IMAGE_URL } from "../../config/env";
 import { useDispatch } from "react-redux";
 import { pushSkippedUser } from "../../redux/slices/globalSlice";
-import { useRateMatchMutation } from "../../redux/services/auth";
 import LinearGradient from "react-native-linear-gradient";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const IMAGE_BASE_URL = IMAGE_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -494,13 +494,13 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
             <View style={styles.avatarSection}>
               <Animated.View style={[styles.avatarGlow, { opacity: glowShadowOpacity }]} />
               <View style={styles.avatarBorder}>
-                {matchUri ? (
-                  <Image source={{ uri: matchUri }} style={styles.avatar} />
-                ) : (
-                  <View style={[styles.avatar, { backgroundColor: colors.surfaceSecondary, justifyContent: "center", alignItems: "center" }]}>
-                    <Text style={{ fontSize: 48, fontWeight: "bold", color: colors.textPlaceholder }}>{matchName.charAt(0)}</Text>
-                  </View>
-                )}
+                <UserAvatar
+                  uri={matchUri}
+                  gender={matchGender}
+                  name={matchName}
+                  size={AVATAR_SIZE}
+                  borderRadius={AVATAR_SIZE / 2}
+                />
               </View>
 
               {/* VIP badge */}

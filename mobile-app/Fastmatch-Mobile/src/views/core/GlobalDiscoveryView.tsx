@@ -28,6 +28,7 @@ import {
 } from "../../redux/services/auth";
 import { IMAGE_URL } from "../../config/env";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 8;
@@ -162,7 +163,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   const [page, setPage] = React.useState(1);
   const { data: globalUsersData, isLoading, refetch: refetchGlobalUsers, isFetching } = useGetGlobalUsersQuery({
     page,
-    limit: 50,
+    limit: 100,
   });
 
   const { data: favData, refetch: refetchFav } = useGetFavoritesQuery({});
@@ -243,18 +244,14 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
       }}
     >
       <View style={styles.gridImageWrap}>
-        {item.profilePicture ? (
-          <Image
-            source={{ uri: `${IMAGE_URL}${item.profilePicture}`, cache: "force-cache" }}
-            style={styles.gridImage}
-          />
-        ) : (
-          <View style={[styles.gridImage, styles.fallbackImage]}>
-            <Text style={styles.fallbackText}>
-              {item.displayName?.charAt(0)?.toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <UserAvatar
+          uri={item.profilePicture}
+          gender={item.gender}
+          name={item.displayName}
+          size={CARD_WIDTH}
+          style={styles.gridImage}
+          borderRadius={10}
+        />
         {item.isOnline && (
           <View style={styles.onlineDot} />
         )}
@@ -496,18 +493,13 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             </TouchableOpacity>
 
             <View style={{ alignItems: "center", marginBottom: 16 }}>
-              {selectedUser?.profilePicture ? (
-                <Image
-                  source={{ uri: `${IMAGE_URL}${selectedUser.profilePicture}`, cache: "force-cache" }}
-                  style={styles.connectAvatar}
-                />
-              ) : (
-                <View style={[styles.connectAvatar, styles.fallbackImage]}>
-                  <Text style={styles.connectFallbackText}>
-                    {selectedUser?.displayName?.charAt(0)?.toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <UserAvatar
+                uri={selectedUser?.profilePicture}
+                gender={selectedUser?.gender}
+                name={selectedUser?.displayName}
+                size={80}
+                borderRadius={40}
+              />
             </View>
 
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>

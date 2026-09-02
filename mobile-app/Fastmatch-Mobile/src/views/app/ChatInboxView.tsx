@@ -19,6 +19,7 @@ import { IMG_URL } from "../../redux/services";
 import { socket } from "../../socket/socket";
 import { useDispatch } from "react-redux";
 import { setHasUnread } from "../../redux/slices/globalSlice";
+import { UserAvatar } from "../../components/UserAvatar";
 
 const { width, height } = Dimensions.get("window");
 
@@ -226,15 +227,12 @@ export const ChatInboxView: React.FC<{
               activeOpacity={0.7}
             >
               <View style={styles.avatarContainer}>
-                <Image
-                  source={{
-                    uri: item.profilePicture
-                      ? item.profilePicture.startsWith("http") ? item.profilePicture : `${IMG_URL}${item.profilePicture}`
-                      : "https://via.placeholder.com/100",
-                    cache: 'force-cache'
-                  }}
-                  style={styles.chatAvatar}
-                  resizeMode="cover"
+                <UserAvatar
+                  uri={item.profilePicture}
+                  gender={item.gender}
+                  name={item.displayName || item.fullName}
+                  size={52}
+                  borderRadius={26}
                 />
                 {count > 0 && (
                   <View style={styles.unreadBadge}>

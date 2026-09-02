@@ -36,8 +36,8 @@ import { moderateScale , scale, verticalScale } from "../../helpers/metrics";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { NotificationService } from "../../helpers/notificationService";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
-import { Linking } from "react-native";
 import { BASE_URL } from "../../redux/services/index";
+import { UserAvatar } from "../../components/UserAvatar";
 import { DataManager } from "../../helpers/dataManager";
 import { NativeModules } from 'react-native';
 import { enableSecureView, disableSecureView } from 'react-native-prevent-screenshot-ios-android';
@@ -1208,10 +1208,12 @@ React.useEffect(() => {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setProfilePopupVisible(true)}>
-              <Image
-                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", cache: 'force-cache' }}
-                style={styles.chatHeaderAvatar}
-                resizeMode="cover"
+              <UserAvatar
+                uri={chatUserAvatar}
+                gender={chatUser?.gender}
+                name={chatUserName}
+                size={moderateScale(36)}
+                borderRadius={moderateScale(18)}
               />
             </TouchableOpacity>
 
@@ -1278,11 +1280,15 @@ React.useEffect(() => {
         <Modal visible={profilePopupVisible} transparent animationType="fade" onRequestClose={() => setProfilePopupVisible(false)}>
           <View style={styles.menuOverlay}>
             <View style={[styles.menuDropdown, { alignItems: 'center', padding: 20 }]}>
-              <Image 
-                source={{ uri: chatUserAvatar || "https://via.placeholder.com/100", cache: 'force-cache' }} 
-                style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 10 }} 
-                resizeMode="cover"
-              />
+              <View style={{ marginBottom: 10 }}>
+                <UserAvatar
+                  uri={chatUserAvatar}
+                  gender={chatUser?.gender}
+                  name={chatUserName}
+                  size={80}
+                  borderRadius={40}
+                />
+              </View>
               <Text style={{ color: colors.white, fontSize: 18, fontWeight: 'bold', marginBottom: 5 }}>{chatUserName}</Text>
               <Text style={{ color: colors.textMuted, fontSize: 14, marginBottom: 5 }}>Age: {chatUser?.age || 'N/A'}</Text>
               <Text style={{ color: colors.textMuted, fontSize: 14, marginBottom: 5 }}>Trust Score: {chatUser?.trustScore ?? 100}</Text>
