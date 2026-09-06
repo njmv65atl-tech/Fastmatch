@@ -27,6 +27,7 @@ import { saveUser } from "../../utils/storage";
 import { IMAGE_URL } from "../../config/env";
 import { useDispatch } from "react-redux";
 import { pushSkippedUser } from "../../redux/slices/globalSlice";
+import { useRateMatchMutation } from "../../redux/services/auth";
 import LinearGradient from "react-native-linear-gradient";
 import { UserAvatar } from "../../components/UserAvatar";
 
@@ -44,6 +45,9 @@ interface CoreProps {
   setView: (view: AppView, params?: any) => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   preference?: 'everyone' | 'male' | 'female';
+  locationMode?: 'any' | 'my_country';
+  languageMode?: 'any' | 'my_language';
+  ageRange?: 'any' | '18-24' | '25-34' | '35+';
   showRatingModal?: boolean;
   lastMatchId?: string;
   lastPartnerName?: string;
@@ -92,10 +96,27 @@ const cStyles = StyleSheet.create({
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 
-export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'everyone', showRatingModal, lastMatchId, lastPartnerName }) => {
+export const MatchFoundView: React.FC<CoreProps> = ({
+  setView,
+  preference = 'everyone',
+  locationMode = 'any',
+  languageMode = 'any',
+  ageRange = 'any',
+  showRatingModal,
+  lastMatchId,
+  lastPartnerName,
+}) => {
+  const searchPayload = React.useMemo(() => {
+    const p: any = { preference };
+    if (locationMode && locationMode !== 'any') p.locationMode = locationMode;
+    if (languageMode && languageMode !== 'any') p.languageMode = languageMode;
+    if (ageRange && ageRange !== 'any') p.ageRange = ageRange;
+    return p;
+  }, [preference, locationMode, languageMode, ageRange]);
+
   React.useEffect(() => {
-    console.log("ℹ️ [MatchFoundView] Component mounted/updated with preference:", preference);
-  }, [preference]);
+    console.log("ℹ️ [MatchFoundView] Component mounted/updated with payload:", searchPayload);
+  }, [searchPayload]);
 
   const [ratingModalVisible, setRatingModalVisible] = useState(!!showRatingModal);
   const [givenRating, setGivenRating] = useState(0);
@@ -126,9 +147,8 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
   const remoteUserRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Animations
-  const pulseScale = useRef(new Animated.Value(1)).current;
-  const pulseOpacity = useRef(new Animated.Value(0.6)).current;
+  // Animations (Safe Native-Driver Compliant)
+  const pulseAnim = useRef(new Animated.Value(0)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
   const cardSlide = useRef(new Animated.Value(50)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -170,7 +190,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
           if (mid) socket.emit("match-skip", { matchId: mid });
           if (remoteUserRef.current) dispatch(pushSkippedUser(remoteUserRef.current));
           resetToSearching();
-          socket.emit("find-match", { preference });
+          socket.emit("find-match", searchPayload);
           return TOTAL_TIME;
         }
         return t - 1;
@@ -191,22 +211,32 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
     setView(AppView.HOME);
   }, [setView]);
 
+  const stopSearchRef = useRef(handleGlobalStopSearch);
+  useEffect(() => {
+    stopSearchRef.current = handleGlobalStopSearch;
+  }, [handleGlobalStopSearch]);
+
   // ─── Lifecycle & Sockets ───────────────────────────────────
 
   useEffect(() => {
     const startSearching = () => {
       setTimeout(() => {
-        if (socket.connected) socket.emit("find-match", { preference });
-      }, 1000);
+        if (socket.connected) socket.emit("find-match", searchPayload);
+      }, 500);
     };
 
     if (ratingModalVisible) return;
 
-    if (socket.connected) startSearching();
-    else socket.once("connect", startSearching);
+    if (socket.connected) {
+      startSearching();
+    } else {
+      socket.once("connect", startSearching);
+    }
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState.match(/inactive|background/)) handleGlobalStopSearch();
+      if (nextAppState.match(/inactive|background/)) {
+        stopSearchRef.current();
+      }
     };
     const appStateSub = AppState.addEventListener("change", handleAppStateChange);
 
@@ -275,6 +305,9 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
         streamToken: data?.streamToken,
         remoteUserId: remoteUser?._id || remoteUser?.id,
         preference,
+        locationMode,
+        languageMode,
+        ageRange,
       });
     };
 
@@ -282,6 +315,19 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
 
     const onLimitInfo = (data: any) => {
       if (data?.remaining !== undefined) setFreeCallsRemaining(data.remaining);
+    };
+
+    const onMatchDeclined = () => {
+      resetToSearching();
+      socket.emit("find-match", searchPayload);
+    };
+
+    const onPartnerAccepted = (incoming: any) => {
+      if (incoming) {
+        setPick(incoming);
+        setButtonClr("#22c55e");
+        setButtonState("Accept");
+      }
     };
 
     socket.on("match-found", onMatchFound);
@@ -297,6 +343,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
       appStateSub.remove();
       socket.off("connect", startSearching);
       socket.off("match-found", onMatchFound);
+      socket.off("ping-presence", onPingPresence);
       socket.off("call-start", onCallStart);
       socket.off("match-declined", onMatchDeclined);
       socket.off("partner-accepted", onPartnerAccepted);
@@ -304,20 +351,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
       socket.off("limit_info", onLimitInfo);
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [socket, setView, handleGlobalStopSearch]);
-
-  const onMatchDeclined = () => {
-    resetToSearching();
-    socket.emit("find-match", { preference });
-  };
-
-  const onPartnerAccepted = (incoming: any) => {
-    if (incoming) {
-      setPick(incoming);
-      setButtonClr("#22c55e");
-      setButtonState("Accept");
-    }
-  };
+  }, [searchPayload, ratingModalVisible]);
 
   // Android back
   useEffect(() => {
@@ -332,22 +366,45 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
   // ─── Animations ───────────────────────────────────────────
 
   useEffect(() => {
-    Animated.loop(
-      Animated.parallel([
-        Animated.timing(pulseScale, { toValue: 2, duration: 2000, useNativeDriver: true }),
-        Animated.timing(pulseOpacity, { toValue: 0, duration: 2000, useNativeDriver: true }),
-      ])
-    ).start();
-  }, []);
+    const loop = Animated.loop(
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 2200,
+        useNativeDriver: true,
+      })
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulseAnim]);
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: false }),
         Animated.timing(glowAnim, { toValue: 0, duration: 1500, useNativeDriver: false }),
       ])
-    ).start();
-  }, []);
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [glowAnim]);
+
+  const ring1Scale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 2.3],
+  });
+  const ring1Opacity = pulseAnim.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0.7, 0.35, 0],
+  });
+
+  const ring2Scale = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.7],
+  });
+  const ring2Opacity = pulseAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.5, 0.25, 0],
+  });
 
   // ─── Actions ──────────────────────────────────────────────
 
@@ -357,11 +414,11 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
     resetToSearching();
     if (mid) {
       socket.emit("match-skip", { matchId: mid });
-      socket.emit("find-match", { preference });
+      socket.emit("find-match", searchPayload);
     } else {
       handleGlobalStopSearch();
     }
-  }, [handleGlobalStopSearch, dispatch]);
+  }, [handleGlobalStopSearch, dispatch, searchPayload]);
 
   const [showLowRatingModal, setShowLowRatingModal] = useState(false);
 
@@ -390,13 +447,25 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
 
   if (!hasMatch) {
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <MobileContainer>
           <View style={styles.searchWrap}>
             {/* Pulse Rings */}
             <View style={styles.pulseContainer}>
-              <Animated.View style={[styles.pulseRing, styles.pulseRing1, { transform: [{ scale: pulseScale }], opacity: pulseOpacity }]} />
-              <Animated.View style={[styles.pulseRing, styles.pulseRing2, { transform: [{ scale: Animated.multiply(pulseScale, 0.7) }], opacity: Animated.multiply(pulseOpacity, 1.3) }]} />
+              <Animated.View
+                style={[
+                  styles.pulseRing,
+                  styles.pulseRing1,
+                  { transform: [{ scale: ring1Scale }], opacity: ring1Opacity },
+                ]}
+              />
+              <Animated.View
+                style={[
+                  styles.pulseRing,
+                  styles.pulseRing2,
+                  { transform: [{ scale: ring2Scale }], opacity: ring2Opacity },
+                ]}
+              />
               <View style={styles.pulseCore}>
                 <Sparkles color={colors.primary} size={32} />
               </View>
@@ -404,6 +473,30 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
 
             <Text style={styles.searchTitle}>Finding Your Match</Text>
             <Text style={styles.searchSubtitle}>Looking for someone amazing to connect with...</Text>
+
+            {/* Filter Pills preview */}
+            <View style={styles.filterPillsRow}>
+              <View style={styles.filterPill}>
+                <Text style={styles.filterPillText}>
+                  {preference === 'male' ? '👨 Male Only' : preference === 'female' ? '👩 Female Only' : '👥 Everyone'}
+                </Text>
+              </View>
+              {locationMode === 'my_country' && (
+                <View style={styles.filterPill}>
+                  <Text style={styles.filterPillText}>📍 My Country</Text>
+                </View>
+              )}
+              {languageMode === 'my_language' && (
+                <View style={styles.filterPill}>
+                  <Text style={styles.filterPillText}>🌐 My Language</Text>
+                </View>
+              )}
+              {ageRange !== 'any' && (
+                <View style={styles.filterPill}>
+                  <Text style={styles.filterPillText}>🎂 {ageRange}</Text>
+                </View>
+              )}
+            </View>
 
             {freeCallsRemaining !== null && (
               <View style={styles.callsRemainingBadge}>
@@ -413,7 +506,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
               </View>
             )}
 
-            <TouchableOpacity onPress={handleGlobalStopSearch} style={styles.cancelBtn}>
+            <TouchableOpacity onPress={handleGlobalStopSearch} style={styles.cancelBtn} activeOpacity={0.8}>
               <ArrowLeft color={colors.textMuted} size={18} />
               <Text style={styles.cancelText}>Cancel Search</Text>
             </TouchableOpacity>
@@ -443,7 +536,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
                       try { await rateMatch({ matchId: lastMatchId, rating: givenRating }).unwrap(); } catch (e) {}
                     }
                     setRatingModalVisible(false);
-                    if (socket.connected) socket.emit("find-match", { preference });
+                    if (socket.connected) socket.emit("find-match", searchPayload);
                   }}
                 >
                   <Text style={styles.ratingSubmitText}>Submit</Text>
@@ -452,7 +545,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({ setView, preference = 'eve
                   style={{ marginTop: 12 }}
                   onPress={() => {
                     setRatingModalVisible(false);
-                    if (socket.connected) socket.emit("find-match", { preference });
+                    if (socket.connected) socket.emit("find-match", searchPayload);
                   }}
                 >
                   <Text style={{ color: colors.textMuted, fontSize: 14 }}>Skip</Text>
@@ -665,6 +758,26 @@ const styles = StyleSheet.create({
   },
   searchTitle: { fontSize: 28, fontWeight: "900", color: colors.white, textAlign: "center" },
   searchSubtitle: { fontSize: 15, color: colors.textMuted, marginTop: 8, textAlign: "center" },
+  filterPillsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+  },
+  filterPill: {
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.35)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  filterPillText: {
+    color: "#A5B4FC",
+    fontSize: 12,
+    fontWeight: "700",
+  },
   callsRemainingBadge: {
     marginTop: 20,
     paddingHorizontal: 16,

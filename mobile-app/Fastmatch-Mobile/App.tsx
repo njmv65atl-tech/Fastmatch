@@ -279,7 +279,7 @@ const App: React.FC = () => {
   //   Orientation.lockToPortrait();
   // }, []);
 
-  const handleSetView = (view: AppView, params?: any) => {
+  const handleSetView = React.useCallback((view: AppView, params?: any) => {
     if (currentView === AppView.VIDEO_CHAT && view === AppView.HOME) {
       if (activeCallParams?.matchId) {
         setFinishedMatchId(activeCallParams.matchId);
@@ -311,7 +311,7 @@ const App: React.FC = () => {
     });
 
     setCurrentView(view);
-  };
+  }, [currentView, activeCallParams]);
 
   const handleLogin = (u: User) => {
     setUser(u);
@@ -572,7 +572,6 @@ const App: React.FC = () => {
       AppView.HOME,
       AppView.CHAT_INBOX,
       AppView.SETTINGS,
-      AppView.MATCH_FILTERS,
       AppView.FRIENDS,
     ].includes(currentView) && user?.role !== UserRole.ADMIN;
 

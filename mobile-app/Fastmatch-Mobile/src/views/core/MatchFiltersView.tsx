@@ -6,17 +6,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Platform,
 } from "react-native";
 import { MobileContainer } from "../../components/UIComponents";
 import { AppView, User, Gender } from "../../types";
-import { Crown, MapPin, Users, Globe, SlidersHorizontal, ArrowLeft, Sparkles, Video, Check } from "lucide-react-native";
+import { Crown, MapPin, Users, Globe, SlidersHorizontal, ArrowLeft, Video } from "lucide-react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { colors } from "../../utils/colors";
-import { MATCH_FILTERS_TEXT } from "../../utils/commonText";
 import { useBackHandler } from "../../components/BackHandlerWrapper";
 import NetInfo from "@react-native-community/netinfo";
-
-import { findMatch } from "../../socket/fastMatchSocket";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 
 interface CoreProps {
@@ -47,23 +45,26 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
   };
 
   const handleStartMatching = async () => {
-    const state = await NetInfo.fetch();
-    if (!state.isConnected) {
-      ShowAlertMessage("Please check your internet connection", popTypes.error);
-      return;
+    try {
+      const state = await NetInfo.fetch();
+      if (state && state.isConnected === false) {
+        ShowAlertMessage("Please check your internet connection", popTypes.error);
+        return;
+      }
+    } catch (e) {
+      console.warn("NetInfo fetch error:", e);
     }
 
     let preference: 'everyone' | 'male' | 'female' = 'everyone';
     if (selectedGender === Gender.MALE) preference = 'male';
     else if (selectedGender === Gender.FEMALE) preference = 'female';
 
-    findMatch({
+    setView(AppView.MATCH_FOUND, {
       preference,
       locationMode: selectedLocation,
       languageMode: selectedLanguage,
       ageRange: selectedAge,
     });
-    setView(AppView.MATCH_FOUND, { preference });
   };
 
   // ─── Option Card Component ──────────────────────────────────
@@ -264,8 +265,10 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
             />
           </View>
         </View>
+      </ScrollView>
 
-        {/* ── Start Matching Button ── */}
+      {/* ── Fixed Bottom Button (Always Fully Visible on iOS & Android) ── */}
+      <View style={styles.fixedBottomBar}>
         <TouchableOpacity
           style={styles.startMatchBtn}
           onPress={handleStartMatching}
@@ -279,7 +282,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
             <Text style={styles.startMatchBtnText}>Find Match Now</Text>
           </LinearGradient>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </MobileContainer>
   );
 };
@@ -316,7 +319,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 110,
+    paddingBottom: 24,
     gap: 14,
   },
   sectionCard: {
@@ -408,8 +411,15 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#6366F1",
   },
+  fixedBottomBar: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 28 : 16,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+  },
   startMatchBtn: {
-    marginTop: 8,
     borderRadius: 18,
     overflow: "hidden",
     elevation: 10,
