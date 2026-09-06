@@ -5,11 +5,11 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronDown, ChevronLeft, Zap, Star, X } from "lucide-react-native";
 import { colors } from "../utils/colors";
 import LinearGradient from "react-native-linear-gradient";
@@ -19,8 +19,9 @@ export const MobileContainer: React.FC<{
   children: React.ReactNode;
   style?: any;
   className?: string;
-}> = ({ children, style }) => (
-  <SafeAreaView style={[styles.container, style]}>
+  edges?: readonly ("top" | "right" | "bottom" | "left")[];
+}> = ({ children, style, edges = ["top", "bottom"] }) => (
+  <SafeAreaView style={[styles.container, style]} edges={edges}>
     <StatusBar barStyle="light-content" backgroundColor={colors.background} />
     <View style={styles.innerContainer}>{children}</View>
   </SafeAreaView>

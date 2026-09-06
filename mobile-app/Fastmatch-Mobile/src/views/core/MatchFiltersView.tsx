@@ -15,6 +15,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { colors } from "../../utils/colors";
 import { useBackHandler } from "../../components/BackHandlerWrapper";
 import NetInfo from "@react-native-community/netinfo";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 
 interface CoreProps {
@@ -24,6 +25,7 @@ interface CoreProps {
 }
 
 export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
+  const insets = useSafeAreaInsets();
   const [selectedGender, setSelectedGender] = useState<Gender>(Gender.ANY);
   const [selectedLocation, setSelectedLocation] = useState<'any' | 'my_country'>('any');
   const [selectedLanguage, setSelectedLanguage] = useState<'any' | 'my_language'>('any');
@@ -114,22 +116,24 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
   };
 
   return (
-    <MobileContainer>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.8}>
-          <ArrowLeft color={colors.textPrimary} size={22} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleGroup}>
-          <Text style={styles.headerTitle}>Match Preferences</Text>
-          <Text style={styles.headerSubtitle}>Customize who you connect with</Text>
+    <MobileContainer edges={["top"]}>
+      <View style={styles.mainContainer}>
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.8}>
+            <ArrowLeft color={colors.textPrimary} size={22} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleGroup}>
+            <Text style={styles.headerTitle}>Match Preferences</Text>
+            <Text style={styles.headerSubtitle}>Customize who you connect with</Text>
+          </View>
         </View>
-      </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
         {/* ── Section: Gender ── */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
@@ -268,7 +272,14 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
       </ScrollView>
 
       {/* ── Fixed Bottom Button (Always Fully Visible on iOS & Android) ── */}
-      <View style={styles.fixedBottomBar}>
+      <View
+        style={[
+          styles.fixedBottomBar,
+          {
+            paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 34 : 16) + 12,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.startMatchBtn}
           onPress={handleStartMatching}
@@ -283,11 +294,18 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+      </View>
     </MobileContainer>
   );
 };
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -413,8 +431,7 @@ const styles = StyleSheet.create({
   },
   fixedBottomBar: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === "ios" ? 28 : 16,
+    paddingTop: 14,
     backgroundColor: colors.background,
     borderTopWidth: 1,
     borderTopColor: colors.borderSubtle,
