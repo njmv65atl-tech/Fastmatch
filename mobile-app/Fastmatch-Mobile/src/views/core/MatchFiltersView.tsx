@@ -7,8 +7,8 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
+  Image,
 } from "react-native";
-import Svg, { Circle, Path, Rect, Ellipse, G } from "react-native-svg";
 import { MobileContainer } from "../../components/UIComponents";
 import { AppView, User, Gender } from "../../types";
 import {
@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  Heart,
 } from "lucide-react-native";
 import LinearGradient from "react-native-linear-gradient";
 import { colors } from "../../utils/colors";
@@ -28,306 +29,58 @@ import NetInfo from "@react-native-community/netinfo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 
-// ─── Modern Youthful SVG Avatar Illustrations ────────────────
-const MaleAvatar = ({ size = 54 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 60 60">
-    {/* Circular Background */}
-    <Circle cx="30" cy="30" r="28" fill="#1C2033" />
-
-    {/* Shoulders / T-shirt */}
-    <Path
-      d="M10 58 C10 44 20 40 30 40 C40 40 50 44 50 58 Z"
-      fill="#3B82F6"
+// ─── Image Avatar Components (Using User's Provided Art) ──────
+const BoyAvatar = ({ size = 56 }: { size?: number }) => (
+  <View style={[styles.avatarCircleInner, { width: size, height: size, borderRadius: size / 2 }]}>
+    <Image
+      source={require("../../assets/images/avatar_boy.png")}
+      style={{ width: size * 0.96, height: size * 0.96, marginTop: 4 }}
+      resizeMode="contain"
     />
-    {/* Crew neck collar */}
-    <Path
-      d="M24 40 C25 43.5 35 43.5 36 40"
-      stroke="#2563EB"
-      strokeWidth="1.5"
-      fill="#FCD5B5"
-    />
-
-    {/* Neck */}
-    <Rect x="26.5" y="32" width="7" height="8" rx="2" fill="#FCD5B5" />
-    {/* Neck shadow */}
-    <Path d="M26.5 34 C28 36 32 36 33.5 34 L33.5 32 L26.5 32 Z" fill="#EAB896" />
-
-    {/* Ears */}
-    <Circle cx="17.5" cy="27" r="3" fill="#FCD5B5" />
-    <Circle cx="17.5" cy="27" r="1.5" fill="#EAB896" />
-    <Circle cx="42.5" cy="27" r="3" fill="#FCD5B5" />
-    <Circle cx="42.5" cy="27" r="1.5" fill="#EAB896" />
-
-    {/* Head / Face */}
-    <Path
-      d="M18 24 C18 16 22 13 30 13 C38 13 42 16 42 24 C42 32 37 36 30 36 C23 36 18 32 18 24 Z"
-      fill="#FCD5B5"
-    />
-
-    {/* Cheeks Blush */}
-    <Ellipse cx="22" cy="29" rx="2.5" ry="1.2" fill="#FB7185" opacity="0.3" />
-    <Ellipse cx="38" cy="29" rx="2.5" ry="1.2" fill="#FB7185" opacity="0.3" />
-
-    {/* Eyes */}
-    <Circle cx="24.5" cy="24.5" r="2" fill="#1E293B" />
-    <Circle cx="24" cy="24" r="0.7" fill="#FFFFFF" />
-    <Circle cx="35.5" cy="24.5" r="2" fill="#1E293B" />
-    <Circle cx="35" cy="24" r="0.7" fill="#FFFFFF" />
-
-    {/* Eyebrows */}
-    <Path
-      d="M22 20.5 Q24.5 19 27 20.5"
-      stroke="#1E293B"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-    />
-    <Path
-      d="M33 20.5 Q35.5 19 38 20.5"
-      stroke="#1E293B"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-    />
-
-    {/* Nose */}
-    <Path
-      d="M29.5 26.5 Q30 27.5 30.5 26.5"
-      stroke="#DDA078"
-      strokeWidth="1"
-      strokeLinecap="round"
-    />
-
-    {/* Smile */}
-    <Path
-      d="M26.5 29.5 Q30 33 33.5 29.5"
-      stroke="#E11D48"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      fill="none"
-    />
-
-    {/* Stylish Modern Textured Hair */}
-    <Path
-      d="M17 21 C16 14 20 8 30 8 C40 8 44 14 43 21 C41 18 41 15 39 14 C35 12 25 11 20 15 C18 17 17 19 17 21 Z"
-      fill="#1E2029"
-    />
-    <Path
-      d="M17 17 C20 10 28 8 34 9 C39 10 43 13 44 18 C41 16 38 15 34 16 C28 17 23 18 19 22 C17 19 17 18 17 17 Z"
-      fill="#2B3042"
-    />
-    <Path
-      d="M23 11 C28 9 34 9 38 11 C35 12 30 13 25 14 Z"
-      fill="#3D4560"
-    />
-    <Path d="M18 20 L17.5 24 L19 23 Z" fill="#1E2029" />
-    <Path d="M42 20 L42.5 24 L41 23 Z" fill="#1E2029" />
-  </Svg>
+  </View>
 );
 
-const FemaleAvatar = ({ size = 54 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 60 60">
-    {/* Circular Background */}
-    <Circle cx="30" cy="30" r="28" fill="#281C33" />
-
-    {/* Blonde Hair Behind Shoulders */}
-    <Path
-      d="M13 28 C11 36 11 48 15 52 C17 52 19 48 19 44 C19 38 17 32 17 28 Z"
-      fill="#D97706"
+const GirlAvatar = ({ size = 56 }: { size?: number }) => (
+  <View style={[styles.avatarCircleInner, { width: size, height: size, borderRadius: size / 2 }]}>
+    <Image
+      source={require("../../assets/images/avatar_girl.png")}
+      style={{ width: size * 0.96, height: size * 0.96, marginTop: 4 }}
+      resizeMode="contain"
     />
-    <Path
-      d="M47 28 C49 36 49 48 45 52 C43 52 41 48 41 44 C41 38 43 32 43 28 Z"
-      fill="#D97706"
-    />
-    <Path
-      d="M14 28 C12 36 13 46 16 50 C17.5 50 19 46 19.5 42"
-      stroke="#FBBF24"
-      strokeWidth="2.5"
-      fill="none"
-      strokeLinecap="round"
-    />
-    <Path
-      d="M46 28 C48 36 47 46 44 50 C42.5 50 41 46 40.5 42"
-      stroke="#FBBF24"
-      strokeWidth="2.5"
-      fill="none"
-      strokeLinecap="round"
-    />
-
-    {/* Shoulders / Pink Top */}
-    <Path
-      d="M11 58 C11 44 20 40 30 40 C40 40 49 44 49 58 Z"
-      fill="#EC4899"
-    />
-    {/* Feminine Neckline */}
-    <Path
-      d="M24 40 C25 44 35 44 36 40"
-      stroke="#DB2777"
-      strokeWidth="1.5"
-      fill="#FDE2CD"
-    />
-
-    {/* Neck */}
-    <Rect x="27" y="32" width="6" height="8" rx="2" fill="#FDE2CD" />
-    <Path d="M27 34 C28.5 35.5 31.5 35.5 33 34 L33 32 L27 32 Z" fill="#F4BFA0" />
-
-    {/* Earrings */}
-    <Circle cx="17" cy="28" r="1.2" fill="#FDE047" />
-    <Circle cx="43" cy="28" r="1.2" fill="#FDE047" />
-
-    {/* Head / Face */}
-    <Path
-      d="M18.5 24 C18.5 16 22 13 30 13 C38 13 41.5 16 41.5 24 C41.5 32 36.5 36 30 36 C23.5 36 18.5 32 18.5 24 Z"
-      fill="#FDE2CD"
-    />
-
-    {/* Rosy Cheeks */}
-    <Ellipse cx="22" cy="29" rx="3" ry="1.4" fill="#FB7185" opacity="0.38" />
-    <Ellipse cx="38" cy="29" rx="3" ry="1.4" fill="#FB7185" opacity="0.38" />
-
-    {/* Feminine Eyes with Lashes */}
-    <Circle cx="24.5" cy="24.5" r="2.1" fill="#1E293B" />
-    <Circle cx="23.8" cy="23.8" r="0.8" fill="#FFFFFF" />
-    <Circle cx="25.2" cy="25.2" r="0.35" fill="#FFFFFF" />
-    <Path d="M22.5 23 L21 21.8" stroke="#1E293B" strokeWidth="0.9" strokeLinecap="round" />
-    <Path d="M26.5 23 L27.8 21.8" stroke="#1E293B" strokeWidth="0.9" strokeLinecap="round" />
-
-    <Circle cx="35.5" cy="24.5" r="2.1" fill="#1E293B" />
-    <Circle cx="34.8" cy="23.8" r="0.8" fill="#FFFFFF" />
-    <Circle cx="36.2" cy="25.2" r="0.35" fill="#FFFFFF" />
-    <Path d="M33.5 23 L32.2 21.8" stroke="#1E293B" strokeWidth="0.9" strokeLinecap="round" />
-    <Path d="M37.5 23 L39 21.8" stroke="#1E293B" strokeWidth="0.9" strokeLinecap="round" />
-
-    {/* Eyebrows */}
-    <Path
-      d="M22 20 Q24.5 18.5 27 19.8"
-      stroke="#B45309"
-      strokeWidth="1"
-      strokeLinecap="round"
-    />
-    <Path
-      d="M33 19.8 Q35.5 18.5 38 20"
-      stroke="#B45309"
-      strokeWidth="1"
-      strokeLinecap="round"
-    />
-
-    {/* Nose */}
-    <Path
-      d="M29.5 26.5 Q30 27.2 30.5 26.5"
-      stroke="#EAA482"
-      strokeWidth="0.9"
-      strokeLinecap="round"
-    />
-
-    {/* Smiling Pink Lips */}
-    <Path
-      d="M26.5 29.8 Q30 33.5 33.5 29.8"
-      stroke="#E11D48"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      fill="#FDA4AF"
-    />
-
-    {/* Gorgeous Blonde Hair (Center-parted, framing face) */}
-    <Path
-      d="M17 20 C16 11 22 7 30 7 C38 7 44 11 43 20 C42 16 38 13 30 13 C22 13 18 16 17 20 Z"
-      fill="#F59E0B"
-    />
-    <Path
-      d="M17 17 C20 10 27 9 30 14 C33 9 40 10 43 17 C40 14 34 13 30 18 C26 13 20 14 17 17 Z"
-      fill="#FBBF24"
-    />
-    <Path
-      d="M17 18 C16.5 23 17 28 19 32 C18.5 27 18 22 19 18 Z"
-      fill="#FCD34D"
-    />
-    <Path
-      d="M43 18 C43.5 23 43 28 41 32 C41.5 27 42 22 41 18 Z"
-      fill="#FCD34D"
-    />
-    <Path
-      d="M23 9.5 C26 8.5 34 8.5 37 9.5 C34 10.5 26 10.5 23 9.5 Z"
-      fill="#FEF08A"
-    />
-  </Svg>
+  </View>
 );
 
-const CoupleAvatar = ({ size = 54 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 64 60">
-    {/* Circular Background */}
-    <Circle cx="32" cy="30" r="28" fill="#1F1B35" />
-
-    {/* Young Boy (Left) */}
-    <G transform="translate(-5, 2)">
-      {/* Boy Body */}
-      <Path d="M12 56 C12 45 18 42 25 42 C32 42 36 45 36 56 Z" fill="#3B82F6" />
-      {/* Boy Head */}
-      <Path
-        d="M16 26 C16 19 19 16 25 16 C31 16 34 19 34 26 C34 32 30 35 25 35 C20 35 16 32 16 26 Z"
-        fill="#FCD5B5"
-      />
-      {/* Hair */}
-      <Path
-        d="M15 23 C14 17 18 12 25 12 C32 12 35 17 34 23 C33 20 31 18 25 18 C19 18 17 20 15 23 Z"
-        fill="#1E2029"
-      />
-      <Path
-        d="M15 20 C18 14 24 13 28 14 C32 15 34 18 35 21 C33 19 30 19 27 19 C22 19 18 20 15 20 Z"
-        fill="#2B3042"
-      />
-      {/* Boy Eye & Smile */}
-      <Circle cx="22" cy="26" r="1.5" fill="#1E293B" />
-      <Circle cx="21.6" cy="25.6" r="0.5" fill="#FFFFFF" />
-      <Circle cx="29" cy="26" r="1.5" fill="#1E293B" />
-      <Circle cx="28.6" cy="25.6" r="0.5" fill="#FFFFFF" />
-      <Path
-        d="M23 30 Q25.5 32.5 28 30"
-        stroke="#E11D48"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </G>
-
-    {/* Young Blonde Girl (Right) */}
-    <G transform="translate(6, 2)">
-      {/* Hair behind */}
-      <Path d="M37 28 C39 36 38 46 35 50" stroke="#FBBF24" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      {/* Girl Body */}
-      <Path d="M22 56 C22 45 26 42 33 42 C40 42 46 45 46 56 Z" fill="#EC4899" />
-      {/* Girl Head */}
-      <Path
-        d="M25 26 C25 19 28 16 34 16 C40 16 43 19 43 26 C43 32 39 35 34 35 C29 35 25 32 25 26 Z"
-        fill="#FDE2CD"
-      />
-      {/* Blonde Hair */}
-      <Path
-        d="M24 23 C23 17 27 12 34 12 C41 12 44 17 43 23 C42 20 40 17 34 17 C28 17 26 20 24 23 Z"
-        fill="#F59E0B"
-      />
-      <Path
-        d="M24 20 C26 14 32 13 35 17 C37 13 42 14 44 20 C42 17 38 16 35 20 C32 16 26 17 24 20 Z"
-        fill="#FBBF24"
-      />
-      {/* Girl Eye & Smile */}
-      <Circle cx="30" cy="26" r="1.6" fill="#1E293B" />
-      <Circle cx="29.6" cy="25.5" r="0.6" fill="#FFFFFF" />
-      <Circle cx="37" cy="26" r="1.6" fill="#1E293B" />
-      <Circle cx="36.6" cy="25.5" r="0.6" fill="#FFFFFF" />
-      <Path
-        d="M31 30 Q33.5 32.5 36 30"
-        stroke="#E11D48"
-        strokeWidth="1.1"
-        fill="none"
-        strokeLinecap="round"
-      />
-    </G>
-
-    {/* Cute 3D Heart between them */}
-    <Path
-      d="M32 10 C32 8.5 33.5 7 35 8 C36.5 7 38 8.5 38 10 C38 12.5 35 15 35 15 C35 15 32 12.5 32 10 Z"
-      fill="#A855F7"
+const CoupleAvatar = ({ size = 56 }: { size?: number }) => (
+  <View style={[styles.avatarCircleInner, { width: size, height: size, borderRadius: size / 2 }]}>
+    {/* Boy on Left */}
+    <Image
+      source={require("../../assets/images/avatar_boy.png")}
+      style={{
+        width: size * 0.74,
+        height: size * 0.74,
+        position: "absolute",
+        left: 0,
+        bottom: -1,
+      }}
+      resizeMode="contain"
     />
-  </Svg>
+    {/* Girl on Right */}
+    <Image
+      source={require("../../assets/images/avatar_girl.png")}
+      style={{
+        width: size * 0.74,
+        height: size * 0.74,
+        position: "absolute",
+        right: 0,
+        bottom: -1,
+      }}
+      resizeMode="contain"
+    />
+    {/* Floating Heart between them */}
+    <View style={styles.coupleHeartWrap}>
+      <Heart size={10} color="#FFF" fill="#EC4899" />
+    </View>
+  </View>
 );
 
 interface CoreProps {
@@ -429,24 +182,21 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           {isActive && <Check size={11} color="#FFF" strokeWidth={3} />}
         </View>
 
-        {/* Avatar circle */}
-        <View
-          style={[
-            styles.genderAvatarCircle,
-            isActive && styles.genderAvatarCircleActive,
-          ]}
-        >
+        {/* Avatar container */}
+        <View style={styles.genderAvatarContainer}>
           {avatar}
         </View>
 
-        {/* Label */}
+        {/* Label & Subtitle */}
         <Text
           style={[styles.genderLabel, isActive && styles.genderLabelActive]}
           numberOfLines={1}
         >
           {label}
         </Text>
-        <Text style={styles.genderSubLabel}>{subtitle}</Text>
+        <Text style={styles.genderSubLabel} numberOfLines={1}>
+          {subtitle}
+        </Text>
 
         {/* Pro badge */}
         {!isFree && user?.isPremium !== "premium" && (
@@ -628,21 +378,21 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 label="Everyone"
                 subtitle="Men & Women"
                 value={Gender.ANY}
-                avatar={<CoupleAvatar size={50} />}
+                avatar={<CoupleAvatar size={54} />}
                 isFree={true}
               />
               <GenderCard
                 label="Male Only"
                 subtitle="Men"
                 value={Gender.MALE}
-                avatar={<MaleAvatar size={50} />}
+                avatar={<BoyAvatar size={54} />}
                 isFree={false}
               />
               <GenderCard
                 label="Female Only"
                 subtitle="Women"
                 value={Gender.FEMALE}
-                avatar={<FemaleAvatar size={50} />}
+                avatar={<GirlAvatar size={54} />}
                 isFree={false}
               />
             </View>
@@ -892,7 +642,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   genderCard: {
-    flex: 1, // Equal width 3 columns, 100% inside container
+    flex: 1,
     backgroundColor: colors.surfaceAlt,
     borderRadius: 14,
     paddingVertical: 10,
@@ -929,17 +679,25 @@ const styles = StyleSheet.create({
     borderColor: "#6366F1",
     backgroundColor: "#6366F1",
   },
-  genderAvatarCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  genderAvatarContainer: {
+    marginBottom: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarCircleInner: {
+    backgroundColor: "rgba(99, 102, 241, 0.12)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
     overflow: "hidden",
+    position: "relative",
   },
-  genderAvatarCircleActive: {
-    backgroundColor: "rgba(99, 102, 241, 0.2)",
+  coupleHeartWrap: {
+    position: "absolute",
+    top: 2,
+    alignSelf: "center",
+    backgroundColor: "rgba(236, 72, 153, 0.25)",
+    borderRadius: 8,
+    padding: 2,
   },
   genderLabel: {
     fontSize: 11,
