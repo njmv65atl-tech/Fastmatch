@@ -26,7 +26,6 @@ import LinearGradient from "react-native-linear-gradient";
 import { colors } from "../../utils/colors";
 import { useBackHandler } from "../../components/BackHandlerWrapper";
 import NetInfo from "@react-native-community/netinfo";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 
 // ─── Image Avatar Components (Using User's Provided Art) ──────
@@ -90,7 +89,6 @@ interface CoreProps {
 }
 
 export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
-  const insets = useSafeAreaInsets();
   const [selectedGender, setSelectedGender] = useState<Gender>(Gender.ANY);
   const [selectedLocation, setSelectedLocation] = useState<
     "any" | "my_country"
@@ -331,38 +329,33 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
   };
 
   return (
-    <MobileContainer edges={["top"]}>
-      <View style={styles.mainContainer}>
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            style={styles.backBtn}
-            activeOpacity={0.8}
-          >
-            <ArrowLeft color={colors.textPrimary} size={22} />
-          </TouchableOpacity>
-          <View style={styles.headerTitleGroup}>
-            <Text style={styles.headerTitle}>Match Preferences</Text>
-            <Text style={styles.headerSubtitle}>
-              Customize who you connect with
-            </Text>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <MobileContainer>
+        <View style={styles.mainContainer}>
+          {/* ── Header ── */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={handleBack}
+              style={styles.backBtn}
+              activeOpacity={0.8}
+            >
+              <ArrowLeft color={colors.textPrimary} size={22} />
+            </TouchableOpacity>
+            <View style={styles.headerTitleGroup}>
+              <Text style={styles.headerTitle}>Match Preferences</Text>
+              <Text style={styles.headerSubtitle}>
+                Customize who you connect with
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingBottom:
-                Math.max(insets.bottom, Platform.OS === "ios" ? 44 : 20) + 20,
-            },
-          ]}
-        >
-          {/* ── Section: Gender Preference ── */}
-          <View style={styles.sectionCard}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* ── Section: Gender Preference ── */}
+            <View style={styles.sectionCard}>
             <View style={styles.sectionHeader}>
               <View
                 style={[
@@ -529,29 +522,30 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
               />
             </View>
           </View>
-
-          {/* ── Bottom Button (Inside ScrollView for guaranteed visibility) ── */}
-          <View style={styles.bottomBtnContainer}>
-            <TouchableOpacity
-              style={styles.startMatchBtn}
-              onPress={handleStartMatching}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={["#7C3AED", "#6366F1"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.startMatchGradient}
-              >
-                <Text style={styles.startMatchBtnText}>Continue to Explore</Text>
-                <ArrowRight size={18} color="#FFF" strokeWidth={2.5} />
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
         </ScrollView>
+
+        {/* ── Fixed Bottom Button Bar ── */}
+        <View style={styles.bottomBarContainer}>
+          <TouchableOpacity
+            style={styles.startMatchBtn}
+            onPress={handleStartMatching}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={["#7C3AED", "#6366F1"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.startMatchGradient}
+            >
+              <Text style={styles.startMatchBtnText}>Continue to Explore</Text>
+              <ArrowRight size={18} color="#FFF" strokeWidth={2.5} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </View>
     </MobileContainer>
-  );
+  </View>
+);
 };
 
 // ═════════════════════════════════════════════════════════════
@@ -593,6 +587,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
+    paddingBottom: 24,
     gap: 12,
   },
 
@@ -819,8 +814,13 @@ const styles = StyleSheet.create({
   },
 
   // ── Bottom Button Container (inside ScrollView) ──
-  bottomBtnContainer: {
-    marginTop: 4,
+  bottomBarContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === "ios" ? 10 : 16,
+    backgroundColor: colors.background,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
   },
   startMatchBtn: {
     borderRadius: 16,
