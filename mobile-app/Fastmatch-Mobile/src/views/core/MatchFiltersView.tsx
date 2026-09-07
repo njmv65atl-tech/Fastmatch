@@ -353,7 +353,13 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingBottom:
+                Math.max(insets.bottom, Platform.OS === "ios" ? 44 : 20) + 20,
+            },
+          ]}
         >
           {/* ── Section: Gender Preference ── */}
           <View style={styles.sectionCard}>
@@ -523,37 +529,26 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
               />
             </View>
           </View>
-        </ScrollView>
 
-        {/* ── Fixed Bottom Button ── */}
-        <View
-          style={[
-            styles.fixedBottomBar,
-            {
-              paddingBottom:
-                Math.max(
-                  insets.bottom,
-                  Platform.OS === "ios" ? 34 : 16
-                ) + 12,
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.startMatchBtn}
-            onPress={handleStartMatching}
-            activeOpacity={0.85}
-          >
-            <LinearGradient
-              colors={["#7C3AED", "#6366F1"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.startMatchGradient}
+          {/* ── Bottom Button (Inside ScrollView for guaranteed visibility) ── */}
+          <View style={styles.bottomBtnContainer}>
+            <TouchableOpacity
+              style={styles.startMatchBtn}
+              onPress={handleStartMatching}
+              activeOpacity={0.85}
             >
-              <Text style={styles.startMatchBtnText}>Continue to Explore</Text>
-              <ArrowRight size={18} color="#FFF" strokeWidth={2.5} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+              <LinearGradient
+                colors={["#7C3AED", "#6366F1"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.startMatchGradient}
+              >
+                <Text style={styles.startMatchBtnText}>Continue to Explore</Text>
+                <ArrowRight size={18} color="#FFF" strokeWidth={2.5} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     </MobileContainer>
   );
@@ -598,7 +593,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 20,
     gap: 12,
   },
 
@@ -824,13 +818,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
 
-  // ── Bottom Bar ──
-  fixedBottomBar: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
+  // ── Bottom Button Container (inside ScrollView) ──
+  bottomBtnContainer: {
+    marginTop: 4,
   },
   startMatchBtn: {
     borderRadius: 16,
