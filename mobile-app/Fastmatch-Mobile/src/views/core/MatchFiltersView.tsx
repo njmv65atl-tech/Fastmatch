@@ -342,11 +342,28 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
               <ArrowLeft color={colors.textPrimary} size={22} />
             </TouchableOpacity>
             <View style={styles.headerTitleGroup}>
-              <Text style={styles.headerTitle}>Match Preferences</Text>
-              <Text style={styles.headerSubtitle}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                Match Preferences
+              </Text>
+              <Text style={styles.headerSubtitle} numberOfLines={1}>
                 Customize who you connect with
               </Text>
             </View>
+            <TouchableOpacity
+              style={styles.headerStartBtn}
+              onPress={handleStartMatching}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={["#7C3AED", "#6366F1"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.headerStartGradient}
+              >
+                <Text style={styles.headerStartText}>Explore</Text>
+                <ArrowRight size={13} color="#FFF" strokeWidth={2.5} />
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
 
           <ScrollView
@@ -524,7 +541,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           </View>
         </ScrollView>
 
-        {/* ── Fixed Bottom Button Bar ── */}
+        {/* ── Compact Round Shape Button ── */}
         <View style={styles.bottomBarContainer}>
           <TouchableOpacity
             style={styles.startMatchBtn}
@@ -537,8 +554,10 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
               end={{ x: 1, y: 0 }}
               style={styles.startMatchGradient}
             >
-              <Text style={styles.startMatchBtnText}>Continue to Explore</Text>
-              <ArrowRight size={18} color="#FFF" strokeWidth={2.5} />
+              <Text style={styles.startMatchBtnText}>Explore Matches</Text>
+              <View style={styles.roundIconBadge}>
+                <ArrowRight size={14} color="#7C3AED" strokeWidth={3} />
+              </View>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -575,14 +594,36 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "bold",
     color: colors.textPrimary,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textPlaceholder,
     marginTop: 2,
+  },
+  headerStartBtn: {
+    borderRadius: 999,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#7C3AED",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+  },
+  headerStartGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    gap: 5,
+  },
+  headerStartText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -813,35 +854,50 @@ const styles = StyleSheet.create({
     gap: 2,
   },
 
-  // ── Bottom Button Container (inside ScrollView) ──
+  // ── Bottom Button Container ──
   bottomBarContainer: {
-    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: 10,
-    paddingBottom: Platform.OS === "ios" ? 10 : 16,
+    paddingBottom: Platform.OS === "ios" ? 16 : 14,
+    paddingHorizontal: 20,
     backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
   },
   startMatchBtn: {
-    borderRadius: 16,
-    overflow: "hidden",
-    elevation: 10,
+    borderRadius: 999,
+    elevation: 8,
     shadowColor: "#7C3AED",
-    shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
-    shadowRadius: 12,
+    shadowRadius: 10,
   },
   startMatchGradient: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 15,
-    gap: 8,
+    paddingVertical: 10,
+    paddingLeft: 22,
+    paddingRight: 8,
+    borderRadius: 999,
+    gap: 10,
   },
   startMatchBtnText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 15,
+    fontWeight: "700",
     letterSpacing: 0.3,
+  },
+  roundIconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
