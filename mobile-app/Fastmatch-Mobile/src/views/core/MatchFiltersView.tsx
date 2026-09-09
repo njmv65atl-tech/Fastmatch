@@ -82,6 +82,21 @@ const CoupleAvatar = ({ size = 56 }: { size?: number }) => (
   </View>
 );
 
+const ProBadge = ({ style }: { style?: any }) => (
+  <View style={[styles.proBadgeContainer, style]}>
+    <LinearGradient
+      colors={["#F59E0B", "#D97706"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={StyleSheet.absoluteFill}
+    />
+    <View style={styles.proBadgeInner}>
+      <Crown size={8} color="#FFF" />
+      <Text style={styles.proBadgeTextSmall}>PRO</Text>
+    </View>
+  </View>
+);
+
 interface CoreProps {
   user: User;
   setView: (view: AppView, params?: any) => void;
@@ -198,13 +213,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
 
         {/* Pro badge */}
         {!isFree && user?.isPremium !== "premium" && (
-          <LinearGradient
-            colors={["#F59E0B", "#D97706"]}
-            style={styles.proBadgeSmall}
-          >
-            <Crown size={8} color="#FFF" />
-            <Text style={styles.proBadgeTextSmall}>PRO</Text>
-          </LinearGradient>
+          <ProBadge style={{ marginTop: 4 }} />
         )}
       </TouchableOpacity>
     );
@@ -256,13 +265,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           </View>
         </View>
         {!isFree && user?.isPremium !== "premium" && (
-          <LinearGradient
-            colors={["#F59E0B", "#D97706"]}
-            style={styles.proBadgeInline}
-          >
-            <Crown size={8} color="#FFF" />
-            <Text style={styles.proBadgeTextSmall}>PRO</Text>
-          </LinearGradient>
+          <ProBadge style={{ marginTop: 6 }} />
         )}
       </TouchableOpacity>
     );
@@ -316,13 +319,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
           {isActive && <Check size={12} color="#FFF" strokeWidth={3} />}
         </View>
         {!isFree && user?.isPremium !== "premium" && (
-          <LinearGradient
-            colors={["#F59E0B", "#D97706"]}
-            style={[styles.proBadgeInline, { marginLeft: 8 }]}
-          >
-            <Crown size={8} color="#FFF" />
-            <Text style={styles.proBadgeTextSmall}>PRO</Text>
-          </LinearGradient>
+          <ProBadge style={{ marginLeft: 8 }} />
         )}
       </TouchableOpacity>
     );
@@ -358,11 +355,12 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 colors={["#7C3AED", "#6366F1"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.headerStartGradient}
-              >
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.headerStartInner}>
                 <Text style={styles.headerStartText}>Explore</Text>
                 <ArrowRight size={13} color="#FFF" strokeWidth={2.5} />
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           </View>
 
@@ -552,13 +550,14 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
               colors={["#7C3AED", "#6366F1"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.startMatchGradient}
-            >
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.startMatchInner}>
               <Text style={styles.startMatchBtnText}>Explore Matches</Text>
               <View style={styles.roundIconBadge}>
                 <ArrowRight size={14} color="#7C3AED" strokeWidth={3} />
               </View>
-            </LinearGradient>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -604,21 +603,22 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   headerStartBtn: {
-    borderRadius: 999,
+    height: 36,
+    borderRadius: 18,
     overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 4,
     shadowColor: "#7C3AED",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
     shadowRadius: 6,
   },
-  headerStartGradient: {
+  headerStartInner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 7,
     paddingHorizontal: 14,
-    borderRadius: 999,
-    gap: 5,
+    gap: 6,
   },
   headerStartText: {
     color: "#FFFFFF",
@@ -744,14 +744,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 1,
   },
-  proBadgeSmall: {
+  proBadgeContainer: {
+    borderRadius: 6,
+    overflow: "hidden",
+    alignSelf: "flex-start",
+  },
+  proBadgeInner: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 5,
     paddingVertical: 2,
-    borderRadius: 5,
     gap: 2,
-    marginTop: 4,
   },
   proBadgeTextSmall: {
     color: "#FFF",
@@ -844,42 +847,36 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // ── Pro Badge Inline ──
-  proBadgeInline: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 5,
-    gap: 2,
-  },
 
   // ── Bottom Button Container ──
   bottomBarContainer: {
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 10,
-    paddingBottom: Platform.OS === "ios" ? 16 : 14,
+    paddingBottom: Platform.OS === "ios" ? 20 : 16,
     paddingHorizontal: 20,
     backgroundColor: colors.background,
   },
   startMatchBtn: {
-    borderRadius: 999,
+    height: 52,
+    borderRadius: 26,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 8,
     shadowColor: "#7C3AED",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 10,
   },
-  startMatchGradient: {
+  startMatchInner: {
+    height: 52,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingLeft: 22,
-    paddingRight: 8,
-    borderRadius: 999,
-    gap: 10,
+    paddingLeft: 24,
+    paddingRight: 10,
+    gap: 12,
   },
   startMatchBtnText: {
     color: "#FFFFFF",
@@ -888,9 +885,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   roundIconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",

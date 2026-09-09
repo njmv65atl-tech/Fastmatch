@@ -81,14 +81,15 @@ export const Button: React.FC<{
       style={[fullWidth && { width: "100%" }, disabled && { opacity: 0.5 }]}
     >
       {isGradient ? (
-        <LinearGradient
-          colors={getGradientColors()}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.btnBase, style]}
-        >
+        <View style={[styles.btnBase, { overflow: "hidden" }, style]}>
+          <LinearGradient
+            colors={getGradientColors()}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+          />
           <Text style={[styles.btnText, getTextStyle()]}>{children}</Text>
-        </LinearGradient>
+        </View>
       ) : (
         <View style={[styles.btnBase, getButtonStyle(), style]}>
           <Text style={[styles.btnText, getTextStyle()]}>{children}</Text>

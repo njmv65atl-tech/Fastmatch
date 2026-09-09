@@ -384,10 +384,16 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
               onPress={() => handleSuperMatch(selectedUser)}
               activeOpacity={0.85}
             >
-              <LinearGradient colors={["#F59E0B", "#D97706"]} style={styles.superMatchGradient}>
+              <LinearGradient
+                colors={["#F59E0B", "#D97706"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.superMatchInner}>
                 <Crown size={18} color="#FFF" />
                 <Text style={styles.superMatchActionBtnText}>Send Super Match</Text>
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -648,14 +654,17 @@ const styles = StyleSheet.create({
   },
   superMatchActionBtn: {
     width: "100%",
+    height: 52,
     borderRadius: 16,
     overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  superMatchGradient: {
+  superMatchInner: {
+    height: 52,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 14,
     gap: 8,
   },
   superMatchActionBtnText: {

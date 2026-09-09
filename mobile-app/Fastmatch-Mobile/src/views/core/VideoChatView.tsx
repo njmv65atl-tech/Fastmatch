@@ -639,10 +639,13 @@ export const VideoChatView: React.FC<CoreProps> = ({
                       {partnerDisplayName}
                     </Text>
                     {matchData?.isPremium === "premium" && (
-                      <LinearGradient colors={["#F59E0B", "#D97706"]} style={styles.vipBadge}>
-                        <Crown size={10} color="#FFF" />
-                        <Text style={styles.vipBadgeText}>VIP</Text>
-                      </LinearGradient>
+                      <View style={styles.vipBadge}>
+                        <LinearGradient colors={["#F59E0B", "#D97706"]} style={StyleSheet.absoluteFill} />
+                        <View style={styles.vipBadgeInner}>
+                          <Crown size={10} color="#FFF" />
+                          <Text style={styles.vipBadgeText}>VIP</Text>
+                        </View>
+                      </View>
                     )}
                   </View>
                   <Text style={styles.liveCallStatus}>● Connected</Text>
@@ -715,18 +718,21 @@ export const VideoChatView: React.FC<CoreProps> = ({
             {/* ── Incoming Icebreaker Floating Toast ── */}
             {incomingIcebreaker && (
               <View style={[styles.icebreakerToast, { top: insets.top + 70 }]}>
-                <LinearGradient
-                  colors={["rgba(99, 102, 241, 0.95)", "rgba(79, 70, 229, 0.95)"]}
-                  style={styles.icebreakerToastInner}
-                >
-                  <View style={styles.icebreakerToastIcon}>
-                    <MessageCircle size={18} color="#FFF" />
+                <View style={styles.icebreakerToastCard}>
+                  <LinearGradient
+                    colors={["rgba(99, 102, 241, 0.95)", "rgba(79, 70, 229, 0.95)"]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.icebreakerToastInner}>
+                    <View style={styles.icebreakerToastIcon}>
+                      <MessageCircle size={18} color="#FFF" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.icebreakerToastHeader}>Conversation Starter</Text>
+                      <Text style={styles.icebreakerToastBody}>{incomingIcebreaker}</Text>
+                    </View>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.icebreakerToastHeader}>Conversation Starter</Text>
-                    <Text style={styles.icebreakerToastBody}>{incomingIcebreaker}</Text>
-                  </View>
-                </LinearGradient>
+                </View>
               </View>
             )}
 
@@ -756,14 +762,15 @@ export const VideoChatView: React.FC<CoreProps> = ({
                   >
                     <LinearGradient
                       colors={["rgba(245, 158, 11, 0.9)", "rgba(217, 119, 6, 0.95)"]}
-                      style={styles.giftUnopenedGradient}
-                    >
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View style={styles.giftUnopenedInner}>
                       <Text style={styles.giftIconLarge}>🎁</Text>
                       <Text style={styles.giftUnopenedTitle}>Gift Received!</Text>
                       <Text style={styles.giftUnopenedSub}>
                         Tap to unwrap gift from {incomingGift.senderName || "partner"}
                       </Text>
-                    </LinearGradient>
+                    </View>
                   </TouchableOpacity>
                 ) : (
                   <Animated.View
@@ -774,8 +781,9 @@ export const VideoChatView: React.FC<CoreProps> = ({
                   >
                     <LinearGradient
                       colors={["rgba(30, 27, 75, 0.95)", "rgba(15, 23, 42, 0.95)"]}
-                      style={styles.giftOpenedGradient}
-                    >
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View style={styles.giftOpenedInner}>
                       <Text style={styles.giftOpenedIcon}>
                         {GIFTS.find((g) => g.name === incomingGift.giftName)?.icon || "🎁"}
                       </Text>
@@ -783,7 +791,7 @@ export const VideoChatView: React.FC<CoreProps> = ({
                       <Text style={styles.giftOpenedSender}>
                         Sent by <Text style={{ color: "#F59E0B", fontWeight: "bold" }}>{incomingGift.senderName}</Text>
                       </Text>
-                    </LinearGradient>
+                    </View>
                   </Animated.View>
                 )}
               </View>
@@ -1439,11 +1447,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   vipBadge: {
+    borderRadius: 6,
+    overflow: "hidden",
+  },
+  vipBadgeInner: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 5,
     paddingVertical: 1.5,
-    borderRadius: 6,
     gap: 2,
   },
   vipBadgeText: {
@@ -1530,13 +1541,21 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 110,
   },
+  icebreakerToastCard: {
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   icebreakerToastInner: {
     flexDirection: "row",
     alignItems: "center",
     padding: 14,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
     gap: 12,
   },
   icebreakerToastIcon: {
@@ -1576,7 +1595,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     elevation: 20,
   },
-  giftUnopenedGradient: {
+  giftUnopenedInner: {
     padding: 24,
     alignItems: "center",
   },
@@ -1600,12 +1619,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: "hidden",
     elevation: 20,
-  },
-  giftOpenedGradient: {
-    padding: 28,
-    alignItems: "center",
     borderWidth: 1.5,
     borderColor: "rgba(245, 158, 11, 0.5)",
+  },
+  giftOpenedInner: {
+    padding: 28,
+    alignItems: "center",
   },
   giftOpenedIcon: {
     fontSize: 80,
