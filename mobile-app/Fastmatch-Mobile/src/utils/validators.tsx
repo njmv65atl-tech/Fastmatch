@@ -187,8 +187,8 @@ export const validateCompleteProfile = (data: any) => {
   }
 
   const numericAge = Number(age);
-  if (isNaN(numericAge) || numericAge > 99 || numericAge < 12) {
-    return { error: "Please enter valid age between 12 to 99" };
+  if (isNaN(numericAge) || numericAge > 99 || numericAge < 18) {
+    return { error: "You must be at least 18 years old to use Fastmatch" };
   }
 
   if (!location) {
@@ -238,8 +238,8 @@ export const validateEditProfile = (data: any) => {
   }
 
   const numericAge = Number(age);
-  if (isNaN(numericAge) || numericAge > 99 || numericAge < 12) {
-    return { error: "Please enter valid age between 12 to 99" };
+  if (isNaN(numericAge) || numericAge > 99 || numericAge < 18) {
+    return { error: "You must be at least 18 years old to use Fastmatch" };
   }
 
   if (!location) {

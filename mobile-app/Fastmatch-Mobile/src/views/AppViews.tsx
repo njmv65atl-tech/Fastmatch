@@ -8,3 +8,4 @@ export * from "./app/Privacy";
 export * from "./app/TermsOfService";
 export * from "./app/FriendsView";
 export * from "./app/FavoritesView";
+export * from "./app/SupportView";

@@ -26,6 +26,7 @@ import {
   Info,
   Gift,
   Heart,
+  HelpCircle,
 } from "lucide-react-native";
 import { AppIcon } from "../../assets/icons";
 import { getImageUrl, ShowAlertMessage , popTypes  } from "../../helpers/commonFunctions";
@@ -291,6 +292,26 @@ export const SettingsView: React.FC<SettingsProps> = ({
                     <Image source={AppIcon.doc} style={{width : 17 , height : 17 , resizeMode : "contain" , tintColor : "#94A3B8"}}/>
                   </View>
                   <Text style={styles.menuText}>Terms of Service</Text>
+                </View>
+
+                <ChevronRight size={18} color="#475569" />
+              </View>
+            </Pressable>
+
+            {/* Help & Support Button */}
+            <Pressable
+              onPress={() => setView(AppView.SUPPORT)}
+              style={({ pressed }) => [
+                styles.menuWrapper,
+                pressed && styles.slatePressed,
+              ]}
+            >
+              <View style={styles.slateMenuItem}>
+                <View style={styles.leftSection}>
+                  <View style={styles.slateIconBox}>
+                    <HelpCircle size={20} color="#38BDF8" />
+                  </View>
+                  <Text style={styles.menuText}>Help & Support Desk</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />

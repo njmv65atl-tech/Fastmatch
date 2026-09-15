@@ -57,4 +57,15 @@ router.post('/reject-friend-request', verifyToken, tryCatchMiddleware(UserContro
 router.post('/favorite', verifyToken, tryCatchMiddleware(UserController.toggleFavorite))
 router.get('/favorites', verifyToken, tryCatchMiddleware(UserController.getFavorites))
 
+// Social Authentication
+router.post('/social-auth', tryCatchMiddleware(UserController.socialAuth))
+
+// Support Desk
+router.post('/support-ticket', verifyToken, tryCatchMiddleware(UserController.createSupportTicket))
+router.get('/support-tickets', verifyToken, tryCatchMiddleware(UserController.getUserSupportTickets))
+
+// Coupon & Pricing
+router.post('/apply-coupon', verifyToken, tryCatchMiddleware(UserController.applyCoupon))
+router.get('/pricing', tryCatchMiddleware(UserController.getAppPricing))
+
 export default router;

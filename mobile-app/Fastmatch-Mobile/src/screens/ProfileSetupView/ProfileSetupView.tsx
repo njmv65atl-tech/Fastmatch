@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   PermissionsAndroid,
+  BackHandler,
 } from "react-native";
 import { launchImageLibrary, launchCamera } from "react-native-image-picker";
 import {
@@ -30,6 +31,7 @@ import { useDispatch } from "react-redux";
 import {
   setCompleteProfile,
   setGlobalUser,
+  setToken,
 } from "../../redux/slices/persistedSlice";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import {
@@ -45,23 +47,67 @@ import { DataManager } from "../../helpers/dataManager";
 
 interface AuthProps {
   setView: (view: AppView) => void;
-  login: (user: any) => void;
-  user: any;
+  login?: (user: any) => void;
+  user?: any;
   setUser: any;
 }
 
-export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {  
+export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }) => {  
   const interests = PROFILE_SETUP_TEXT.interests;
-  const [name, setName] = useState<string>("");
-  const [fullName, setFullName] = useState<string>("");
-  const [age, setAge] = useState<string>("");
-  const [location, setLocation] = useState<string>("");
-  const [language, setLanguage] = useState<string>("English");
-  const [selected, setSelected] = useState<string[]>([]);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [name, setName] = useState<string>(user?.displayName || "");
+  const [fullName, setFullName] = useState<string>(user?.fullName || "");
+  const [age, setAge] = useState<string>(user?.age ? String(user.age) : "");
+  const [location, setLocation] = useState<string>(user?.location || "");
+  const [language, setLanguage] = useState<string>(user?.language || "English");
+  const [selected, setSelected] = useState<string[]>(user?.interests || []);
+  const [profileImage, setProfileImage] = useState<string | null>(user?.profilePicture || null);
   const [deviceId, setDeviceId] = useState('');
   const [deviceName, setDeviceName] = useState('');
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    if (user?.displayName && !name) setName(user.displayName);
+    if (user?.fullName && !fullName) setFullName(user.fullName);
+    if (user?.age && !age) setAge(String(user.age));
+    if (user?.location && !location) setLocation(user.location);
+    if (user?.language && !language) setLanguage(user.language);
+    if (user?.profilePicture && !profileImage) setProfileImage(user.profilePicture);
+    if (user?.interests && user.interests.length > 0 && selected.length === 0) setSelected(user.interests);
+  }, [user]);
+
+  const handleExitAttempt = React.useCallback(() => {
+    Alert.alert(
+      "Profile Setup Required",
+      "You must complete your profile to access Fastmatch. If you leave now, you will be signed out.",
+      [
+        {
+          text: "Stay & Complete",
+          style: "cancel",
+        },
+        {
+          text: "Sign Out",
+          style: "destructive",
+          onPress: async () => {
+            dispatch(setToken(null));
+            dispatch(setCompleteProfile(false));
+            dispatch(setGlobalUser(null));
+            setUser(null);
+            await DataManager.clearDataManager();
+            setView(AppView.WELCOME);
+          },
+        },
+      ]
+    );
+    return true;
+  }, [dispatch, setView, setUser]);
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleExitAttempt
+    );
+    return () => backHandler.remove();
+  }, [handleExitAttempt]);
 
   useEffect(() => {
     const getDeviceInfo = async () => {
@@ -310,7 +356,7 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <TouchableOpacity 
           style={styles.backButton} 
-          onPress={() => setView(AppView.WELCOME)}
+          onPress={handleExitAttempt}
         >
           <ChevronLeft color={colors.white} size={28} />
         </TouchableOpacity>

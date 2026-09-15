@@ -60,6 +60,4 @@ export const colors = {
   amber500: "#F59E0B", // amber-500
   dangerBgSoft: "rgba(239, 68, 68, 0.1)",
   // You can add more if needed
-
-  textPrimary: "#FFFFFF",
 };

@@ -38,3 +38,61 @@ export const useRevokePremium = () => {
     },
   });
 };
+
+// Coupons Hooks
+export const useCoupons = (params) => {
+  return useQuery({
+    queryKey: ["coupons", params],
+    queryFn: () => api.getCoupons(params),
+  });
+};
+
+export const useCreateCoupon = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => api.createCoupon(data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      toast.success(res?.message || "Coupon created successfully");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to create coupon");
+    },
+  });
+};
+
+export const useDeleteCoupon = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.deleteCoupon(id),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      toast.success(res?.message || "Coupon deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to delete coupon");
+    },
+  });
+};
+
+// Dynamic Pricing Hooks
+export const usePricing = () => {
+  return useQuery({
+    queryKey: ["pricing"],
+    queryFn: () => api.getPricing(),
+  });
+};
+
+export const useUpdatePricing = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => api.updatePricing(data),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["pricing"] });
+      toast.success(res?.message || "Pricing updated successfully");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update pricing");
+    },
+  });
+};

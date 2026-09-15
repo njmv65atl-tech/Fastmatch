@@ -49,21 +49,43 @@ export const Privacy: React.FC<PrivacyProps> = ({ onAgree, goBack,  }) => {
 
 
           <View>
-              <Text style={styles.title}>Privacy & Safety Policy</Text>
+            <Text style={styles.title}>Privacy & Safety Policy</Text>
 
-          <Text style={styles.policyText}>
-            {`Welcome to our app. Your privacy and safety are our highest priorities. Please read this policy carefully before using our services.\n\n`}
+            <Text style={styles.policyText}>
+              {`At Fastmatch, your privacy, personal boundaries, and safety are our foundational values. This Privacy Policy details how we handle and protect your personal information.\n\n`}
 
-            <Text style={{ color: colors.white, fontWeight: "bold" }}>
-              1. Information We Collect{"\n"}
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                1. Zero Data Selling Guarantee{"\n"}
+              </Text>
+              {`We believe your personal life belongs to you. Fastmatch does NOT sell, lease, monetize, or trade your personal data, chat logs, profile information, or usage records to any third-party advertisers, data brokers, or marketing networks. Never have, never will.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                2. Ephemeral Live Video & Audio Privacy{"\n"}
+              </Text>
+              {`All video and voice matches take place in real-time over secure WebRTC connections. We do NOT record, intercept, monitor, or archive any video or audio streams. When your call ends, the connection terminates instantly and leaves zero video footprints on our servers.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                3. End-to-End Encrypted Direct Messages{"\n"}
+              </Text>
+              {`Private text messages sent between matched friends utilize device-generated cryptographic keypairs (Curve25519/TweetNaCl). Your messages are encrypted on your device before transmission, meaning only you and your conversation partner possess the keys to decrypt them.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                4. Information We Collect{"\n"}
+              </Text>
+              {`• Account Information: Email address or phone number, display name, verified age (strictly 18+), gender, and interests.\n`}
+              {`• Optional Profile Assets: Profile photo uploaded by you to represent your presence in the community.\n`}
+              {`• Technical Data: Device ID, OS platform, and push notification tokens strictly used for authentication, account security, and delivering incoming call or message alerts.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                5. User Rights, Data Control & Deletion{"\n"}
+              </Text>
+              {`In compliance with international privacy laws (including GDPR and CCPA), you hold full ownership of your data. You may export your information or permanently delete your account and all associated records at any moment from the Settings page or by contacting our data privacy officer.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                6. Contact Privacy Team{"\n"}
+              </Text>
+              {`If you have questions, concerns, or requests regarding this Privacy Policy, please email our security and privacy team directly at: support@fastmatch.app\n`}
             </Text>
-            {`When you create an account, we collect your name, email address or phone number, and a password. During your use of the app, we may also collect profile information such as your display name and profile picture. We also collect usage data such as the features you interact with, session duration, and general app activity to help us improve our services.\n\n`}
-
-            <Text style={{ color: colors.white, fontWeight: "bold" }}>
-              2. How We Use Your Information{"\n"}
-            </Text>
-            {`We use your information to create and manage your account, match you with other users, provide customer support, send important service notifications, and improve the overall experience of the app. We do not use your data for any purpose beyond what is described in this policy without your explicit consent.\n\n`}
-          </Text>
           </View>
 
              

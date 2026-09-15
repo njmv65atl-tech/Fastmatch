@@ -42,4 +42,9 @@ export const apiEndPoints = {
   rejectFriendRequest: "user/reject-friend-request",
   toggleFavorite: "user/favorite",
   getFavorites: "user/favorites",
+  socialAuth: "user/social-auth",
+  createSupportTicket: "user/support-ticket",
+  getUserSupportTickets: "user/support-tickets",
+  applyCoupon: "user/apply-coupon",
+  getPricing: "user/pricing",
 };

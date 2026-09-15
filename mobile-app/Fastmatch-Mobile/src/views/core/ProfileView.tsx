@@ -20,10 +20,17 @@ import { useDeleteAccountMutation } from '../../redux/services/auth';
 import { Crown } from 'lucide-react-native';
 import { colors } from '../../utils/colors';
 import { UserAvatar } from '../../components/UserAvatar';
+import { ShowAlertMessage, popTypes } from '../../helpers/commonFunctions';
+import { useDispatch } from 'react-redux';
+import { resetPersistStore } from '../../redux/slices/persistedSlice';
+import { resetGlobalStore } from '../../redux/slices/globalSlice';
+import { DataManager } from '../../helpers/dataManager';
+import { AppView } from '../../types';
 
 const BASE_URL = IMAGE_URL;
 
 const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any, setView: any }) => {
+  const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -39,9 +46,12 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
           text: 'Delete', 
           style: 'destructive',
           onPress: () => {
-            managerApiCall(deleteAccount, {}, (res: any) => {
+            managerApiCall(deleteAccount, {}, async (res: any) => {
                ShowAlertMessage('Account deleted successfully', popTypes.success);
-               onLogout();
+               dispatch(resetPersistStore());
+               dispatch(resetGlobalStore());
+               await DataManager.clearDataManager();
+               setView(AppView.WELCOME);
             });
           }
         }

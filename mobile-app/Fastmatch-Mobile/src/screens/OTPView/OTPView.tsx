@@ -218,8 +218,7 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
         setTimeout(() => {
           dispatch(setToken(res?.data?.token));
           DataManager.setAccessToken(res?.data?.token);
-          // App.tsx useEffect will handle the redirect to PROFILE_SETUP or HOME based on token
-          // setView(AppView.PROFILE_SETUP);
+          setView(AppView.PROFILE_SETUP);
           ShowAlertMessage("OTP verified successfully", popTypes.info);
         }, 2500);
       }

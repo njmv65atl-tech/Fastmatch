@@ -8,10 +8,13 @@ export const sendEmail = (to: string, subject: string, html: string) => {
         appConfig.smtpHost ? {
             host: appConfig.smtpHost,
             port: Number(appConfig.smtpPort) || 587,
-            secure: false, // true for 465, false for other ports
+            secure: Number(appConfig.smtpPort) === 465, // true for 465, false for 587
             auth: {
                 user: appConfig.smtpUser,
                 pass: appConfig.smtpPassword
+            },
+            tls: {
+                rejectUnauthorized: false
             }
         } : {
             service: 'gmail',
@@ -21,11 +24,18 @@ export const sendEmail = (to: string, subject: string, html: string) => {
             }
         }
     )
+    const plainText = html.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
     const mailDetails = {
-        from: `Fast-Match<${appConfig.smtpUser}>`,
+        from: appConfig.smtpFrom || `Fastmatch <noreply@fastmatch.app>`,
         to,
         subject,
-        html
+        text: plainText,
+        html,
+        replyTo: 'support@fastmatch.app',
+        headers: {
+            'X-Mailer': 'Fastmatch Mailer',
+            'X-Priority': '1'
+        }
     }
     mailTransporter.sendMail(mailDetails, (err, data) => {
         if (err) {

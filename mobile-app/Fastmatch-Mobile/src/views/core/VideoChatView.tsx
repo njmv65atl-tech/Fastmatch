@@ -388,7 +388,7 @@ export const VideoChatView: React.FC<CoreProps> = ({
   useEffect(() => {
     const isAnyPremium =
       user?.isPremium === 'premium' ||
-      user?.role === 'premium' ||
+      (user?.role as any) === 'premium' ||
       matchData?.user1?.isPremium === 'premium' ||
       matchData?.user2?.isPremium === 'premium';
 
@@ -566,7 +566,7 @@ export const VideoChatView: React.FC<CoreProps> = ({
   // ─── Timer Calculation ──────────────────────────────────────────────────────
   const isAnyPremium =
     user?.isPremium === 'premium' ||
-    user?.role === 'premium' ||
+    (user?.role as any) === 'premium' ||
     matchData?.user1?.isPremium === 'premium' ||
     matchData?.user2?.isPremium === 'premium';
 

@@ -118,10 +118,11 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
         (res: any) => {
           dispatch(setToken(res?.data?.token));
           DataManager.setAccessToken(res?.data?.token);
-          if (res?.data?.user?.displayName) {
+          if (res?.data?.user?.isProfileComplete) {
             dispatch(setCompleteProfile(true));
             setView(AppView.HOME);
           } else {
+            dispatch(setCompleteProfile(false));
             setView(AppView.PROFILE_SETUP);
           }
           dispatch(setGlobalUser(res?.data?.user));

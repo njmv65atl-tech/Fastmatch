@@ -13,6 +13,10 @@ import { UserGift } from '@models/userGift';
 import { FriendModel } from '@models/friend';
 import { ChatMessageModel } from '@models/chat/schema';
 import { Transaction } from '@models/transaction';
+import SupportTicket from '@models/supportTicket';
+import Coupon from '@models/coupon';
+import Pricing from '@models/pricing';
+import { sendEmail } from '@helpers/email';
 import { RekognitionClient, DetectModerationLabelsCommand } from "@aws-sdk/client-rekognition";
 import notificationServices from '@services/notification.services';
 import { createCircuitBreaker } from '@config/circuitBreaker';
@@ -67,6 +71,11 @@ class UserController extends ResponseHandler {
         this.removeFriend = this.removeFriend.bind(this);
         this.moderateFrame = this.moderateFrame.bind(this);
         this.walletHistory = this.walletHistory.bind(this);
+        this.socialAuth = this.socialAuth.bind(this);
+        this.createSupportTicket = this.createSupportTicket.bind(this);
+        this.getUserSupportTickets = this.getUserSupportTickets.bind(this);
+        this.applyCoupon = this.applyCoupon.bind(this);
+        this.getAppPricing = this.getAppPricing.bind(this);
     }
 
     // Step 1: Sign Up — sends OTP to email/phone
@@ -779,6 +788,159 @@ class UserController extends ResponseHandler {
             if (!currentUser) throw new Error("User not found");
 
             return res.status(200).send(responseEncryptor(req, true, "Favorites fetched", currentUser.favoriteUsers || []));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async socialAuth(req: Request, res: Response) {
+        try {
+            const { email, fullName, displayName, profilePicture, deviceId, deviceName, platform, fcmToken } = req.body;
+            if (!email) {
+                return res.status(400).send(responseEncryptor(req, false, "Email is required for social authentication"));
+            }
+
+            const cleanEmail = email.toLowerCase().trim();
+            let user = await User.findOne({ email: cleanEmail });
+            let isNewUser = false;
+
+            if (!user) {
+                isNewUser = true;
+                user = await User.create({
+                    email: cleanEmail,
+                    fullName: fullName || displayName || cleanEmail.split('@')[0],
+                    displayName: displayName || fullName || cleanEmail.split('@')[0],
+                    profilePicture: profilePicture || null,
+                    deviceId,
+                    deviceName,
+                    platform: platform || 'android',
+                    fcmToken: fcmToken || '',
+                    isVerified: true,
+                    isProfileComplete: false,
+                    role: 'user',
+                    isPremium: 'free'
+                });
+            } else {
+                if (deviceId) user.deviceId = deviceId;
+                if (deviceName) user.deviceName = deviceName;
+                if (platform) user.platform = platform;
+                if (fcmToken) user.fcmToken = fcmToken;
+                if (!user.isVerified) user.isVerified = true;
+                await user.save();
+            }
+
+            const token = this.jwt.generateToken({ _id: user._id as Types.ObjectId, password: null }, false);
+            return res.status(200).send(responseEncryptor(req, true, isNewUser ? "Account created via social login" : "Signed in successfully", {
+                token,
+                user
+            }));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async createSupportTicket(req: Request, res: Response) {
+        try {
+            const { category, subject, message: ticketMsg, email } = req.body;
+            const currentUserId = req.user?._id;
+            const userEmail = email || req.user?.email;
+
+            if (!subject || !ticketMsg) {
+                return res.status(400).send(responseEncryptor(req, false, "Subject and message are required"));
+            }
+
+            const ticket = await SupportTicket.create({
+                user: currentUserId || null,
+                email: userEmail,
+                category: category || 'other',
+                subject,
+                message: ticketMsg,
+                status: 'open'
+            });
+
+            if (userEmail) {
+                const mailSubject = `Fastmatch Support Ticket Received: #${ticket._id.toString().slice(-6)}`;
+                const html = `
+                    <div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border-radius: 8px; background: #fff; border: 1px solid #eee;">
+                        <h2 style="color: #333;">Support Request Received</h2>
+                        <p>Hello,</p>
+                        <p>We have received your support request regarding: <strong>${subject}</strong> (Ticket #${ticket._id.toString().slice(-6)}).</p>
+                        <p>Our team is reviewing your ticket and will get back to you shortly.</p>
+                        <p style="color: #888; font-size: 12px; margin-top: 20px;">– Fastmatch Support (support@fastmatch.app)</p>
+                    </div>
+                `;
+                try {
+                    sendEmail(userEmail, mailSubject, html);
+                } catch (e) {
+                    console.error("Support confirmation email failed:", e);
+                }
+            }
+
+            return res.status(200).send(responseEncryptor(req, true, "Support ticket created successfully", ticket));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async getUserSupportTickets(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user?._id;
+            const tickets = await SupportTicket.find({ user: currentUserId }).sort({ createdAt: -1 });
+            return res.status(200).send(responseEncryptor(req, true, "Tickets fetched successfully", tickets));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async applyCoupon(req: Request, res: Response) {
+        try {
+            const { code, plan } = req.body;
+            if (!code) {
+                return res.status(400).send(responseEncryptor(req, false, "Coupon code is required"));
+            }
+
+            const coupon = await Coupon.findOne({ code: code.toUpperCase().trim(), isActive: true });
+            if (!coupon) {
+                return res.status(404).send(responseEncryptor(req, false, "Invalid or inactive promo code"));
+            }
+
+            if (coupon.expiresAt && new Date() > new Date(coupon.expiresAt)) {
+                return res.status(400).send(responseEncryptor(req, false, "This promo code has expired"));
+            }
+
+            if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+                return res.status(400).send(responseEncryptor(req, false, "This promo code has reached maximum redemptions"));
+            }
+
+            if (coupon.applicablePlan !== 'all' && plan && coupon.applicablePlan !== plan.toLowerCase()) {
+                return res.status(400).send(responseEncryptor(req, false, `This code is only applicable to the ${coupon.applicablePlan} plan`));
+            }
+
+            return res.status(200).send(responseEncryptor(req, true, `Promo code applied! ${coupon.discountPercent}% OFF`, {
+                code: coupon.code,
+                discountPercent: coupon.discountPercent,
+                applicablePlan: coupon.applicablePlan
+            }));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async getAppPricing(req: Request, res: Response) {
+        try {
+            let pricing = await Pricing.findOne();
+            if (!pricing) {
+                pricing = await Pricing.create({
+                    monthlyPrice: 9.00,
+                    yearlyPrice: 90.00,
+                    coinPackages: [
+                        { id: "com.fastmatch.coins_100", amount: 100, price: 0.99, bonus: 0 },
+                        { id: "com.fastmatch.coins_500", amount: 500, price: 4.99, bonus: 50 },
+                        { id: "com.fastmatch.coins_1000", amount: 1000, price: 9.99, bonus: 200 }
+                    ]
+                });
+            }
+            return res.status(200).send(responseEncryptor(req, true, "Pricing fetched", pricing));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }

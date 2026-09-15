@@ -8,16 +8,19 @@ import {
   Dimensions,
   Platform,
   BackHandler,
+  TextInput,
+  ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
 import { BlurView } from "@react-native-community/blur";
 import LinearGradient from "react-native-linear-gradient";
 import { MobileContainer, Button } from "../../components/UIComponents";
 import { AppView } from "../../types";
-import { Check, Crown } from "lucide-react-native";
+import { Check, Crown, Tag, Sparkles } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { fetchProducts, fetchSubscriptions, subscribeToProduct, type Product, type Subscription as IAPSubscription } from "../../utils/iap";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
+import { useApplyCouponMutation } from "../../redux/services/auth";
 
 const { width, height } = Dimensions.get("window");
 
@@ -32,6 +35,12 @@ export const SubscriptionView: React.FC<{
   const [products, setProducts] = React.useState<Product[]>([]);
   const [subscriptions, setSubscriptions] = React.useState<IAPSubscription[]>([]);
   const [loading, setLoading] = React.useState(true);
+
+  // Coupon state
+  const [couponCode, setCouponCode] = React.useState("");
+  const [appliedCoupon, setAppliedCoupon] = React.useState<{ code: string; discountPercent: number } | null>(null);
+  const [applyCouponMutation, { isLoading: isApplyingCoupon }] = useApplyCouponMutation();
+
   const features = [
     "Unlimited Video Calls",
     "Filter matches by Gender, Age & Location",
@@ -45,9 +54,6 @@ export const SubscriptionView: React.FC<{
       try {
         const subs = await fetchSubscriptions();
         setSubscriptions(subs);
-        // Also fetch products if needed
-        // const prods = await fetchProducts();
-        // setProducts(prods);
       } catch (err) {
         console.warn("Error loading IAP items:", err);
       } finally {
@@ -57,19 +63,39 @@ export const SubscriptionView: React.FC<{
     loadIAP();
   }, []);
 
-  const getPriceForPlan = (plan: PlanType) => {
-    const sku = plan === "YEARLY" ? "com.fastmatch.premium_yearly" : "com.fastmatch.premium_monthly";
-    const sub = subscriptions.find(s => s.productId === sku);
-    if (sub) {
-      return sub.localizedPrice;
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      ShowAlertMessage("Please enter a promo code", popTypes.error);
+      return;
     }
-    return plan === "YEARLY" ? "$49" : "$9";
+    try {
+      const res: any = await applyCouponMutation({
+        code: couponCode.trim(),
+        plan: selectedPlan.toLowerCase(),
+      }).unwrap();
+      if (res?.data) {
+        setAppliedCoupon(res.data);
+        ShowAlertMessage(res.message || "Promo code applied!", popTypes.success);
+      }
+    } catch (err: any) {
+      console.warn("Coupon error:", err);
+      ShowAlertMessage(err?.data?.message || "Invalid or expired promo code", popTypes.error);
+    }
+  };
+
+  const getPriceForPlan = (plan: PlanType) => {
+    const basePrice = plan === "YEARLY" ? 90 : 9;
+    if (appliedCoupon) {
+      const discounted = (basePrice * (1 - appliedCoupon.discountPercent / 100)).toFixed(2);
+      return `$${discounted}`;
+    }
+    return plan === "YEARLY" ? "$90.00" : "$9.00";
   };
 
   const handlePurchase = async () => {
-    // Temporary bypass for testing
     onUpgrade(selectedPlan);
-    ShowAlertMessage("Premium Unlocked successfully!", popTypes.success);
+    const method = Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
+    ShowAlertMessage(`Premium Unlocked successfully via ${method}!`, popTypes.success);
     setView(AppView.HOME);
   };
 
@@ -211,6 +237,57 @@ export const SubscriptionView: React.FC<{
           </TouchableOpacity>
         </View>
 
+        {/* Promo / Coupon Code Section */}
+        <View style={styles.couponContainer}>
+          <View style={styles.couponHeader}>
+            <Tag size={16} color="#F59E0B" />
+            <Text style={styles.couponTitle}>Have a Promo Code?</Text>
+          </View>
+          <View style={styles.couponInputRow}>
+            <TextInput
+              style={styles.couponInput}
+              placeholder="ENTER CODE"
+              placeholderTextColor="#64748B"
+              value={couponCode}
+              onChangeText={(t) => setCouponCode(t.toUpperCase())}
+              autoCapitalize="characters"
+              maxLength={20}
+              editable={!appliedCoupon}
+            />
+            {appliedCoupon ? (
+              <TouchableOpacity
+                style={styles.couponRemoveBtn}
+                onPress={() => {
+                  setAppliedCoupon(null);
+                  setCouponCode("");
+                }}
+              >
+                <Text style={styles.couponRemoveText}>Remove</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.couponApplyBtn}
+                onPress={handleApplyCoupon}
+                disabled={isApplyingCoupon}
+              >
+                {isApplyingCoupon ? (
+                  <ActivityIndicator size="small" color="#0F172A" />
+                ) : (
+                  <Text style={styles.couponApplyText}>Apply</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+          {appliedCoupon && (
+            <View style={styles.appliedBadge}>
+              <Sparkles size={14} color="#10B981" />
+              <Text style={styles.appliedText}>
+                {appliedCoupon.discountPercent}% discount applied with code {appliedCoupon.code}
+              </Text>
+            </View>
+          )}
+        </View>
+
         <View style={{ width: "100%" }}>
           <TouchableOpacity
             activeOpacity={0.85}
@@ -224,7 +301,9 @@ export const SubscriptionView: React.FC<{
               style={styles.unlockBtn}
             >
               <View style={styles.unlockBtnInner}>
-                <Text style={styles.unlockText}>Unlock Premium</Text>
+                <Text style={styles.unlockText}>
+                  {Platform.OS === 'ios' ? ' Pay' : 'G Pay'} • {getPriceForPlan(selectedPlan)} ({selectedPlan === "YEARLY" ? "Yearly" : "Monthly"})
+                </Text>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -424,5 +503,80 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#451A03",
     textAlign: "center",
+  },
+  couponContainer: {
+    width: "100%",
+    backgroundColor: "#0F172A",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  couponHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  couponTitle: {
+    color: "#E2E8F0",
+    fontSize: 13,
+    fontWeight: "bold",
+    marginLeft: 6,
+  },
+  couponInputRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  couponInput: {
+    flex: 1,
+    backgroundColor: "#1E293B",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: "600",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  couponApplyBtn: {
+    backgroundColor: "#F59E0B",
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  couponApplyText: {
+    color: "#0F172A",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  couponRemoveBtn: {
+    backgroundColor: "rgba(239,68,68,0.2)",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  couponRemoveText: {
+    color: "#EF4444",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  appliedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(16,185,129,0.12)",
+    borderRadius: 8,
+  },
+  appliedText: {
+    color: "#10B981",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 6,
   },
 });

@@ -50,29 +50,54 @@ export const TermsOfService: React.FC<PrivacyProps> = ({ onAgree, goBack}) => {
 
           
             
-             <View>
+          <View>
+            <Text style={styles.title}>Terms of Service</Text>
 
-              <Text style={styles.title}>Terms of Service</Text>
+            <Text style={styles.policyText}>
+              {`Welcome to Fastmatch. By accessing or using the Fastmatch mobile application and services, you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you may not use our services.\n\n`}
 
-          <Text style={styles.policyText}>
-            
-            <Text style={{ color: colors.white, fontWeight: "bold" }}>
-              1. User Conduct & Safety{"\n"}
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                1. Strict 18+ Age Requirement{"\n"}
+              </Text>
+              {`You must be at least 18 years of age to use Fastmatch. By registering or using the service, you represent and warrant that you are at least 18 years old. We operate a zero-tolerance policy regarding underage users, and any account found to belong to an individual under 18 will be permanently deleted immediately.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                2. Community Conduct & Zero Tolerance Policy{"\n"}
+              </Text>
+              {`Fastmatch is committed to maintaining a safe, respectful environment. You agree that you will NOT:\n`}
+              {`• Display nudity, pornography, sexually explicit acts, or solicit sexual content.\n`}
+              {`• Harass, bully, intimidate, stalk, defame, or threaten any other user.\n`}
+              {`• Transmit hate speech, promote violence, discrimination, or illegal activities.\n`}
+              {`• Impersonate any person or entity or misrepresent your affiliation.\n`}
+              {`Any violation will result in immediate suspension, permanent hardware-level ban, and may be reported to law enforcement where applicable.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                3. Strict Ban on Unauthorized Recording & Screenshots{"\n"}
+              </Text>
+              {`Users are strictly prohibited from taking screenshots, recording video/audio, or redistributing any portion of video calls or chat interactions without explicit, documented consent from the other party. Fastmatch employs proactive screenshot prevention mechanisms where supported by the operating system.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                4. Ephemeral Live Video Communications{"\n"}
+              </Text>
+              {`Live video chats are streamed directly between users via secure real-time WebRTC connections. Fastmatch does not record, archive, or retain your private video streams on any servers.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                5. Subscriptions, Virtual Coins & Payments{"\n"}
+              </Text>
+              {`• Premium Subscriptions: Monthly ($9.00/month) and Yearly ($90.00/year) subscriptions renew automatically through your Apple App Store or Google Play account unless cancelled at least 24 hours prior to the end of the current billing cycle.\n`}
+              {`• Virtual Coins: Coins are digital consumables purchased for in-app interactions (e.g., virtual gifts, priority matching). Coins have no monetary cash value, are non-refundable, non-transferable, and cannot be redeemed for real currency.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                6. Reporting & Moderation{"\n"}
+              </Text>
+              {`Fastmatch provides automated and human moderation tools. Users can instantly skip, block, or report any misconduct during a call or from their profile. Reports are reviewed promptly by our 24/7 trust and safety team.\n\n`}
+
+              <Text style={{ color: colors.white, fontWeight: "bold" }}>
+                7. Contact Us{"\n"}
+              </Text>
+              {`For inquiries, legal notices, or account assistance, contact our legal and support team at: support@fastmatch.app\n`}
             </Text>
-            {`Users must not engage in harassment, nudity, explicit content, hate speech, or any abusive behavior during video calls or chats. Violations may result in immediate account suspension or permanent ban.\n\n\n`}
-
-            <Text style={{ color: colors.white, fontWeight: "bold" }}>
-              2. Age Requirement & Consent{"\n"}
-            </Text>
-            {`Users must be 12 years or older to use this platform. By using the app, you confirm you meet the age requirement and consent to being matched with strangers for video and chat interactions.\n\n`}
-            <Text style={{ color: colors.white, fontWeight: "bold" }}>
-              3. Privacy & Recording{"\n"}
-            </Text>
-            {`Users are strictly prohibited from recording, screenshots, or sharing any video calls or chat conversations without the explicit consent of the other party. We are not responsible for any unauthorized content captured by users.\n\n`}
-
-             </Text>
-
-             </View>
+          </View>
           
           
 

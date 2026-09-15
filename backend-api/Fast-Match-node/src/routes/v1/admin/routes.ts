@@ -61,4 +61,17 @@ router.delete('/announcements/:id', verifyAdminToken, adminController.deleteAnno
 // Icebreakers for mobile app (public)
 router.get('/public/icebreakers', cacheMiddleware(300), adminController.getActiveIcebreakers);
 
+// Support Ticket Management
+router.get('/support-tickets', verifyAdminToken, adminController.getSupportTickets);
+router.patch('/support-tickets/:id', verifyAdminToken, adminController.updateSupportTicket);
+
+// Coupon Management
+router.get('/coupons', verifyAdminToken, adminController.getCoupons);
+router.post('/coupons', verifyAdminToken, adminController.createCoupon);
+router.delete('/coupons/:id', verifyAdminToken, adminController.deleteCoupon);
+
+// Pricing Management
+router.get('/pricing', verifyAdminToken, adminController.getPricing);
+router.put('/pricing', verifyAdminToken, adminController.updatePricing);
+
 export default router;

@@ -228,6 +228,44 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    socialAuth: builder.mutation({
+      query: (data) => ({
+        url: apiEndPoints.socialAuth,
+        method: "POST",
+        body: data,
+        headers: header1,
+      }),
+    }),
+    createSupportTicket: builder.mutation({
+      query: (data) => ({
+        url: apiEndPoints.createSupportTicket,
+        method: "POST",
+        body: data,
+        headers: header1,
+      }),
+    }),
+    getUserSupportTickets: builder.query({
+      query: () => ({
+        url: apiEndPoints.getUserSupportTickets,
+        method: "GET",
+        headers: header1,
+      }),
+    }),
+    applyCoupon: builder.mutation({
+      query: (data) => ({
+        url: apiEndPoints.applyCoupon,
+        method: "POST",
+        body: data,
+        headers: header1,
+      }),
+    }),
+    getPricing: builder.query({
+      query: () => ({
+        url: apiEndPoints.getPricing,
+        method: "GET",
+        headers: header1,
+      }),
+    }),
   }),
 });
 
@@ -271,4 +309,9 @@ export const {
   useGetGlobalUsersQuery,
   useToggleFavoriteMutation,
   useGetFavoritesQuery,
+  useSocialAuthMutation,
+  useCreateSupportTicketMutation,
+  useGetUserSupportTicketsQuery,
+  useApplyCouponMutation,
+  useGetPricingQuery,
 } = authApi;

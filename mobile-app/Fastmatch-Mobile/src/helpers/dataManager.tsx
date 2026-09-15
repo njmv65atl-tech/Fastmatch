@@ -5,7 +5,6 @@ import { DataManagersKeys } from './dataManagerKeys';
 
 export const DataManager = {
   async setAccessToken(token: string) {
-    console.log(token, "this is token")
     return await AsyncStorage.setItem(DataManagersKeys.access_token, token);
   },
   async getAccessToken() {

@@ -9,6 +9,10 @@ import { Types } from "mongoose";
 import { User } from '../models/user';
 import { Icebreaker } from '../models/icebreaker';
 import { Announcement } from '../models/announcement';
+import SupportTicket from '../models/supportTicket';
+import Coupon from '../models/coupon';
+import Pricing from '../models/pricing';
+import { sendEmail } from '../helpers/email';
 import notificationServices from "./notification.services";
 
 const message = { ...authConstant.auth, ...adminConstant.admin };
@@ -245,6 +249,81 @@ class AdminService {
 
     async deleteAnnouncement(id: string) {
         return await Announcement.findByIdAndDelete(id);
+    }
+
+    // Support Ticket Management
+    async getSupportTickets(query: any) {
+        const filter: any = {};
+        if (query.status) filter.status = query.status;
+        if (query.category) filter.category = query.category;
+        return await SupportTicket.find(filter).populate('user', 'fullName displayName email profilePicture').sort({ createdAt: -1 });
+    }
+
+    async updateSupportTicket(id: string, data: any) {
+        const ticket = await SupportTicket.findByIdAndUpdate(id, data, { new: true }).populate('user', 'email fullName');
+        if (!ticket) throw new Error("Ticket not found");
+
+        if (data.adminReply && (ticket.email || (ticket.user as any)?.email)) {
+            const recipient = ticket.email || (ticket.user as any)?.email;
+            const subject = `Update on your support ticket #${ticket._id.toString().slice(-6)}: ${ticket.subject}`;
+            const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 500px; padding: 20px; border-radius: 8px; background: #fdfdfd; border: 1px solid #eaeaea;">
+                    <h2 style="color: #333;">Fastmatch Support Response</h2>
+                    <p>Hello,</p>
+                    <p>Our support team has replied to your request regarding: <strong>${ticket.subject}</strong></p>
+                    <div style="background: #f4f4f5; padding: 15px; border-left: 4px solid #F59E0B; margin: 15px 0; border-radius: 4px;">
+                        <p style="margin: 0; color: #222; font-size: 15px; line-height: 1.5;">${data.adminReply}</p>
+                    </div>
+                    <p style="color: #666; font-size: 13px;">Status: <strong>${ticket.status.toUpperCase()}</strong></p>
+                    <p style="color: #999; font-size: 12px; margin-top: 20px;">– Fastmatch Support Team (support@fastmatch.app)</p>
+                </div>
+            `;
+            try {
+                sendEmail(recipient, subject, html);
+            } catch (err) {
+                console.error("Support response email failed:", err);
+            }
+        }
+        return ticket;
+    }
+
+    // Coupon Management
+    async getCoupons(query: any) {
+        return await Coupon.find().sort({ createdAt: -1 });
+    }
+
+    async createCoupon(data: any) {
+        const existing = await Coupon.findOne({ code: data.code.toUpperCase() });
+        if (existing) throw new Error("A coupon with this code already exists");
+        return await Coupon.create({
+            ...data,
+            code: data.code.toUpperCase()
+        });
+    }
+
+    async deleteCoupon(id: string) {
+        return await Coupon.findByIdAndDelete(id);
+    }
+
+    // Dynamic Pricing Management
+    async getPricing() {
+        let pricing = await Pricing.findOne();
+        if (!pricing) {
+            pricing = await Pricing.create({
+                monthlyPrice: 9.00,
+                yearlyPrice: 90.00,
+                coinPackages: [
+                    { id: "com.fastmatch.coins_100", amount: 100, price: 0.99, bonus: 0 },
+                    { id: "com.fastmatch.coins_500", amount: 500, price: 4.99, bonus: 50 },
+                    { id: "com.fastmatch.coins_1000", amount: 1000, price: 9.99, bonus: 200 }
+                ]
+            });
+        }
+        return pricing;
+    }
+
+    async updatePricing(data: any) {
+        return await Pricing.findOneAndUpdate({}, data, { upsert: true, new: true });
     }
 }
 

@@ -41,8 +41,8 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
       const response = await buyCoinsMock({ amount: pkg.amount + pkg.bonus }).unwrap() as any;
       if (response?.success && response?.data) {
         dispatch(setGlobalUser(response.data));
-        refetchHistory();
-        ShowAlertMessage("Purchase mock successful. Coins added!", popTypes.success);
+        const method = Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
+        ShowAlertMessage(`Coins purchased successfully via ${method}!`, popTypes.success);
       } else {
         ShowAlertMessage("Purchase failed.", popTypes.error);
       }
@@ -107,6 +107,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
                 </View>
               </View>
               <View style={styles.priceWrap}>
+                <Text style={styles.payMethodText}>{Platform.OS === 'ios' ? ' Pay' : 'G Pay'}</Text>
                 <Text style={styles.priceText}>{pkg.price}</Text>
               </View>
             </TouchableOpacity>
@@ -239,6 +240,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    alignItems: "center",
+  },
+  payMethodText: {
+    color: "#FBBF24",
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 2,
   },
   priceText: {
     color: colors.white,

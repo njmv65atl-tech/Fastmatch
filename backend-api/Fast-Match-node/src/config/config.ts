@@ -14,6 +14,7 @@ const appConfig = {
     smtpPassword: process.env.SMTP_PASSWORD as string,
     smtpHost: process.env.SMTP_HOST as string,
     smtpPort: process.env.SMTP_PORT as string,
+    smtpFrom: (process.env.SMTP_FROM || 'Fastmatch <noreply@fastmatch.app>') as string,
     webUrl: process.env.WEB_URL as string,
     serverUrl: process.env.SERVER_URL as string,
     encryptionAllowed: false,

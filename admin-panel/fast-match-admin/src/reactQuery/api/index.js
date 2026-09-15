@@ -92,3 +92,16 @@ export const deleteIcebreaker = (id) => apiMethods.DELETE(`admin/icebreakers/${i
 export const getAnnouncements = (data) => apiMethods.GET("admin/announcements", data, headers);
 export const createAnnouncement = (data) => apiMethods.POST("admin/announcements", data, headers);
 export const deleteAnnouncement = (id) => apiMethods.DELETE(`admin/announcements/${id}`, {}, headers);
+
+// Support Desk
+export const getSupportTickets = (data) => apiMethods.GET("admin/support-tickets", data, headers);
+export const updateSupportTicket = (id, data) => apiMethods.PATCH(`admin/support-tickets/${id}`, data, headers);
+
+// Coupons
+export const getCoupons = (data) => apiMethods.GET("admin/coupons", data, headers);
+export const createCoupon = (data) => apiMethods.POST("admin/coupons", data, headers);
+export const deleteCoupon = (id) => apiMethods.DELETE(`admin/coupons/${id}`, {}, headers);
+
+// Dynamic Pricing
+export const getPricing = () => apiMethods.GET("admin/pricing", {}, headers);
+export const updatePricing = (data) => apiMethods.PUT("admin/pricing", data, headers);

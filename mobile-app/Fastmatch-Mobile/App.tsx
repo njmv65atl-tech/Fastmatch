@@ -10,6 +10,7 @@ import {
   WalletView,
   FriendsView,
   FavoritesView,
+  SupportView,
 } from "./src/views/AppViews";
 import {
   Alert,
@@ -57,6 +58,7 @@ import {
   completeProfileSelector,
   resetPersistStore,
   setGlobalUser,
+  setCompleteProfile,
   tokenSelector,
   userSelector,
 } from "./src/redux/slices/persistedSlice";
@@ -299,6 +301,12 @@ const App: React.FC = () => {
       setActiveCallParams(null);
     }
 
+    // Enforce profile completion gatekeeping: If logged in but profile incomplete, block navigation
+    if (token && (!completeProfile || !user?.isProfileComplete) && view !== AppView.PROFILE_SETUP && view !== AppView.WELCOME && view !== AppView.PRIVACY && view !== AppView.TERMS) {
+      setCurrentView(AppView.PROFILE_SETUP);
+      return;
+    }
+
     setViewHistory((prev) => {
       // If navigating to HOME from auth views, reset stack
       if (view === AppView.HOME && (prev[prev.length - 1] === AppView.LOGIN || prev[prev.length - 1] === AppView.SIGNUP || prev[prev.length - 1] === AppView.WELCOME)) {
@@ -311,14 +319,18 @@ const App: React.FC = () => {
     });
 
     setCurrentView(view);
-  }, [currentView, activeCallParams]);
+  }, [currentView, activeCallParams, token, completeProfile, user]);
 
   const handleLogin = (u: User) => {
     setUser(u);
     if (u.role === UserRole.ADMIN) {
       setCurrentView(AppView.ADMIN_DASHBOARD);
-    } else {
+    } else if (u.isProfileComplete) {
+      dispatch(setCompleteProfile(true));
       setCurrentView(AppView.HOME);
+    } else {
+      dispatch(setCompleteProfile(false));
+      setCurrentView(AppView.PROFILE_SETUP);
     }
   };
 
@@ -346,7 +358,7 @@ const App: React.FC = () => {
     switch (currentView) {
 
       case AppView.WELCOME:
-        return <WelcomeView setView={setCurrentView} />;
+        return <WelcomeView setView={setCurrentView} setUser={setUser} />;
 
       case AppView.LOGIN:
         return (
@@ -546,6 +558,9 @@ const App: React.FC = () => {
 
       case AppView.CONNECTION_REQUESTS:
         return <ConnectionRequestsView setView={handleSetView} />;
+
+      case AppView.SUPPORT:
+        return <SupportView setView={handleSetView} />;
 
       case AppView.DISCOVER:
         return <DiscoverView setView={handleSetView} />;

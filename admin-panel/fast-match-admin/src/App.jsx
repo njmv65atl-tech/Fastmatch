@@ -17,6 +17,7 @@ import { UserReports } from "./main/screens/UserReports";
 import { ActivityMonitoring } from "./main/screens/ActivityMonitoring";
 import { Analytics } from "./main/screens/Analytics";
 import { SubscriptionManagement } from "./main/screens/SubscriptionManagement";
+import { SupportDesk } from "./main/screens/SupportDesk";
 import { ContentManagement } from "./main/screens/ContentManagement";
 import { Announcements } from "./main/screens/Announcements";
 import { Profile, ChangePassword, EditProfile } from "./main/screens/Profile";
@@ -104,6 +105,7 @@ function App() {
               <Route path="activity" element={<ActivityMonitoring />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="subscriptions" element={<SubscriptionManagement />} />
+              <Route path="support" element={<SupportDesk />} />
               <Route path="content" element={<ContentManagement />} />
               <Route path="announcements" element={<Announcements />} />
               <Route path="profile" element={<Profile />} />

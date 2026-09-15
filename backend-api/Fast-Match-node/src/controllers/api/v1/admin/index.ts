@@ -169,3 +169,41 @@ export const getActiveIcebreakers = tryCatchMiddleware(async (req: Request, res:
     const result = await adminServices.getActiveIcebreakers();
     res.status(constants.successCode).json(responseEncryptor(req, true, 'Active icebreakers fetched successfully', result));
 });
+
+// Support Ticket Management
+export const getSupportTickets = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const result = await adminServices.getSupportTickets(req.query);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'Support tickets fetched successfully', result));
+});
+
+export const updateSupportTicket = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const result = await adminServices.updateSupportTicket(req.params.id as string, req.body);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'Support ticket updated successfully', result));
+});
+
+// Coupon Management
+export const getCoupons = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const result = await adminServices.getCoupons(req.query);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'Coupons fetched successfully', result));
+});
+
+export const createCoupon = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const result = await adminServices.createCoupon(req.body);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'Coupon created successfully', result));
+});
+
+export const deleteCoupon = tryCatchMiddleware(async (req: Request, res: Response) => {
+    await adminServices.deleteCoupon(req.params.id as string);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'Coupon deleted successfully'));
+});
+
+// Pricing Management
+export const getPricing = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const result = await adminServices.getPricing();
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'Pricing fetched successfully', result));
+});
+
+export const updatePricing = tryCatchMiddleware(async (req: Request, res: Response) => {
+    const result = await adminServices.updatePricing(req.body);
+    res.status(constants.successCode).json(responseEncryptor(req, true, 'Pricing updated successfully', result));
+});

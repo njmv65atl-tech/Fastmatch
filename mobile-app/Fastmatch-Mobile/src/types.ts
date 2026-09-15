@@ -30,6 +30,7 @@ export enum AppView {
   GLOBAL_DISCOVERY = "GLOBAL_DISCOVERY",
   FAVORITES = "FAVORITES",
   CONNECTION_REQUESTS = "CONNECTION_REQUESTS",
+  SUPPORT = "SUPPORT",
 }
 
 export enum UserRole {
@@ -46,13 +47,14 @@ export enum Gender {
 }
 
 export interface User {
-  id: string;
-  name: string;
-  email: string;
+  id?: string;
+  _id?: string;
+  name?: string;
+  email?: string;
   avatar?: string;
-  role: UserRole;
-  interests: string[];
-  gender: Gender;
+  role?: UserRole;
+  interests?: string[];
+  gender?: Gender;
   bio?: string;
   displayName?: string;
   fullName?: string;
@@ -61,6 +63,10 @@ export interface User {
   walletBalance?: number;
   trustScore?: number;
   isPremium?: 'free' | 'premium';
+  isProfileComplete?: boolean;
+  age?: number | string;
+  location?: string;
+  language?: string;
 }
 
 export interface ChatMessage {
@@ -87,3 +93,6 @@ export interface SubscriptionPlan {
   duration: string;
   features: string[];
 }
+
+export type Attachment = any;
+export type Message = any;
