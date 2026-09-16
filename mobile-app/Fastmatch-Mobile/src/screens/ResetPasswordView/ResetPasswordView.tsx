@@ -10,6 +10,7 @@ import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { useResetPasswordMutation } from "../../redux/services/auth";
 import { useSelector } from "react-redux";
 import { userSelector } from "../../redux/slices/persistedSlice";
+import { DataManager } from "../../helpers/dataManager";
 
 interface ResetProps {
   setView: (view: AppView) => void;
@@ -24,11 +25,32 @@ export const ResetPasswordView: React.FC<ResetProps> = ({ setView }) => {
     confirmPassword: "",
   });
 
+  // On mount, copy the reset token to the access token so RTK Query picks it up
+  useEffect(() => {
+    const setupResetToken = async () => {
+      const resetToken = await DataManager.getResetToken();
+      if (resetToken) {
+        await DataManager.setAccessToken(resetToken);
+      }
+    };
+    setupResetToken();
+  }, []);
+
+  const cleanupAndNavigate = async (view: AppView) => {
+    await DataManager.clearResetToken();
+    // Clear the temporary access token that was set for the reset call
+    // (Only if user is not actually logged in — no Redux token)
+    if (!currentUser) {
+      await DataManager.setAccessToken("");
+    }
+    setView(view);
+  };
+
   // ── Handle System Back Button ─────────────────────────────────────────────
   useEffect(() => {
     const backAction = () => {
       // Navigate back to Login view when system back is pressed
-      setView(AppView.LOGIN);
+      cleanupAndNavigate(AppView.LOGIN);
       return true; // Prevents the app from exiting
     };
 
@@ -57,7 +79,7 @@ export const ResetPasswordView: React.FC<ResetProps> = ({ setView }) => {
       resetPayload,
       (res: any) => {
         ShowAlertMessage(res?.message || "Password reset successfully!", popTypes.info);
-        setView(AppView.LOGIN);
+        cleanupAndNavigate(AppView.LOGIN);
       },
       (err: any) => {
         console.log(err, "Reset Password Error");

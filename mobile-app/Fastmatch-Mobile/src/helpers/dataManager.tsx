@@ -29,4 +29,13 @@ export const DataManager = {
   async getFcmToken() {
     return await AsyncStorage.getItem(DataManagersKeys.fcm_token);
   },
+  async setResetToken(token: string) {
+    return await AsyncStorage.setItem(DataManagersKeys.reset_token, token);
+  },
+  async getResetToken() {
+    return await AsyncStorage.getItem(DataManagersKeys.reset_token);
+  },
+  async clearResetToken() {
+    return await AsyncStorage.removeItem(DataManagersKeys.reset_token);
+  },
 };

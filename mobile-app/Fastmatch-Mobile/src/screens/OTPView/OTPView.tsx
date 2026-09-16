@@ -183,7 +183,7 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
           otp: otpAsNumber,
         },
         (res: any) => {
-          DataManager.setAccessToken(res?.data?.token);
+          DataManager.setResetToken(res?.data?.token);
           DataManager.clearForgotOtpEmail();
           setStatus('success');
           setTimeout(() => {

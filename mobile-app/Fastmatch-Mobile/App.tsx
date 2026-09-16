@@ -182,13 +182,15 @@ const App: React.FC = () => {
       return true; // handled
     }
 
-    // If at root view (HOME, WELCOME, LOGIN, SIGNUP), allow default app exit
+    // If at root view (HOME, WELCOME, LOGIN, SIGNUP, etc.), allow default app exit
     if (
       currentView === AppView.HOME ||
       currentView === AppView.WELCOME ||
       currentView === AppView.LOGIN ||
       currentView === AppView.SIGNUP ||
-      currentView === AppView.ADMIN_DASHBOARD
+      currentView === AppView.ADMIN_DASHBOARD ||
+      currentView === AppView.FORGOT_PASSWORD ||
+      currentView === AppView.RESET_PASSWORD
     ) {
       return false;
     }
@@ -302,7 +304,7 @@ const App: React.FC = () => {
     }
 
     // Enforce profile completion gatekeeping: If logged in but profile incomplete, block navigation
-    if (token && (!completeProfile || !user?.isProfileComplete) && view !== AppView.PROFILE_SETUP && view !== AppView.WELCOME && view !== AppView.PRIVACY && view !== AppView.TERMS) {
+    if (token && (!completeProfile || !user?.isProfileComplete) && view !== AppView.PROFILE_SETUP && view !== AppView.WELCOME && view !== AppView.PRIVACY && view !== AppView.TERMS && view !== AppView.RESET_PASSWORD && view !== AppView.FORGOT_PASSWORD && view !== AppView.OTP && view !== AppView.LOGIN && view !== AppView.SIGNUP) {
       setCurrentView(AppView.PROFILE_SETUP);
       return;
     }
@@ -404,7 +406,7 @@ const App: React.FC = () => {
       case AppView.FORGOT_PASSWORD:
         return (
           <ForgotPasswordView
-            setView={setCurrentView}
+            setView={handleSetView}
             onOtpRequested={(email) => {
               setOtpContext({ type: "forgot", email });
               setCurrentView(AppView.OTP);
@@ -415,7 +417,7 @@ const App: React.FC = () => {
       case AppView.RESET_PASSWORD:
         return (
           <ResetPasswordView
-            setView={setCurrentView}
+            setView={handleSetView}
             
           />
         );
