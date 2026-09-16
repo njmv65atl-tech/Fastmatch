@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   StatusBar,
   TouchableOpacity,
   Platform,
-  Modal,
-  TextInput,
   ActivityIndicator,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
@@ -28,6 +26,8 @@ import { DataManager } from "../../helpers/dataManager";
 import { useSocialAuthMutation } from "../../redux/services/auth";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import DeviceInfo from "react-native-device-info";
+import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
+import { appleAuth } from "@invertase/react-native-apple-authentication";
 
 const { width, height } = Dimensions.get("window");
 
@@ -39,25 +39,27 @@ interface AuthProps {
 export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
   const dispatch = useDispatch();
   const [socialAuth, { isLoading: isSocialLoading }] = useSocialAuthMutation();
-  const [socialModalVisible, setSocialModalVisible] = useState(false);
-  const [socialProvider, setSocialProvider] = useState<"Google" | "Apple">("Google");
-  const [socialEmail, setSocialEmail] = useState("");
-  const [socialName, setSocialName] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSocialClick = (provider: "Google" | "Apple") => {
-    setSocialProvider(provider);
-    setSocialEmail("");
-    setSocialName("");
-    setSocialModalVisible(true);
-  };
-
-  const handleCompleteSocialLogin = async () => {
-    if (!socialEmail.trim()) {
-      ShowAlertMessage("Please enter your email address", popTypes.error);
-      return;
-    }
-
+  useEffect(() => {
     try {
+      GoogleSignin.configure({
+        scopes: ["email", "profile"],
+        offlineAccess: false,
+      });
+    } catch (e) {
+      console.warn("GoogleSignin configure error:", e);
+    }
+  }, []);
+
+  const executeSocialAuth = async (
+    email: string,
+    provider: "google" | "apple",
+    fullName: string,
+    profilePicture: string | null
+  ) => {
+    try {
+      setIsProcessing(true);
       let deviceId = "";
       let deviceName = "";
       try {
@@ -70,10 +72,11 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
       const fcmToken = (await DataManager.getFcmToken()) || "";
 
       const payload = {
-        email: socialEmail.trim().toLowerCase(),
-        provider: socialProvider.toLowerCase(),
-        fullName: socialName.trim() || socialEmail.split("@")[0],
-        displayName: socialName.trim() || socialEmail.split("@")[0],
+        email: email.trim().toLowerCase(),
+        provider,
+        fullName: fullName.trim() || email.split("@")[0],
+        displayName: fullName.trim() || email.split("@")[0],
+        profilePicture: profilePicture || undefined,
         deviceId,
         deviceName,
         platform: Platform.OS,
@@ -81,8 +84,6 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
       };
 
       const res: any = await socialAuth(payload).unwrap();
-
-      setSocialModalVisible(false);
 
       if (res?.data?.token) {
         dispatch(setToken(res.data.token));
@@ -103,7 +104,7 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
       }
 
       ShowAlertMessage(
-        res?.message || `Signed in with ${socialProvider}`,
+        res?.message || `Signed in with ${provider === "google" ? "Google" : "Apple"}`,
         popTypes.success
       );
     } catch (err: any) {
@@ -112,8 +113,84 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
         err?.data?.message || "Social login failed. Please try again.",
         popTypes.error
       );
+    } finally {
+      setIsProcessing(false);
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    if (isProcessing || isSocialLoading) return;
+    try {
+      if (Platform.OS === "android") {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      }
+      const response: any = await GoogleSignin.signIn();
+      const userObj = response?.data?.user || response?.user;
+      const email = userObj?.email;
+      const fullName = userObj?.name || userObj?.displayName || (email ? email.split("@")[0] : "Google User");
+      const photo = userObj?.photo || null;
+
+      if (!email) {
+        ShowAlertMessage("Could not retrieve email from Google account.", popTypes.error);
+        return;
+      }
+
+      await executeSocialAuth(email, "google", fullName, photo);
+    } catch (error: any) {
+      if (error?.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled the prompt - no error needed
+        return;
+      } else if (error?.code === statusCodes.IN_PROGRESS) {
+        return;
+      } else if (error?.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        ShowAlertMessage("Google Play Services is not available.", popTypes.error);
+      } else {
+        console.warn("Google Sign-In Error:", error);
+        ShowAlertMessage(
+          error?.message || "Google Sign-In failed. Please try again.",
+          popTypes.error
+        );
+      }
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    if (isProcessing || isSocialLoading) return;
+    if (Platform.OS !== "ios") {
+      ShowAlertMessage("Apple Sign-In is only available on iOS devices.", popTypes.info);
+      return;
+    }
+
+    try {
+      const appleAuthRequestResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
+      });
+
+      const { email, fullName, user: appleUserId } = appleAuthRequestResponse;
+
+      let displayName = "";
+      if (fullName?.givenName || fullName?.familyName) {
+        displayName = `${fullName?.givenName || ""} ${fullName?.familyName || ""}`.trim();
+      }
+
+      const userEmail = email || `${appleUserId}@privaterelay.appleid.com`;
+      displayName = displayName || userEmail.split("@")[0] || "Apple User";
+
+      await executeSocialAuth(userEmail, "apple", displayName, null);
+    } catch (error: any) {
+      if (error?.code === appleAuth.Error.CANCELED) {
+        return;
+      }
+      console.warn("Apple Sign-In Error:", error);
+      ShowAlertMessage(
+        error?.message || "Apple Sign-In failed. Please try again.",
+        popTypes.error
+      );
+    }
+  };
+
+  const isLoading = isProcessing || isSocialLoading;
 
   return (
     <LinearGradient colors={["#312E81", "#020617"]} style={styles.container}>
@@ -142,18 +219,26 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
           {/* Social Sign-In Buttons */}
           <TouchableOpacity
             style={styles.socialBtn}
-            onPress={() => handleSocialClick("Google")}
+            onPress={handleGoogleSignIn}
             activeOpacity={0.8}
+            disabled={isLoading}
           >
-            <Text style={styles.socialIconG}>G</Text>
-            <Text style={styles.socialBtnText}>Continue with Google</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#0F172A" />
+            ) : (
+              <>
+                <Text style={styles.socialIconG}>G</Text>
+                <Text style={styles.socialBtnText}>Continue with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
 
-          {(Platform.OS === "ios" || Platform.OS === "android") && (
+          {Platform.OS === "ios" && (
             <TouchableOpacity
               style={[styles.socialBtn, styles.appleBtn]}
-              onPress={() => handleSocialClick("Apple")}
+              onPress={handleAppleSignIn}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
               <Text style={styles.socialIconApple}></Text>
               <Text style={[styles.socialBtnText, styles.appleBtnText]}>
@@ -172,66 +257,6 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
           </Button>
         </View>
       </View>
-
-      {/* Social Login Modal */}
-      <Modal
-        visible={socialModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSocialModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              Sign In with {socialProvider}
-            </Text>
-            <Text style={styles.modalSubtitle}>
-              Fastmatch will use your {socialProvider} account to verify your email.
-            </Text>
-
-            <Text style={styles.modalInputLabel}>Account Email</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder={`yourname@${socialProvider === "Apple" ? "icloud.com" : "gmail.com"}`}
-              placeholderTextColor="#64748B"
-              value={socialEmail}
-              onChangeText={setSocialEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            <Text style={styles.modalInputLabel}>Display / Full Name</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="e.g. Alex Smith"
-              placeholderTextColor="#64748B"
-              value={socialName}
-              onChangeText={setSocialName}
-            />
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setSocialModalVisible(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalConfirmBtn}
-                onPress={handleCompleteSocialLogin}
-                disabled={isSocialLoading}
-              >
-                {isSocialLoading ? (
-                  <ActivityIndicator color="#0F172A" />
-                ) : (
-                  <Text style={styles.modalConfirmText}>Continue</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </LinearGradient>
   );
 };
@@ -345,81 +370,5 @@ const styles = StyleSheet.create({
   },
   appleBtnText: {
     color: "#FFFFFF",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  modalCard: {
-    width: "100%",
-    maxWidth: 380,
-    backgroundColor: "#0F172A",
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  modalTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 6,
-  },
-  modalSubtitle: {
-    color: "#94A3B8",
-    fontSize: 13,
-    marginBottom: 20,
-    lineHeight: 18,
-  },
-  modalInputLabel: {
-    color: "#E2E8F0",
-    fontSize: 12,
-    fontWeight: "600",
-    marginBottom: 6,
-    marginTop: 4,
-  },
-  modalInput: {
-    backgroundColor: "#1E293B",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: "#FFFFFF",
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    marginBottom: 14,
-  },
-  modalActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-    marginTop: 10,
-  },
-  modalCancelBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#1E293B",
-  },
-  modalCancelText: {
-    color: "#94A3B8",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  modalConfirmBtn: {
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#F59E0B",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalConfirmText: {
-    color: "#0F172A",
-    fontWeight: "bold",
-    fontSize: 14,
   },
 });

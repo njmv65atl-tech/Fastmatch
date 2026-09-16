@@ -18,6 +18,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { userSelector, setGlobalUser } from "../../redux/slices/persistedSlice";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import { useBuyCoinsMockMutation, useWalletHistoryQuery } from "../../redux/services/auth";
+import { purchaseProduct } from "../../utils/iap";
 
 interface WalletViewProps {
   setView: (view: AppView) => void;
@@ -38,17 +39,10 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
 
   const handlePurchase = async (pkg: any) => {
     try {
-      const response = await buyCoinsMock({ amount: pkg.amount + pkg.bonus }).unwrap() as any;
-      if (response?.success && response?.data) {
-        dispatch(setGlobalUser(response.data));
-        const method = Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
-        ShowAlertMessage(`Coins purchased successfully via ${method}!`, popTypes.success);
-      } else {
-        ShowAlertMessage("Purchase failed.", popTypes.error);
-      }
+      await purchaseProduct(pkg.id);
     } catch (e: any) {
-      console.warn(e);
-      ShowAlertMessage(e?.data?.message || "Purchase failed or cancelled.", popTypes.error);
+      console.warn("handlePurchase error:", e);
+      ShowAlertMessage(e?.message || "Purchase could not be initiated.", popTypes.error);
     }
   };
 

@@ -266,6 +266,14 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    verifyPurchase: builder.mutation({
+      query: (data) => ({
+        url: apiEndPoints.verifyPurchase,
+        method: "POST",
+        body: data,
+        headers: header1,
+      }),
+    }),
   }),
 });
 
@@ -314,4 +322,5 @@ export const {
   useGetUserSupportTicketsQuery,
   useApplyCouponMutation,
   useGetPricingQuery,
+  useVerifyPurchaseMutation,
 } = authApi;

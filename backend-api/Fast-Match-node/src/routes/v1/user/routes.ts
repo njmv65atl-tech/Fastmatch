@@ -68,4 +68,7 @@ router.get('/support-tickets', verifyToken, tryCatchMiddleware(UserController.ge
 router.post('/apply-coupon', verifyToken, tryCatchMiddleware(UserController.applyCoupon))
 router.get('/pricing', tryCatchMiddleware(UserController.getAppPricing))
 
+// In-App Purchases & Subscriptions
+router.post('/verify-purchase', verifyToken, tryCatchMiddleware(UserController.verifyPurchase))
+
 export default router;

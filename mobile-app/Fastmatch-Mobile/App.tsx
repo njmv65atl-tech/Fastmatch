@@ -82,14 +82,15 @@ import { resetGlobalStore, incomingMatchRequestSelector, clearIncomingMatchReque
 import { socket } from "./src/socket/socket";
 import { useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
-import { useRateMatchMutation, useUpgradePremiumMockMutation } from "./src/redux/services/auth";
-import { setupIAP, purchaseErrorListener, purchaseUpdatedListener, finishTransaction, closeIAPConnection } from "./src/utils/iap";
+import { useRateMatchMutation, useUpgradePremiumMockMutation, useVerifyPurchaseMutation } from "./src/redux/services/auth";
+import { setupIAP, purchaseErrorListener, purchaseUpdatedListener, finishTransaction, closeIAPConnection, subscribeToProduct } from "./src/utils/iap";
 const { width } = Dimensions.get("window");
 const App: React.FC = () => {
 
   const [isConnected, setIsConnected] = useState<boolean | null>(true);
   const token = useSelector(tokenSelector);
   const [upgradePremiumMock] = useUpgradePremiumMockMutation();
+  const [verifyPurchaseApi] = useVerifyPurchaseMutation();
   const currentUser = useSelector(userSelector);
   const completeProfile = useSelector(completeProfileSelector);
   const incomingMatchRequest = useSelector(incomingMatchRequestSelector);
@@ -223,18 +224,29 @@ const App: React.FC = () => {
   React.useEffect(() => {
     setupIAP();
 
-    const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase) => {
+    const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: any) => {
       console.log('purchaseUpdatedListener', purchase);
-      const receipt = purchase.transactionReceipt;
-      if (receipt) {
+      const receipt = purchase.transactionReceipt || purchase.purchaseToken;
+      const productId = purchase.productId || (purchase.productIds && purchase.productIds[0]);
+      if (receipt || productId) {
         try {
-          // Tell your backend about the purchase here -- backend api hit
-
-
-          await finishTransaction({ purchase, isConsumable: false });
-          ShowAlertMessage("Purchase successful!", popTypes.success);
-        } catch (ackErr) {
-          console.warn('ackErr', ackErr);
+          const isSub = productId?.includes('premium');
+          const verifyPayload = {
+            productId: productId,
+            purchaseToken: purchase.purchaseToken || purchase.transactionId || receipt,
+            receipt: receipt,
+            platform: Platform.OS,
+          };
+          const res: any = await verifyPurchaseApi(verifyPayload).unwrap();
+          if (res?.data) {
+            setUser(res.data);
+            dispatch(setGlobalUser(res.data));
+          }
+          await finishTransaction({ purchase, isConsumable: !isSub });
+          ShowAlertMessage(res?.message || "Purchase successful!", popTypes.success);
+        } catch (ackErr: any) {
+          console.warn('IAP verification error:', ackErr);
+          ShowAlertMessage(ackErr?.data?.message || "Purchase verification failed.", popTypes.error);
         }
       }
     });
@@ -337,22 +349,12 @@ const App: React.FC = () => {
   };
 
   const handleUpgrade = async (plan: "YEARLY" | "MONTHLY") => {
-    if (user) {
-      try {
-        const response = await upgradePremiumMock({ plan }).unwrap() as any;
-        if (response?.success && response?.data) {
-          setUser(response.data);
-          dispatch(setGlobalUser(response.data));
-          setShowPremiumModal(true);
-          setCurrentView(AppView.HOME);
-          ShowAlertMessage("Mock Premium Upgrade Successful!", popTypes.success);
-        } else {
-          ShowAlertMessage("Upgrade failed.", popTypes.error);
-        }
-      } catch (e: any) {
-        console.warn(e);
-        ShowAlertMessage(e?.data?.message || "Upgrade failed.", popTypes.error);
-      }
+    try {
+      const sku = plan === "YEARLY" ? "com.fastmatch.premium.yearly" : "com.fastmatch.premium.monthly";
+      await subscribeToProduct(sku);
+    } catch (e: any) {
+      console.warn("handleUpgrade error:", e);
+      ShowAlertMessage(e?.message || "Subscription could not be initiated.", popTypes.error);
     }
   };
 

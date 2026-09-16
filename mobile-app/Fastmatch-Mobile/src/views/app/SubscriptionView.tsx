@@ -94,9 +94,6 @@ export const SubscriptionView: React.FC<{
 
   const handlePurchase = async () => {
     onUpgrade(selectedPlan);
-    const method = Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay';
-    ShowAlertMessage(`Premium Unlocked successfully via ${method}!`, popTypes.success);
-    setView(AppView.HOME);
   };
 
   // Toggle plan with disable functionality

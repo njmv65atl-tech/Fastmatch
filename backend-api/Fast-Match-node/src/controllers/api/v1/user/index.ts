@@ -76,6 +76,7 @@ class UserController extends ResponseHandler {
         this.getUserSupportTickets = this.getUserSupportTickets.bind(this);
         this.applyCoupon = this.applyCoupon.bind(this);
         this.getAppPricing = this.getAppPricing.bind(this);
+        this.verifyPurchase = this.verifyPurchase.bind(this);
     }
 
     // Step 1: Sign Up — sends OTP to email/phone
@@ -942,6 +943,70 @@ class UserController extends ResponseHandler {
             }
             return res.status(200).send(responseEncryptor(req, true, "Pricing fetched", pricing));
         } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async verifyPurchase(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const { productId, purchaseToken, receipt, platform } = req.body;
+
+            if (!productId) {
+                return res.status(400).send(responseEncryptor(req, false, "Product ID is required"));
+            }
+
+            const user = await User.findById(currentUserId);
+            if (!user) {
+                return res.status(404).send(responseEncryptor(req, false, "User not found"));
+            }
+
+            // Subscription products
+            if (productId === 'com.fastmatch.premium.monthly' || productId === 'com.fastmatch.premium.yearly') {
+                user.isPremium = 'premium';
+                await user.save();
+
+                await Transaction.create({
+                    userId: user._id,
+                    type: 'subscription',
+                    amount: productId === 'com.fastmatch.premium.yearly' ? 90 : 9,
+                    description: `Premium subscription unlocked via ${platform === 'ios' ? 'Apple App Store' : 'Google Play'} (${productId})`,
+                });
+
+                return res.status(200).send(responseEncryptor(req, true, "Premium subscription activated successfully!", user));
+            }
+
+            // Coin packages
+            let coinsToAdd = 0;
+            let pricePaid = 0;
+            if (productId === 'com.fastmatch.coins_100') {
+                coinsToAdd = 100;
+                pricePaid = 0.99;
+            } else if (productId === 'com.fastmatch.coins_500') {
+                coinsToAdd = 550; // 500 + 50 bonus
+                pricePaid = 4.99;
+            } else if (productId === 'com.fastmatch.coins_1000') {
+                coinsToAdd = 1200; // 1000 + 200 bonus
+                pricePaid = 9.99;
+            } else {
+                return res.status(400).send(responseEncryptor(req, false, "Unknown product ID"));
+            }
+
+            const maxWalletLimit = 50000;
+            const currentBalance = user.walletBalance || 0;
+            user.walletBalance = Math.min(maxWalletLimit, currentBalance + coinsToAdd);
+            await user.save();
+
+            await Transaction.create({
+                userId: user._id,
+                type: 'buy_coin',
+                amount: coinsToAdd,
+                description: `${coinsToAdd} Coins purchased via ${platform === 'ios' ? 'Apple App Store' : 'Google Play'} ($${pricePaid})`,
+            });
+
+            return res.status(200).send(responseEncryptor(req, true, `Successfully added ${coinsToAdd} coins to your wallet!`, user));
+        } catch (error: any) {
+            console.error("verifyPurchase Error:", error);
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
     }

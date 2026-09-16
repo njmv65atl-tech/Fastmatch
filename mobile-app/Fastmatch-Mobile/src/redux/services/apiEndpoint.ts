@@ -47,4 +47,5 @@ export const apiEndPoints = {
   getUserSupportTickets: "user/support-tickets",
   applyCoupon: "user/apply-coupon",
   getPricing: "user/pricing",
+  verifyPurchase: "user/verify-purchase",
 };
