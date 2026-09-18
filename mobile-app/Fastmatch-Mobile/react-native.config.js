@@ -1,5 +1,10 @@
 module.exports = {
   dependencies: {
+    'react-native-prevent-screenshot-ios-android': {
+      platforms: {
+        android: null,
+      },
+    },
     'react-native-iap': {
       platforms: {
         android: {
@@ -18,3 +23,4 @@ module.exports = {
     }
   }
 };
+

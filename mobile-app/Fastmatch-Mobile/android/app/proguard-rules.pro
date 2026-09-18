@@ -37,3 +37,14 @@
 -keep class com.android.billingclient.api.** { *; }
 -keep class com.dooboolab.rniap.** { *; }
 
+# Keep Google Sign In
+-keep class com.reactnativegooglesignin.** { *; }
+-keep class com.google.android.gms.auth.api.signin.** { *; }
+
+# Keep Apple Authentication
+-keep class com.RNAppleAuthentication.** { *; }
+
+# Keep SVG
+-keep class com.horcrux.svg.** { *; }
+
+

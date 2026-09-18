@@ -2,8 +2,10 @@ import { Platform } from 'react-native';
 import {
   initConnection,
   endConnection,
-  fetchProducts as fetchIAPProducts,
-  requestPurchase as requestIAPPurchase,
+  getProducts,
+  getSubscriptions,
+  requestPurchase,
+  requestSubscription,
   finishTransaction as iapFinishTransaction,
   purchaseUpdatedListener as iapPurchaseUpdatedListener,
   purchaseErrorListener as iapPurchaseErrorListener,
@@ -46,15 +48,12 @@ export const setupIAP = async () => {
 
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
-    const storeProducts: any = await fetchIAPProducts({
-      skus: COIN_SKUS,
-      type: 'in-app',
-    });
+    const storeProducts = await getProducts({ skus: COIN_SKUS });
     if (storeProducts && storeProducts.length > 0) {
       return storeProducts.map((p: any) => ({
-        productId: p.productId || p.id,
-        price: p.price || (p.displayPrice ? p.displayPrice.replace(/[^0-9.]/g, '') : '0.99'),
-        title: p.title || p.displayName || 'Coins',
+        productId: p.productId,
+        price: p.price || (p.localizedPrice ? p.localizedPrice.replace(/[^0-9.]/g, '') : '0.99'),
+        title: p.title || 'Coins',
         description: p.description || 'Coins pack',
       }));
     }
@@ -87,16 +86,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
 export const fetchSubscriptions = async (): Promise<Subscription[]> => {
   try {
-    const storeSubs: any = await fetchIAPProducts({
-      skus: SUBSCRIPTION_SKUS,
-      type: 'subs',
-    });
+    const storeSubs = await getSubscriptions({ skus: SUBSCRIPTION_SKUS });
     if (storeSubs && storeSubs.length > 0) {
       return storeSubs.map((s: any) => ({
-        productId: s.productId || s.id,
-        price: s.price || (s.displayPrice ? s.displayPrice.replace(/[^0-9.]/g, '') : '9.00'),
-        localizedPrice: s.displayPrice || `$${s.price || 9}`,
-        title: s.title || s.displayName || 'Premium',
+        productId: s.productId,
+        price: s.price || (s.localizedPrice ? s.localizedPrice.replace(/[^0-9.]/g, '') : '9.00'),
+        localizedPrice: s.localizedPrice || `$${s.price || 9}`,
+        title: s.title || 'Premium',
         description: s.description || 'Premium subscription',
       }));
     }
@@ -125,17 +121,10 @@ export const fetchSubscriptions = async (): Promise<Subscription[]> => {
 
 export const purchaseProduct = async (sku: string) => {
   try {
-    if (Platform.OS === 'ios') {
-      return await requestIAPPurchase({
-        type: 'in-app',
-        request: { apple: { sku } },
-      });
-    } else {
-      return await requestIAPPurchase({
-        type: 'in-app',
-        request: { google: { skus: [sku] } },
-      });
-    }
+    return await requestPurchase({
+      sku,
+      andDangerouslyFinishTransactionAutomaticallyIOS: false,
+    });
   } catch (error) {
     console.warn('[IAP] purchaseProduct error:', error);
     throw error;
@@ -144,17 +133,10 @@ export const purchaseProduct = async (sku: string) => {
 
 export const subscribeToProduct = async (sku: string) => {
   try {
-    if (Platform.OS === 'ios') {
-      return await requestIAPPurchase({
-        type: 'subs',
-        request: { apple: { sku } },
-      });
-    } else {
-      return await requestIAPPurchase({
-        type: 'subs',
-        request: { google: { skus: [sku] } },
-      });
-    }
+    return await requestSubscription({
+      sku,
+      andDangerouslyFinishTransactionAutomaticallyIOS: false,
+    });
   } catch (error) {
     console.warn('[IAP] subscribeToProduct error:', error);
     throw error;

@@ -267,46 +267,61 @@ const App: React.FC = () => {
   }, []);
 
   React.useEffect(() => {
-    setupIAP();
+    let purchaseUpdateSub: any = null;
+    let purchaseErrorSub: any = null;
 
-    const purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: any) => {
-      console.log('purchaseUpdatedListener', purchase);
-      const receipt = purchase.transactionReceipt || purchase.purchaseToken;
-      const productId = purchase.productId || (purchase.productIds && purchase.productIds[0]);
-      if (receipt || productId) {
-        try {
-          const isSub = productId?.includes('premium');
-          const verifyPayload = {
-            productId: productId,
-            purchaseToken: purchase.purchaseToken || purchase.transactionId || receipt,
-            receipt: receipt,
-            platform: Platform.OS,
-          };
-          const res: any = await verifyPurchaseApi(verifyPayload).unwrap();
-          if (res?.data) {
-            setUser(res.data);
-            dispatch(setGlobalUser(res.data));
+    try {
+      setupIAP().catch((e) => console.warn('setupIAP error:', e));
+
+      purchaseUpdateSub = purchaseUpdatedListener(async (purchase: any) => {
+        console.log('purchaseUpdatedListener', purchase);
+        const receipt = purchase.transactionReceipt || purchase.purchaseToken;
+        const productId = purchase.productId || (purchase.productIds && purchase.productIds[0]);
+        if (receipt || productId) {
+          try {
+            const isSub = productId?.includes('premium');
+            const verifyPayload = {
+              productId: productId,
+              purchaseToken: purchase.purchaseToken || purchase.transactionId || receipt,
+              receipt: receipt,
+              platform: Platform.OS,
+            };
+            const res: any = await verifyPurchaseApi(verifyPayload).unwrap();
+            if (res?.data) {
+              setUser(res.data);
+              dispatch(setGlobalUser(res.data));
+            }
+            await finishTransaction({ purchase, isConsumable: !isSub });
+            ShowAlertMessage(res?.message || "Purchase successful!", popTypes.success);
+          } catch (ackErr: any) {
+            console.warn('IAP verification error:', ackErr);
+            ShowAlertMessage(ackErr?.data?.message || "Purchase verification failed.", popTypes.error);
           }
-          await finishTransaction({ purchase, isConsumable: !isSub });
-          ShowAlertMessage(res?.message || "Purchase successful!", popTypes.success);
-        } catch (ackErr: any) {
-          console.warn('IAP verification error:', ackErr);
-          ShowAlertMessage(ackErr?.data?.message || "Purchase verification failed.", popTypes.error);
         }
-      }
-    });
+      });
 
-    const purchaseErrorSubscription = purchaseErrorListener((error) => {
-      console.warn('purchaseErrorListener', error);
-      if (error.responseCode !== 2) { // 2 is user cancelled
-        ShowAlertMessage("Purchase failed", popTypes.error);
-      }
-    });
+      purchaseErrorSub = purchaseErrorListener((error) => {
+        console.warn('purchaseErrorListener', error);
+        if (error && error.responseCode !== 2) { // 2 is user cancelled
+          ShowAlertMessage("Purchase failed", popTypes.error);
+        }
+      });
+    } catch (iapInitErr) {
+      console.warn("IAP listener registration error:", iapInitErr);
+    }
 
     return () => {
-      purchaseUpdateSubscription.remove();
-      purchaseErrorSubscription.remove();
-      closeIAPConnection();
+      try {
+        if (purchaseUpdateSub && typeof purchaseUpdateSub.remove === 'function') {
+          purchaseUpdateSub.remove();
+        }
+        if (purchaseErrorSub && typeof purchaseErrorSub.remove === 'function') {
+          purchaseErrorSub.remove();
+        }
+        closeIAPConnection().catch((e) => console.warn('closeIAP error:', e));
+      } catch (cleanupErr) {
+        console.warn('IAP cleanup error:', cleanupErr);
+      }
     };
   }, []);
 

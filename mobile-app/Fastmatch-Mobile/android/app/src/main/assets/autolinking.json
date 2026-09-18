@@ -3,11 +3,54 @@
   "reactNativePath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native",
   "reactNativeVersion": "0.76",
   "dependencies": {
+    "react-native-prevent-screenshot-ios-android": {
+      "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-prevent-screenshot-ios-android",
+      "name": "react-native-prevent-screenshot-ios-android",
+      "platforms": {
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-prevent-screenshot-ios-android\\react-native-prevent-screenshot-ios-android.podspec",
+          "version": "1.1.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": null
+      }
+    },
+    "react-native-iap": {
+      "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-iap",
+      "name": "react-native-iap",
+      "platforms": {
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-iap\\RNIap.podspec",
+          "version": "12.16.2",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-iap\\android",
+          "packageImportPath": "import com.dooboolab.rniap.RNIapPackage;",
+          "packageInstance": "new RNIapPackage()",
+          "buildTypes": [],
+          "libraryName": "RNIap",
+          "componentDescriptors": [],
+          "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/react-native-iap/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-orientation-locker": {
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-orientation-locker",
       "name": "react-native-orientation-locker",
       "platforms": {
-        "ios": null,
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-orientation-locker\\react-native-orientation-locker.podspec",
+          "version": "1.7.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
         "android": {
           "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-orientation-locker\\android",
           "packageImportPath": "import org.wonday.orientation.OrientationPackage;",
@@ -22,11 +65,40 @@
         }
       }
     },
+    "@invertase/react-native-apple-authentication": {
+      "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@invertase\\react-native-apple-authentication",
+      "name": "@invertase/react-native-apple-authentication",
+      "platforms": {
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@invertase\\react-native-apple-authentication\\RNAppleAuthentication.podspec",
+          "version": "2.5.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@invertase\\react-native-apple-authentication\\android",
+          "packageImportPath": "import com.RNAppleAuthentication.AppleAuthenticationAndroidPackage;",
+          "packageInstance": "new AppleAuthenticationAndroidPackage()",
+          "buildTypes": [],
+          "componentDescriptors": [],
+          "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/@invertase/react-native-apple-authentication/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "@notifee/react-native": {
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@notifee\\react-native",
       "name": "@notifee/react-native",
       "platforms": {
-        "ios": null,
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@notifee\\react-native\\RNNotifee.podspec",
+          "version": "9.1.8",
+          "configurations": [],
+          "scriptPhases": []
+        },
         "android": {
           "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@notifee\\react-native\\android",
           "packageImportPath": "import io.invertase.notifee.NotifeePackage;",
@@ -45,7 +117,12 @@
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-async-storage\\async-storage",
       "name": "@react-native-async-storage/async-storage",
       "platforms": {
-        "ios": null,
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-async-storage\\async-storage\\RNCAsyncStorage.podspec",
+          "version": "2.2.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
         "android": {
           "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-async-storage\\async-storage\\android",
           "packageImportPath": "import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;",
@@ -54,6 +131,31 @@
           "libraryName": "rnasyncstorage",
           "componentDescriptors": [],
           "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "@react-native-camera-roll/camera-roll": {
+      "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-camera-roll\\camera-roll",
+      "name": "@react-native-camera-roll/camera-roll",
+      "platforms": {
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-camera-roll\\camera-roll\\react-native-cameraroll.podspec",
+          "version": "7.10.2",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-camera-roll\\camera-roll\\android",
+          "packageImportPath": "import com.reactnativecommunity.cameraroll.CameraRollPackage;",
+          "packageInstance": "new CameraRollPackage()",
+          "buildTypes": [],
+          "libraryName": "rncameraroll",
+          "componentDescriptors": [],
+          "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/@react-native-camera-roll/camera-roll/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -94,7 +196,12 @@
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-community\\netinfo",
       "name": "@react-native-community/netinfo",
       "platforms": {
-        "ios": null,
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-community\\netinfo\\react-native-netinfo.podspec",
+          "version": "12.0.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
         "android": {
           "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-community\\netinfo\\android",
           "packageImportPath": "import com.reactnativecommunity.netinfo.NetInfoPackage;",
@@ -114,7 +221,21 @@
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-firebase\\app",
       "name": "@react-native-firebase/app",
       "platforms": {
-        "ios": null,
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-firebase\\app\\RNFBApp.podspec",
+          "version": "24.1.1",
+          "configurations": [],
+          "scriptPhases": [
+            {
+              "name": "[RNFB] Core Configuration",
+              "path": "./ios_config.sh",
+              "execution_position": "after_compile",
+              "input_files": [
+                "$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"
+              ]
+            }
+          ]
+        },
         "android": {
           "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-firebase\\app\\android",
           "packageImportPath": "import io.invertase.firebase.app.ReactNativeFirebaseAppPackage;",
@@ -135,7 +256,7 @@
       "platforms": {
         "ios": {
           "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-firebase\\messaging\\RNFBMessaging.podspec",
-          "version": "24.0.0",
+          "version": "24.1.1",
           "configurations": [],
           "scriptPhases": []
         },
@@ -146,6 +267,33 @@
           "buildTypes": [],
           "componentDescriptors": [],
           "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/@react-native-firebase/messaging/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "@react-native-google-signin/google-signin": {
+      "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-google-signin\\google-signin",
+      "name": "@react-native-google-signin/google-signin",
+      "platforms": {
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-google-signin\\google-signin\\RNGoogleSignin.podspec",
+          "version": "16.1.5",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@react-native-google-signin\\google-signin\\android",
+          "packageImportPath": "import com.reactnativegooglesignin.RNGoogleSigninPackage;",
+          "packageInstance": "new RNGoogleSigninPackage()",
+          "buildTypes": [],
+          "libraryName": "RNGoogleSignInCGen",
+          "componentDescriptors": [
+            "RNGoogleSigninButtonComponentDescriptor"
+          ],
+          "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/@react-native-google-signin/google-signin/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -181,7 +329,12 @@
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@stream-io\\react-native-webrtc",
       "name": "@stream-io/react-native-webrtc",
       "platforms": {
-        "ios": null,
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@stream-io\\react-native-webrtc\\stream-react-native-webrtc.podspec",
+          "version": "145.2.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
         "android": {
           "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@stream-io\\react-native-webrtc\\android",
           "packageImportPath": "import com.oney.WebRTCModule.WebRTCModulePackage;",
@@ -202,7 +355,7 @@
       "platforms": {
         "ios": {
           "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\@stream-io\\video-react-native-sdk\\stream-video-react-native.podspec",
-          "version": "1.35.0",
+          "version": "1.38.2",
           "configurations": [],
           "scriptPhases": []
         },
@@ -250,6 +403,30 @@
           "buildTypes": [],
           "componentDescriptors": [],
           "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/react-native-device-info/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-fs": {
+      "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-fs",
+      "name": "react-native-fs",
+      "platforms": {
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-fs\\RNFS.podspec",
+          "version": "2.20.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-fs\\android",
+          "packageImportPath": "import com.rnfs.RNFSPackage;",
+          "packageInstance": "new RNFSPackage()",
+          "buildTypes": [],
+          "componentDescriptors": [],
+          "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/react-native-fs/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -334,6 +511,31 @@
         }
       }
     },
+    "react-native-permissions": {
+      "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-permissions",
+      "name": "react-native-permissions",
+      "platforms": {
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-permissions\\RNPermissions.podspec",
+          "version": "5.5.3",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-permissions\\android",
+          "packageImportPath": "import com.zoontek.rnpermissions.RNPermissionsPackage;",
+          "packageInstance": "new RNPermissionsPackage()",
+          "buildTypes": [],
+          "libraryName": "RNPermissionsSpec",
+          "componentDescriptors": [],
+          "cmakeListsPath": "E:/Fastmatch App/mobile-app/Fastmatch-Mobile/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-radial-gradient": {
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-radial-gradient",
       "name": "react-native-radial-gradient",
@@ -387,7 +589,12 @@
       "root": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-safe-area-context",
       "name": "react-native-safe-area-context",
       "platforms": {
-        "ios": null,
+        "ios": {
+          "podspecPath": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-safe-area-context\\react-native-safe-area-context.podspec",
+          "version": "4.14.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
         "android": {
           "sourceDir": "E:\\Fastmatch App\\mobile-app\\Fastmatch-Mobile\\node_modules\\react-native-safe-area-context\\android",
           "packageImportPath": "import com.th3rdwave.safeareacontext.SafeAreaContextPackage;",
