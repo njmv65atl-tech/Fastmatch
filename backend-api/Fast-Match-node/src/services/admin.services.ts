@@ -260,7 +260,17 @@ class AdminService {
     }
 
     async updateSupportTicket(id: string, data: any) {
-        const ticket = await SupportTicket.findByIdAndUpdate(id, data, { new: true }).populate('user', 'email fullName');
+        const updateData: any = { ...data };
+        if (data.adminReply && data.adminReply.trim()) {
+            updateData.$push = {
+                messages: {
+                    sender: 'admin',
+                    message: data.adminReply.trim(),
+                    createdAt: new Date()
+                }
+            };
+        }
+        const ticket = await SupportTicket.findByIdAndUpdate(id, updateData, { new: true }).populate('user', 'email fullName');
         if (!ticket) throw new Error("Ticket not found");
 
         if (data.adminReply && (ticket.email || (ticket.user as any)?.email)) {

@@ -11,6 +11,7 @@ import {
   TextInput,
   ActivityIndicator,
   useWindowDimensions,
+  RefreshControl,
 } from "react-native";
 import { BlurView } from "@react-native-community/blur";
 import LinearGradient from "react-native-linear-gradient";
@@ -20,7 +21,7 @@ import { Check, Crown, Tag, Sparkles } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { fetchProducts, fetchSubscriptions, subscribeToProduct, type Product, type Subscription as IAPSubscription } from "../../utils/iap";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
-import { useApplyCouponMutation } from "../../redux/services/auth";
+import { useApplyCouponMutation, useGetPricingQuery } from "../../redux/services/auth";
 
 const { width, height } = Dimensions.get("window");
 
@@ -40,6 +41,22 @@ export const SubscriptionView: React.FC<{
   const [couponCode, setCouponCode] = React.useState("");
   const [appliedCoupon, setAppliedCoupon] = React.useState<{ code: string; discountPercent: number } | null>(null);
   const [applyCouponMutation, { isLoading: isApplyingCoupon }] = useApplyCouponMutation();
+
+  // Dynamic pricing from Admin Panel
+  const {
+    data: pricingData,
+    isLoading: isPricingLoading,
+    isFetching: isPricingFetching,
+    refetch: refetchPricing,
+  } = useGetPricingQuery({}, { refetchOnMountOrArgChange: true });
+
+  const onRefresh = React.useCallback(async () => {
+    try {
+      await refetchPricing();
+    } catch (e) {
+      console.warn("Pricing refresh error:", e);
+    }
+  }, [refetchPricing]);
 
   const features = [
     "Unlimited Video Calls",
@@ -84,12 +101,19 @@ export const SubscriptionView: React.FC<{
   };
 
   const getPriceForPlan = (plan: PlanType) => {
-    const basePrice = plan === "YEARLY" ? 90 : 9;
+    const rawYearly = pricingData?.data?.yearlyPrice;
+    const rawMonthly = pricingData?.data?.monthlyPrice;
+    const defaultYearly = 90;
+    const defaultMonthly = 9;
+    const basePrice = plan === "YEARLY"
+      ? (typeof rawYearly === "number" ? rawYearly : parseFloat(rawYearly) || defaultYearly)
+      : (typeof rawMonthly === "number" ? rawMonthly : parseFloat(rawMonthly) || defaultMonthly);
+
     if (appliedCoupon) {
       const discounted = (basePrice * (1 - appliedCoupon.discountPercent / 100)).toFixed(2);
       return `$${discounted}`;
     }
-    return plan === "YEARLY" ? "$90.00" : "$9.00";
+    return `$${basePrice.toFixed(2)}`;
   };
 
   const handlePurchase = async () => {
@@ -134,7 +158,17 @@ export const SubscriptionView: React.FC<{
         <Text style={styles.closeIcon}>✕</Text>
       </TouchableOpacity>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={isPricingFetching}
+            onRefresh={onRefresh}
+            tintColor={colors.gold || "#E29547"}
+            colors={[colors.gold || "#E29547"]}
+          />
+        }
+      >
         <View style={styles.crownWrap}>
           <Crown size={40} color="#78350F" fill="#78350F" />
         </View>

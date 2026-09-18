@@ -20,7 +20,22 @@ export const SupportTicketSchema = new Schema<SupportTicketInterface>({
         enum: ['open', 'in_progress', 'resolved', 'closed'],
         default: 'open'
     },
-    adminReply: stringType(false)
+    adminReply: stringType(false),
+    userReply: stringType(false),
+    messages: [
+        {
+            sender: {
+                type: String,
+                enum: ['user', 'admin'],
+                required: true
+            },
+            message: stringType(true),
+            createdAt: {
+                type: Date,
+                default: Date.now
+            }
+        }
+    ]
 }, {
     timestamps: true
 });

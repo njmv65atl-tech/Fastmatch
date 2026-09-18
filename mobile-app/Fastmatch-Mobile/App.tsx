@@ -164,8 +164,10 @@ const App: React.FC = () => {
 }, []);
 
   const [viewHistory, setViewHistory] = useState<AppView[]>(() => {
-    const initial = user?.role === UserRole.ADMIN ? AppView.ADMIN_DASHBOARD : user ? AppView.HOME : AppView.WELCOME;
-    return [initial];
+    if (token) {
+      return completeProfile ? [AppView.HOME] : [AppView.PROFILE_SETUP];
+    }
+    return [AppView.WELCOME];
   });
 
   const handleGoBack = React.useCallback(() => {
@@ -174,33 +176,76 @@ const App: React.FC = () => {
       return true;
     }
 
+    // If user is authenticated
+    if (token) {
+      // If at HOME or ADMIN_DASHBOARD, allow default app exit
+      if (currentView === AppView.HOME || currentView === AppView.ADMIN_DASHBOARD) {
+        return false;
+      }
+      // If profile is incomplete, keep on PROFILE_SETUP
+      if ((!completeProfile || !user?.isProfileComplete) && currentView === AppView.PROFILE_SETUP) {
+        return false;
+      }
+
+      // Pop from history if more than 1 view
+      if (viewHistory.length > 1) {
+        const nextHistory = [...viewHistory];
+        nextHistory.pop(); // remove current view
+
+        // Filter out any auth views that shouldn't be reached when logged in
+        let prevView = nextHistory[nextHistory.length - 1];
+        while (
+          nextHistory.length > 0 &&
+          (prevView === AppView.WELCOME ||
+            prevView === AppView.LOGIN ||
+            prevView === AppView.SIGNUP ||
+            prevView === AppView.OTP ||
+            prevView === AppView.FORGOT_PASSWORD ||
+            prevView === AppView.RESET_PASSWORD)
+        ) {
+          nextHistory.pop();
+          prevView = nextHistory[nextHistory.length - 1];
+        }
+
+        if (prevView && nextHistory.length > 0) {
+          setViewHistory(nextHistory);
+          setCurrentView(prevView);
+          return true;
+        }
+      }
+
+      // Fallback: If on any inner screen and history is exhausted, navigate safely to HOME
+      setCurrentView(AppView.HOME);
+      setViewHistory([AppView.HOME]);
+      return true;
+    }
+
+    // If user is NOT authenticated
     if (viewHistory.length > 1) {
       const nextHistory = [...viewHistory];
-      nextHistory.pop(); // remove current view
+      nextHistory.pop();
       const prevView = nextHistory[nextHistory.length - 1];
       setViewHistory(nextHistory);
       setCurrentView(prevView);
-      return true; // handled
+      return true;
     }
 
-    // If at root view (HOME, WELCOME, LOGIN, SIGNUP, etc.), allow default app exit
+    // If at root unauthenticated view, allow default app exit
     if (
-      currentView === AppView.HOME ||
       currentView === AppView.WELCOME ||
       currentView === AppView.LOGIN ||
       currentView === AppView.SIGNUP ||
-      currentView === AppView.ADMIN_DASHBOARD ||
       currentView === AppView.FORGOT_PASSWORD ||
       currentView === AppView.RESET_PASSWORD
     ) {
       return false;
     }
 
-    // Fallback if history became empty but on inner view -> go to HOME
-    setCurrentView(AppView.HOME);
-    setViewHistory([AppView.HOME]);
+    // Fallback for unauthenticated users
+    setCurrentView(AppView.WELCOME);
+    setViewHistory([AppView.WELCOME]);
     return true;
-  }, [currentView, viewHistory]);
+  }, [currentView, viewHistory, token, completeProfile, user]);
 
   React.useEffect(() => {
     const onBackPress = () => {
@@ -269,15 +314,18 @@ const App: React.FC = () => {
 
 
   React.useEffect(() => {
-    console.log(token, currentUser,"token and CurrentUser");
+    console.log(token, currentUser, "token and CurrentUser");
     if (token) {
       if (completeProfile) {
         setCurrentView(AppView.HOME);
+        setViewHistory([AppView.HOME]);
       } else {
         setCurrentView(AppView.PROFILE_SETUP);
+        setViewHistory([AppView.PROFILE_SETUP]);
       }
     } else {
       setCurrentView(AppView.WELCOME);
+      setViewHistory([AppView.WELCOME]);
     }
   }, [token]);
 

@@ -45,6 +45,7 @@ export const apiEndPoints = {
   socialAuth: "user/social-auth",
   createSupportTicket: "user/support-ticket",
   getUserSupportTickets: "user/support-tickets",
+  replySupportTicket: "user/support-ticket",
   applyCoupon: "user/apply-coupon",
   getPricing: "user/pricing",
   verifyPurchase: "user/verify-purchase",

@@ -63,6 +63,7 @@ router.post('/social-auth', tryCatchMiddleware(UserController.socialAuth))
 // Support Desk
 router.post('/support-ticket', verifyToken, tryCatchMiddleware(UserController.createSupportTicket))
 router.get('/support-tickets', verifyToken, tryCatchMiddleware(UserController.getUserSupportTickets))
+router.post('/support-ticket/:id/reply', verifyToken, tryCatchMiddleware(UserController.replySupportTicket))
 
 // Coupon & Pricing
 router.post('/apply-coupon', verifyToken, tryCatchMiddleware(UserController.applyCoupon))

@@ -9,6 +9,7 @@ import {
   Platform,
 } from "react-native";
 import { MobileContainer, Button, Input } from "../../components/UIComponents";
+import { SocialAuthButtons } from "../../components/SocialAuthButtons";
 import { AppView, UserRole, User } from "../../types";
 import { Mail, Lock } from "lucide-react-native";
 import { colors } from "../../utils/colors";
@@ -192,6 +193,7 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
           </TouchableOpacity>
           <View style={styles.bottomActions}>
             <Button onClick={handleLogin}>{LOGIN_TEXT.logInButton}</Button>
+            <SocialAuthButtons setView={setView} setUser={setUser} onLoginSuccess={login} />
             <View style={styles.footerRow}>
               <Text style={styles.footerText}>{LOGIN_TEXT.noAccount}</Text>
               <TouchableOpacity onPress={() => setView(AppView.SIGNUP)}>

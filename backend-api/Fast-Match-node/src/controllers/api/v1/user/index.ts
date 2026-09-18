@@ -74,6 +74,7 @@ class UserController extends ResponseHandler {
         this.socialAuth = this.socialAuth.bind(this);
         this.createSupportTicket = this.createSupportTicket.bind(this);
         this.getUserSupportTickets = this.getUserSupportTickets.bind(this);
+        this.replySupportTicket = this.replySupportTicket.bind(this);
         this.applyCoupon = this.applyCoupon.bind(this);
         this.getAppPricing = this.getAppPricing.bind(this);
         this.verifyPurchase = this.verifyPurchase.bind(this);
@@ -888,6 +889,42 @@ class UserController extends ResponseHandler {
             const currentUserId = req.user?._id;
             const tickets = await SupportTicket.find({ user: currentUserId }).sort({ createdAt: -1 });
             return res.status(200).send(responseEncryptor(req, true, "Tickets fetched successfully", tickets));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
+    async replySupportTicket(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user?._id;
+            const ticketId = req.params.id;
+            const { message } = req.body;
+
+            if (!message || !message.trim()) {
+                return res.status(400).send(responseEncryptor(req, false, "Message is required"));
+            }
+
+            const ticket = await SupportTicket.findOne({ _id: ticketId, user: currentUserId });
+            if (!ticket) {
+                return res.status(404).send(responseEncryptor(req, false, "Ticket not found"));
+            }
+
+            ticket.userReply = message.trim();
+            if (!ticket.messages) {
+                ticket.messages = [];
+            }
+            ticket.messages.push({
+                sender: 'user',
+                message: message.trim(),
+                createdAt: new Date()
+            });
+
+            if (ticket.status === 'resolved' || ticket.status === 'closed') {
+                ticket.status = 'open';
+            }
+            await ticket.save();
+
+            return res.status(200).send(responseEncryptor(req, true, "Reply submitted successfully", ticket));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }

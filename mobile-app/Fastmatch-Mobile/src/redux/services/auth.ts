@@ -251,6 +251,14 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    replySupportTicket: builder.mutation({
+      query: ({ ticketId, message }) => ({
+        url: `${apiEndPoints.replySupportTicket}/${ticketId}/reply`,
+        method: "POST",
+        body: { message },
+        headers: header1,
+      }),
+    }),
     applyCoupon: builder.mutation({
       query: (data) => ({
         url: apiEndPoints.applyCoupon,
@@ -320,6 +328,7 @@ export const {
   useSocialAuthMutation,
   useCreateSupportTicketMutation,
   useGetUserSupportTicketsQuery,
+  useReplySupportTicketMutation,
   useApplyCouponMutation,
   useGetPricingQuery,
   useVerifyPurchaseMutation,
