@@ -15,6 +15,8 @@ prepare_react_native_project!
 # Specific fixes for Firebase static library issue
 pod 'GoogleUtilities', :modular_headers => true
 pod 'FirebaseCoreInternal', :modular_headers => true
+pod 'AppCheckCore', :modular_headers => true
+pod 'RecaptchaInterop', :modular_headers => true
 
 setup_permissions([
   'Camera',
