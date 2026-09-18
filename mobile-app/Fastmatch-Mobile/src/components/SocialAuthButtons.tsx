@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -246,21 +246,19 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
           )}
         </TouchableOpacity>
 
-        {/* Apple Sleek Button (iOS only or as requested) */}
-        {Platform.OS === "ios" && (
-          <TouchableOpacity
-            style={[styles.iconButton, styles.appleButton]}
-            onPress={handleAppleSignIn}
-            activeOpacity={0.7}
-            disabled={isBusy}
-          >
-            {loadingProvider === "apple" ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <AppleIcon size={22} color="#FFFFFF" />
-            )}
-          </TouchableOpacity>
-        )}
+        {/* Apple Sleek Button */}
+        <TouchableOpacity
+          style={[styles.iconButton, styles.appleButton]}
+          onPress={handleAppleSignIn}
+          activeOpacity={0.7}
+          disabled={isBusy}
+        >
+          {loadingProvider === "apple" ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <AppleIcon size={22} color="#FFFFFF" />
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
