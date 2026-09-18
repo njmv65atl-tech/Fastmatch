@@ -32,3 +32,8 @@
 -keepattributes *Annotation*
 -keepattributes SourceFile,LineNumberTable
 -keep class com.facebook.react.turbomodule.** { *; }
+
+# Keep react-native-iap and Google Play Billing
+-keep class com.android.billingclient.api.** { *; }
+-keep class com.dooboolab.rniap.** { *; }
+
