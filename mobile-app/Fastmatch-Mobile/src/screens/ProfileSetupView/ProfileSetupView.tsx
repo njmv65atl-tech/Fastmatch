@@ -52,10 +52,23 @@ interface AuthProps {
   setUser: any;
 }
 
+const isInvalidOrAppleName = (val?: string | null): boolean => {
+  if (!val) return true;
+  const s = val.trim();
+  return (
+    /^[0-9]+\.[a-f0-9]{10,}\.[0-9]+/i.test(s) ||
+    /^[a-f0-9]{24,}$/i.test(s) ||
+    s.toLowerCase().includes("privaterelay") ||
+    s.toLowerCase() === "apple user"
+  );
+};
+
 export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }) => {  
   const interests = PROFILE_SETUP_TEXT.interests;
-  const [name, setName] = useState<string>(user?.displayName || "");
-  const [fullName, setFullName] = useState<string>(user?.fullName || "");
+  const initialDisplayName = isInvalidOrAppleName(user?.displayName) ? "" : (user?.displayName || "");
+  const initialFullName = isInvalidOrAppleName(user?.fullName) ? "" : (user?.fullName || "");
+  const [name, setName] = useState<string>(initialDisplayName);
+  const [fullName, setFullName] = useState<string>(initialFullName);
   const [age, setAge] = useState<string>(user?.age ? String(user.age) : "");
   const [location, setLocation] = useState<string>(user?.location || "");
   const [language, setLanguage] = useState<string>(user?.language || "English");
@@ -66,8 +79,8 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (user?.displayName && !name) setName(user.displayName);
-    if (user?.fullName && !fullName) setFullName(user.fullName);
+    if (user?.displayName && !name && !isInvalidOrAppleName(user.displayName)) setName(user.displayName);
+    if (user?.fullName && !fullName && !isInvalidOrAppleName(user.fullName)) setFullName(user.fullName);
     if (user?.age && !age) setAge(String(user.age));
     if (user?.location && !location) setLocation(user.location);
     if (user?.language && !language) setLanguage(user.language);

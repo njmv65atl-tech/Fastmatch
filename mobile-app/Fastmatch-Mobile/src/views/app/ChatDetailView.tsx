@@ -1520,15 +1520,14 @@ React.useEffect(() => {
                 ) : (
                   <TouchableOpacity 
                     style={{ backgroundColor: colors.surfaceAlt, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', gap: 5, alignItems: 'center' }}
-                    onPress={() => {
-                      sendFriendRequest({ targetUserId: userId }).then((res: any) => {
-                        if (res.data?.success) {
-                          setRequestSentLocal(true);
-                          ShowAlertMessage("Friend request sent", popTypes.success);
-                        } else {
-                          ShowAlertMessage("Failed to send request", popTypes.error);
-                        }
-                      });
+                    onPress={async () => {
+                      try {
+                        await sendFriendRequest({ targetUserId: userId, source: 'chat' }).unwrap();
+                        setRequestSentLocal(true);
+                        ShowAlertMessage("Friend request sent", popTypes.success);
+                      } catch (err: any) {
+                        ShowAlertMessage(err?.data?.message || err?.message || "Failed to send request", popTypes.error);
+                      }
                     }}
                   >
                     <UserPlus color={colors.primary} size={18} />

@@ -201,10 +201,16 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
 
   const handleSendRequest = async () => {
     if (!selectedUser) return;
+    if (user?.isPremium !== "premium") {
+      ShowAlertMessage("Premium required to send connection requests from the global network.", popTypes.info);
+      setView(AppView.SUBSCRIPTION);
+      return;
+    }
     try {
       await sendFriendRequest({
         targetUserId: selectedUser._id,
         message: message.trim(),
+        source: 'global',
       }).unwrap();
       ShowAlertMessage("Connection request sent successfully!", popTypes.success);
       setSelectedUser(null);
@@ -235,11 +241,6 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
       style={styles.gridCard}
       activeOpacity={0.8}
       onPress={() => {
-        if (user?.isPremium !== "premium") {
-          ShowAlertMessage("Premium required to send connection requests.", popTypes.info);
-          setView(AppView.SUBSCRIPTION);
-          return;
-        }
         setSelectedUser(item);
       }}
     >
@@ -276,11 +277,6 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
         style={styles.listRow}
         activeOpacity={0.8}
         onPress={() => {
-          if (user?.isPremium !== "premium") {
-            ShowAlertMessage("Premium required to send connection requests.", popTypes.info);
-            setView(AppView.SUBSCRIPTION);
-            return;
-          }
           setSelectedUser(item);
         }}
       >

@@ -60,6 +60,16 @@ interface SocialAuthButtonsProps {
   dividerText?: string;
 }
 
+const isAppleRelayId = (val?: string | null): boolean => {
+  if (!val) return false;
+  const s = val.trim();
+  return (
+    /^[0-9]+\.[a-f0-9]{10,}\.[0-9]+/i.test(s) ||
+    /^[a-f0-9]{24,}$/i.test(s) ||
+    s.includes("privaterelay")
+  );
+};
+
 export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
   setView,
   setUser,
@@ -74,6 +84,7 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
     try {
       GoogleSignin.configure({
         scopes: ["email", "profile"],
+        iosClientId: "205547608843-go7vud6rut8qtijonakr8oiuhbp2vp6h.apps.googleusercontent.com",
         offlineAccess: false,
       });
     } catch (e) {
@@ -100,11 +111,16 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
 
       const fcmToken = (await DataManager.getFcmToken()) || "";
 
+      let cleanName = fullName?.trim() || "";
+      if (!cleanName || isAppleRelayId(cleanName) || isAppleRelayId(email?.split("@")[0])) {
+        cleanName = provider === "apple" ? "Apple User" : (email ? email.split("@")[0] : "User");
+      }
+
       const payload = {
         email: email.trim().toLowerCase(),
         provider,
-        fullName: fullName.trim() || email.split("@")[0],
-        displayName: fullName.trim() || email.split("@")[0],
+        fullName: cleanName,
+        displayName: cleanName,
         profilePicture: profilePicture || undefined,
         deviceId,
         deviceName,
@@ -114,23 +130,28 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
 
       const res: any = await socialAuth(payload).unwrap();
 
-      if (res?.data?.token) {
-        dispatch(setToken(res.data.token));
-        await DataManager.setAccessToken(res.data.token);
-      }
-
       if (res?.data?.user) {
+        const isComplete = !!res.data.user.isProfileComplete;
+
+        // Set completeProfile and user BEFORE token to prevent App.tsx useEffect([token]) race condition
+        dispatch(setCompleteProfile(isComplete));
         dispatch(setGlobalUser(res.data.user));
         setUser && setUser(res.data.user);
         onLoginSuccess && onLoginSuccess(res.data.user);
 
-        if (res.data.user.isProfileComplete) {
-          dispatch(setCompleteProfile(true));
+        if (res?.data?.token) {
+          dispatch(setToken(res.data.token));
+          await DataManager.setAccessToken(res.data.token);
+        }
+
+        if (isComplete) {
           setView(AppView.HOME);
         } else {
-          dispatch(setCompleteProfile(false));
           setView(AppView.PROFILE_SETUP);
         }
+      } else if (res?.data?.token) {
+        dispatch(setToken(res.data.token));
+        await DataManager.setAccessToken(res.data.token);
       }
 
       ShowAlertMessage(
@@ -203,8 +224,10 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
         displayName = `${fullName?.givenName || ""} ${fullName?.familyName || ""}`.trim();
       }
 
-      const userEmail = email || `${appleUserId}@privaterelay.appleid.com`;
-      displayName = displayName || userEmail.split("@")[0] || "Apple User";
+      const userEmail = email || (appleUserId ? `${appleUserId}@privaterelay.appleid.com` : "");
+      if (!displayName || isAppleRelayId(displayName)) {
+        displayName = "Apple User";
+      }
 
       await executeSocialAuth(userEmail, "apple", displayName, null);
     } catch (error: any) {

@@ -104,14 +104,12 @@ const App: React.FC = () => {
  
  
   const [currentView, setCurrentView] = useState<AppView>(() => {
-  
-    
-  
-  if (token) {
-    return completeProfile ? AppView.HOME : AppView.PROFILE_SETUP;
-  }
-  return AppView.WELCOME;
-});
+    if (token) {
+      const isComplete = completeProfile && (currentUser?.isProfileComplete ?? false);
+      return isComplete ? AppView.HOME : AppView.PROFILE_SETUP;
+    }
+    return AppView.WELCOME;
+  });
 
 
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -331,7 +329,8 @@ const App: React.FC = () => {
   React.useEffect(() => {
     console.log(token, currentUser, "token and CurrentUser");
     if (token) {
-      if (completeProfile) {
+      const isComplete = completeProfile && (currentUser?.isProfileComplete ?? user?.isProfileComplete ?? false);
+      if (isComplete) {
         setCurrentView(AppView.HOME);
         setViewHistory([AppView.HOME]);
       } else {
@@ -342,7 +341,7 @@ const App: React.FC = () => {
       setCurrentView(AppView.WELCOME);
       setViewHistory([AppView.WELCOME]);
     }
-  }, [token]);
+  }, [token, completeProfile, currentUser?.isProfileComplete, user?.isProfileComplete]);
 
   React.useEffect(() => {
     if (
@@ -379,7 +378,8 @@ const App: React.FC = () => {
     }
 
     // Enforce profile completion gatekeeping: If logged in but profile incomplete, block navigation
-    if (token && (!completeProfile || !user?.isProfileComplete) && view !== AppView.PROFILE_SETUP && view !== AppView.WELCOME && view !== AppView.PRIVACY && view !== AppView.TERMS && view !== AppView.RESET_PASSWORD && view !== AppView.FORGOT_PASSWORD && view !== AppView.OTP && view !== AppView.LOGIN && view !== AppView.SIGNUP) {
+    const isProfileActuallyComplete = completeProfile && (user?.isProfileComplete ?? currentUser?.isProfileComplete ?? false);
+    if (token && !isProfileActuallyComplete && view !== AppView.PROFILE_SETUP && view !== AppView.WELCOME && view !== AppView.PRIVACY && view !== AppView.TERMS && view !== AppView.RESET_PASSWORD && view !== AppView.FORGOT_PASSWORD && view !== AppView.OTP && view !== AppView.LOGIN && view !== AppView.SIGNUP) {
       setCurrentView(AppView.PROFILE_SETUP);
       return;
     }

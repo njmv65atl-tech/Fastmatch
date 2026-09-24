@@ -488,18 +488,21 @@ class UserController extends ResponseHandler {
     async sendFriendRequest(req: Request, res: Response) {
         try {
             const currentUserId = req.user._id;
-            const { targetUserId, message } = req.body;
+            const { targetUserId, message, source } = req.body;
             if (!targetUserId) return res.status(400).send(responseEncryptor(req, false, "Target user ID required"));
 
             const currentUser = await User.findById(currentUserId).select('displayName role isPremium');
             if (!currentUser) return res.status(404).send(responseEncryptor(req, false, "User not found"));
 
-            if (currentUser.isPremium !== 'premium' && currentUser.role !== 'admin') {
-                return res.status(403).send(responseEncryptor(req, false, "You must be a premium user to send a connection request."));
+            // Non-premium users can send friend requests from the chat page only.
+            // Requests from global network require a premium subscription.
+            const isFromChat = source === 'chat';
+            if (!isFromChat && currentUser.isPremium !== 'premium' && currentUser.role !== 'admin') {
+                return res.status(403).send(responseEncryptor(req, false, "You must be a premium user to send connection requests from the global network."));
             }
 
             const existing = await FriendModel.findOne({ requester: currentUserId, recipient: targetUserId });
-            if (existing) return res.status(400).send(responseEncryptor(req, false, "Request already sent"));
+            if (existing) return res.status(400).send(responseEncryptor(req, false, "Friend request already sent"));
 
             const request = await FriendModel.create({ requester: currentUserId, recipient: targetUserId, message: message || '' });
             
@@ -762,13 +765,15 @@ class UserController extends ResponseHandler {
             const currentUser = await User.findById(currentUserId);
             if (!currentUser) throw new Error("User not found");
 
-            const favIndex = currentUser.favoriteUsers?.indexOf(targetUserId);
+            currentUser.favoriteUsers = currentUser.favoriteUsers || [];
+            const favIndex = currentUser.favoriteUsers.findIndex(
+                (id: any) => id?.toString() === targetUserId?.toString()
+            );
             let isFavorite = false;
             if (favIndex > -1) {
                 currentUser.favoriteUsers.splice(favIndex, 1);
             } else {
-                currentUser.favoriteUsers = currentUser.favoriteUsers || [];
-                currentUser.favoriteUsers.push(targetUserId);
+                currentUser.favoriteUsers.push(new Types.ObjectId(targetUserId));
                 isFavorite = true;
             }
             await currentUser.save();
@@ -802,7 +807,33 @@ class UserController extends ResponseHandler {
                 return res.status(400).send(responseEncryptor(req, false, "Email is required for social authentication"));
             }
 
+            const isRelayOrAppleId = (val?: string | null): boolean => {
+                if (!val) return true;
+                const v = val.trim();
+                return /^[0-9]+\.[a-f0-9]{10,}\.[0-9]+/i.test(v) ||
+                       /^[a-f0-9]{24,}$/i.test(v) ||
+                       v.toLowerCase().includes('privaterelay') ||
+                       v.toLowerCase() === 'apple user';
+            };
+
             const cleanEmail = email.toLowerCase().trim();
+            let cleanFullName = (fullName || "").trim();
+            let cleanDisplayName = (displayName || "").trim();
+
+            if (isRelayOrAppleId(cleanFullName)) cleanFullName = "";
+            if (isRelayOrAppleId(cleanDisplayName)) cleanDisplayName = "";
+
+            if (!cleanFullName && !cleanDisplayName) {
+                const prefix = cleanEmail.split('@')[0];
+                if (!isRelayOrAppleId(prefix)) {
+                    cleanFullName = prefix;
+                    cleanDisplayName = prefix;
+                } else {
+                    cleanFullName = "Apple User";
+                    cleanDisplayName = "Apple User";
+                }
+            }
+
             let user = await User.findOne({ email: cleanEmail });
             let isNewUser = false;
 
@@ -810,8 +841,8 @@ class UserController extends ResponseHandler {
                 isNewUser = true;
                 user = await User.create({
                     email: cleanEmail,
-                    fullName: fullName || displayName || cleanEmail.split('@')[0],
-                    displayName: displayName || fullName || cleanEmail.split('@')[0],
+                    fullName: cleanFullName || "User",
+                    displayName: cleanDisplayName || "User",
                     profilePicture: profilePicture || null,
                     deviceId,
                     deviceName,
@@ -828,6 +859,9 @@ class UserController extends ResponseHandler {
                 if (platform) user.platform = platform;
                 if (fcmToken) user.fcmToken = fcmToken;
                 if (!user.isVerified) user.isVerified = true;
+                // If existing record was saved with Apple relay hash as name, clean it up
+                if (isRelayOrAppleId(user.fullName)) user.fullName = cleanFullName || "User";
+                if (isRelayOrAppleId(user.displayName)) user.displayName = cleanDisplayName || "User";
                 await user.save();
             }
 

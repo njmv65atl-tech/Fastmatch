@@ -15,6 +15,7 @@ import {
   RefreshControl,
   Modal,
   BackHandler,
+  KeyboardAvoidingView,
 } from "react-native";
 import { MobileContainer, Header } from "../../components/UIComponents";
 import { AppView } from "../../types";
@@ -197,35 +198,6 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
     <MobileContainer>
       <Header title="Help & Support" onBack={() => setView(AppView.SETTINGS)} />
 
-      {/* Direct Contact Banner */}
-      <View style={styles.bannerWrapper}>
-        <LinearGradient
-          colors={["#1E1B4B", "#312E81"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.banner}
-        >
-          <View style={styles.bannerContent}>
-            <LifeBuoy size={28} color="#FBBF24" />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.bannerTitle}>Fastmatch Help Desk</Text>
-              <Text style={styles.bannerSubtitle}>
-                Our team is available 24/7. Reach us anytime at{" "}
-                <Text style={{ color: "#FBBF24", fontWeight: "bold" }}>support@fastmatch.app</Text>
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.bannerBtn}
-            onPress={handleSendEmail}
-            activeOpacity={0.8}
-          >
-            <Mail size={16} color="#0F172A" />
-            <Text style={styles.bannerBtnText}>Email Support</Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-
       {/* Navigation Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -259,17 +231,51 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={isLoadingTickets}
-            onRefresh={refetchTickets}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
       >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoadingTickets}
+              onRefresh={refetchTickets}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {/* Direct Contact Banner */}
+          <View style={styles.bannerWrapper}>
+            <LinearGradient
+              colors={["#1E1B4B", "#312E81"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.banner}
+            >
+              <View style={styles.bannerContent}>
+                <LifeBuoy size={28} color="#FBBF24" />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.bannerTitle}>Fastmatch Help Desk</Text>
+                  <Text style={styles.bannerSubtitle}>
+                    Our team is available 24/7. Reach us anytime at{" "}
+                    <Text style={{ color: "#FBBF24", fontWeight: "bold" }}>support@fastmatch.app</Text>
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.bannerBtn}
+                onPress={handleSendEmail}
+                activeOpacity={0.8}
+              >
+                <Mail size={16} color="#0F172A" />
+                <Text style={styles.bannerBtnText}>Email Support</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
         {/* FAQS TAB */}
         {activeTab === "faq" && (
           <View style={styles.section}>
@@ -467,6 +473,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* TICKET DETAIL & INTERACTIVE REPLY MODAL */}
       <Modal
@@ -617,15 +624,16 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
 
 const styles = StyleSheet.create({
   bannerWrapper: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingHorizontal: 0,
+    paddingTop: 4,
+    paddingBottom: 16,
   },
   banner: {
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
   },
   bannerContent: {
     flexDirection: "row",
@@ -684,7 +692,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === "ios" ? 140 : 100,
   },
   section: {
     marginBottom: 20,
@@ -783,6 +791,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 24,
+    marginBottom: Platform.OS === "ios" ? 24 : 12,
     borderRadius: 12,
     overflow: "hidden",
   },
@@ -791,6 +800,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 14,
+    minHeight: 48,
   },
   submitBtnText: {
     color: "#0F172A",
@@ -901,9 +911,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FBBF24",
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 10,
-    marginTop: 8,
+    marginTop: 10,
+    minHeight: 44,
   },
   bannerBtnText: {
     color: "#0F172A",
