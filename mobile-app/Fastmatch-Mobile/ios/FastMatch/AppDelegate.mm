@@ -1,6 +1,6 @@
 #import "AppDelegate.h"
 #import <Firebase.h>
-#import <RNGoogleSignin/RNGoogleSignin.h>
+#import <GoogleSignIn/GoogleSignIn.h>
 
 #import <React/RCTBundleURLProvider.h>
 
@@ -19,7 +19,7 @@
 
 - (BOOL)application:(UIApplication *)application openURL:(nonnull NSURL *)url options:(nonnull NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options
 {
-  return [RNGoogleSignin application:application openURL:url options:options];
+  return [GIDSignIn.sharedInstance handleURL:url];
 }
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
