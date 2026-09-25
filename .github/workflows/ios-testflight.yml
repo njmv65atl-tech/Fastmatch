@@ -29,11 +29,21 @@ jobs:
           
       - name: Install dependencies
         working-directory: mobile-app/Fastmatch-Mobile
-        run: npm install
+        run: |
+          rm -rf node_modules
+          npm install
+
+      - name: Clean Metro and React Native caches
+        working-directory: mobile-app/Fastmatch-Mobile
+        run: |
+          rm -rf /tmp/metro-* /tmp/haste-map-* || true
+          rm -rf $TMPDIR/metro-* $TMPDIR/haste-map-* || true
+          watchman watch-del-all 2>/dev/null || true
         
       - name: Install CocoaPods
         working-directory: mobile-app/Fastmatch-Mobile/ios
         run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData/*
           rm -f Podfile.lock
           pod install --repo-update
           

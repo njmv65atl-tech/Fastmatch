@@ -15,7 +15,6 @@ import {
   RefreshControl,
   Modal,
   BackHandler,
-  KeyboardAvoidingView,
 } from "react-native";
 import { MobileContainer, Header } from "../../components/UIComponents";
 import { AppView } from "../../types";
@@ -195,7 +194,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
   ];
 
   return (
-    <MobileContainer>
+    <MobileContainer edges={["top"]}>
       <Header title="Help & Support" onBack={() => setView(AppView.SETTINGS)} />
 
       {/* Navigation Tabs */}
@@ -231,14 +230,11 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={true}
           alwaysBounceVertical={true}
           refreshControl={
@@ -475,7 +471,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
           </View>
         )}
       </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
 
       {/* TICKET DETAIL & INTERACTIVE REPLY MODAL */}
       <Modal
@@ -635,7 +631,6 @@ const styles = StyleSheet.create({
     padding: 18,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
-    overflow: "hidden",
   },
   bannerContent: {
     flexDirection: "row",
@@ -695,7 +690,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: Platform.OS === "ios" ? 220 : 100,
+    paddingBottom: 50,
     flexGrow: 1,
   },
   section: {
@@ -795,7 +790,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 24,
-    marginBottom: Platform.OS === "ios" ? 60 : 12,
+    marginBottom: 20,
     borderRadius: 12,
     overflow: "hidden",
   },
