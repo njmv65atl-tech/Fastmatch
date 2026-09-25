@@ -239,6 +239,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
+          alwaysBounceVertical={true}
           refreshControl={
             <RefreshControl
               refreshing={isLoadingTickets}
@@ -630,14 +632,14 @@ const styles = StyleSheet.create({
   },
   banner: {
     borderRadius: 16,
-    padding: 16,
+    padding: 18,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
     overflow: "hidden",
   },
   bannerContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   bannerTitle: {
@@ -648,8 +650,9 @@ const styles = StyleSheet.create({
   bannerSubtitle: {
     color: "#CBD5E1",
     fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
+    marginTop: 4,
+    lineHeight: 18,
+    flexWrap: "wrap",
   },
   emailBtn: {
     flexDirection: "row",
@@ -692,7 +695,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: Platform.OS === "ios" ? 140 : 100,
+    paddingBottom: Platform.OS === "ios" ? 220 : 100,
+    flexGrow: 1,
   },
   section: {
     marginBottom: 20,
@@ -791,7 +795,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 24,
-    marginBottom: Platform.OS === "ios" ? 24 : 12,
+    marginBottom: Platform.OS === "ios" ? 60 : 12,
     borderRadius: 12,
     overflow: "hidden",
   },
