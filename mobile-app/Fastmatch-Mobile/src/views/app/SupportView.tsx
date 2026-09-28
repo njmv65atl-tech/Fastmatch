@@ -194,7 +194,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
   ];
 
   return (
-    <MobileContainer edges={["top"]}>
+    <MobileContainer edges={["top", "bottom"]}>
       <Header title="Help & Support" onBack={() => setView(AppView.SETTINGS)} />
 
       {/* Navigation Tabs */}
@@ -248,22 +248,30 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         >
           {/* Direct Contact Banner */}
           <View style={styles.bannerWrapper}>
-            <LinearGradient
-              colors={["#1E1B4B", "#312E81"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.banner}
-            >
-              <View style={styles.bannerContent}>
-                <LifeBuoy size={28} color="#FBBF24" />
-                <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={styles.bannerCard}>
+              <LinearGradient
+                colors={["#1E1B4B", "#312E81"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <View style={styles.bannerHeader}>
+                <View style={styles.bannerIconCircle}>
+                  <LifeBuoy size={24} color="#FBBF24" />
+                </View>
+                <View style={styles.bannerTitleGroup}>
                   <Text style={styles.bannerTitle}>Fastmatch Help Desk</Text>
-                  <Text style={styles.bannerSubtitle}>
-                    Our team is available 24/7. Reach us anytime at{" "}
-                    <Text style={{ color: "#FBBF24", fontWeight: "bold" }}>support@fastmatch.app</Text>
-                  </Text>
+                  <Text style={styles.bannerTagline}>24/7 Live Customer Support</Text>
                 </View>
               </View>
+
+              <Text style={styles.bannerSubtitle}>
+                Our team is available 24/7. Reach us anytime at{" "}
+                <Text style={styles.bannerEmailText} onPress={handleSendEmail}>
+                  support@fastmatch.app
+                </Text>
+              </Text>
+
               <TouchableOpacity
                 style={styles.bannerBtn}
                 onPress={handleSendEmail}
@@ -272,7 +280,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
                 <Mail size={16} color="#0F172A" />
                 <Text style={styles.bannerBtnText}>Email Support</Text>
               </TouchableOpacity>
-            </LinearGradient>
+            </View>
           </View>
         {/* FAQS TAB */}
         {activeTab === "faq" && (
@@ -626,68 +634,49 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 16,
   },
-  banner: {
+  bannerCard: {
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
   },
-  bannerContent: {
+  bannerHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     marginBottom: 12,
+  },
+  bannerIconCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(251, 191, 36, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bannerTitleGroup: {
+    marginLeft: 12,
+    flex: 1,
   },
   bannerTitle: {
     color: colors.white,
     fontSize: 16,
     fontWeight: "bold",
   },
+  bannerTagline: {
+    color: "#94A3B8",
+    fontSize: 12,
+    marginTop: 2,
+  },
   bannerSubtitle: {
     color: "#CBD5E1",
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 18,
-    flexWrap: "wrap",
-  },
-  emailBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FBBF24",
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  emailBtnText: {
-    color: "#0F172A",
-    fontWeight: "bold",
     fontSize: 13,
-    marginLeft: 6,
+    lineHeight: 19,
+    marginBottom: 14,
   },
-  tabBar: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    marginTop: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  tabBtnActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#F59E0B",
-  },
-  tabText: {
-    color: "#94A3B8",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  tabTextActive: {
-    color: "#F59E0B",
+  bannerEmailText: {
+    color: "#FBBF24",
     fontWeight: "bold",
-  },
   scrollContent: {
     padding: 16,
     paddingBottom: 50,
@@ -790,16 +779,16 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 24,
-    marginBottom: 20,
-    borderRadius: 12,
+    marginBottom: 36,
+    borderRadius: 14,
     overflow: "hidden",
   },
   submitGradient: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
-    minHeight: 48,
+    paddingVertical: 16,
+    minHeight: 52,
   },
   submitBtnText: {
     color: "#0F172A",
@@ -910,16 +899,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FBBF24",
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginTop: 10,
-    minHeight: 44,
+    paddingVertical: 13,
+    borderRadius: 12,
+    marginTop: 6,
+    minHeight: 46,
   },
   bannerBtnText: {
     color: "#0F172A",
     fontWeight: "bold",
-    fontSize: 13,
-    marginLeft: 6,
+    fontSize: 14,
+    marginLeft: 8,
   },
   tabContainer: {
     flexDirection: "row",
