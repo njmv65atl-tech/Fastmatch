@@ -677,6 +677,7 @@ const styles = StyleSheet.create({
   bannerEmailText: {
     color: "#FBBF24",
     fontWeight: "bold",
+  },
   scrollContent: {
     padding: 16,
     paddingBottom: 50,
