@@ -235,6 +235,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
           showsVerticalScrollIndicator={true}
           alwaysBounceVertical={true}
           refreshControl={
@@ -478,6 +479,9 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
             )}
           </View>
         )}
+
+        {/* Extra bottom spacer to guarantee full scroll clearance above iOS home indicator */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
       </View>
 
@@ -680,8 +684,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 50,
+    paddingBottom: 80,
     flexGrow: 1,
+  },
+  bottomSpacer: {
+    height: 60,
   },
   section: {
     marginBottom: 20,
@@ -780,7 +787,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 24,
-    marginBottom: 36,
+    marginBottom: 16,
     borderRadius: 14,
     overflow: "hidden",
   },
@@ -793,7 +800,7 @@ const styles = StyleSheet.create({
   },
   submitBtnText: {
     color: "#0F172A",
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "bold",
   },
   ticketCard: {
