@@ -33,6 +33,24 @@ jobs:
           rm -rf node_modules
           npm install
 
+      - name: Patch react-native-svg for New Architecture
+        working-directory: mobile-app/Fastmatch-Mobile
+        run: |
+          node -e '
+            const fs = require("fs");
+            const file = "node_modules/react-native-svg/apple/RNSVGNode.mm";
+            if (fs.existsSync(file)) {
+              let c = fs.readFileSync(file, "utf8");
+              if (c.includes(".onSvgLayout(")) {
+                c = c.replace(/static_cast<const RNSVGGroupEventEmitter &>\(\*_eventEmitter\)[\s\S]*?\.onSvgLayout[\s\S]*?\}\);/g, "// onSvgLayout disabled for New Architecture");
+                fs.writeFileSync(file, c);
+                console.log("Verified: disabled onSvgLayout in RNSVGNode.mm");
+              } else {
+                console.log("RNSVGNode.mm already patched.");
+              }
+            }
+          '
+
       - name: Clean Metro and React Native caches
         working-directory: mobile-app/Fastmatch-Mobile
         run: |
