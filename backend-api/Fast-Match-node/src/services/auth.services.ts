@@ -8,6 +8,8 @@ import { mailWithTemplate } from "@helpers/ejsHandler";
 import { Types } from "mongoose";
 import { randomOtp } from "@helpers/utils";
 import { randomUUID } from "crypto";
+import { forceLogoutUser } from "@config/socket";
+import { applyFreeTrialIfEligible } from "./subscriptionWatcher";
 
 const message = { ...authConstant.auth, ...adminConstant.admin, ...userConstant.user };
 
@@ -135,6 +137,7 @@ class AuthService {
         if (platform) updateFields.platform = platform;
 
         await userRepos.updateUser(user._id as Types.ObjectId, updateFields);
+        forceLogoutUser((user._id as Types.ObjectId).toString());
 
         const token = this.generateTokens(user._id as Types.ObjectId, user.password, loginSessionId, deviceId, deviceName, platform);
         return { token, user: await userRepos.getUserDetails(user._id) };
@@ -173,6 +176,10 @@ class AuthService {
         if (platform) updateFields.platform = platform;
 
         await userRepos.updateUser(userExist._id, updateFields);
+        forceLogoutUser(userExist._id.toString());
+
+        // Automatically grant Free Trial to newly activated user if configured in Admin
+        await applyFreeTrialIfEligible(userExist._id);
 
         const token = this.generateTokens(userExist._id, userExist.password, loginSessionId, deviceId, deviceName, platform);
         return { token, user: await userRepos.getUserDetails(userExist._id) };

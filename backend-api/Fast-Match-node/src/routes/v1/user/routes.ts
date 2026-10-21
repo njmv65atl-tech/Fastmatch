@@ -67,6 +67,7 @@ router.post('/support-ticket/:id/reply', verifyToken, tryCatchMiddleware(UserCon
 
 // Coupon & Pricing
 router.post('/apply-coupon', verifyToken, tryCatchMiddleware(UserController.applyCoupon))
+router.post('/redeem-coupon', verifyToken, tryCatchMiddleware(UserController.redeemCoupon))
 router.get('/pricing', tryCatchMiddleware(UserController.getAppPricing))
 
 // In-App Purchases & Subscriptions

@@ -9,3 +9,4 @@ export * from "./app/TermsOfService";
 export * from "./app/FriendsView";
 export * from "./app/FavoritesView";
 export * from "./app/SupportView";
+export * from "./app/MembershipDetailsView";

@@ -56,6 +56,29 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
           </Button>
 
           <SocialAuthButtons setView={setView} setUser={setUser} />
+
+          {/* EULA & Privacy Policy Agreement (Apple Review Guideline 1.2.0) */}
+          <View style={styles.legalContainer}>
+            <Text style={styles.legalText}>
+              By continuing, you agree to our{" "}
+              <Text
+                style={styles.legalHighlight}
+                onPress={() => setView(AppView.TERMS)}
+              >
+                Terms of Use (EULA)
+              </Text>{" "}
+              and{" "}
+              <Text
+                style={styles.legalHighlight}
+                onPress={() => setView(AppView.PRIVACY)}
+              >
+                Privacy Policy
+              </Text>.
+            </Text>
+            <Text style={styles.zeroToleranceText}>
+              FastMatch enforces strict zero tolerance for objectionable content and abusive users.
+            </Text>
+          </View>
         </View>
       </View>
     </LinearGradient>
@@ -132,5 +155,28 @@ const styles = StyleSheet.create({
 
   buttonContainer: {
     width: "100%",
+  },
+  legalContainer: {
+    marginTop: 18,
+    paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  legalText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  legalHighlight: {
+    color: "#FBBF24",
+    fontWeight: "700",
+    textDecorationLine: "underline",
+  },
+  zeroToleranceText: {
+    fontSize: 10.5,
+    color: "#64748B",
+    textAlign: "center",
+    marginTop: 4,
+    lineHeight: 14,
   },
 });

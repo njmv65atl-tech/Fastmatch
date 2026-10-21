@@ -58,6 +58,21 @@ export const managerApiCall = async (
       lastError = err;
       console.log(`💥 Attempt ${attempt + 1} failed:`, err);
 
+      const isDiffDevice =
+        err?.status === 401 ||
+        err?.status === 402 ||
+        err?.data?.message?.includes("another device") ||
+        err?.data?.data?.sessionExpired;
+
+      if (isDiffDevice) {
+        console.warn("Session expired / logged in on another device. Logging out...");
+        setLoaderOff();
+        onLogout();
+        ShowAlertMessage("Your account was logged into on another device. You have been logged out.", popTypes.error);
+        onFail(err);
+        return;
+      }
+
       if (attempt < retries) {
         const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
         console.log(`⏳ Retrying in ${delay}ms...`);

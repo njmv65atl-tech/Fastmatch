@@ -237,12 +237,18 @@ export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
           <View style={styles.bottomActions}>
             <Button onClick={handleSignUp}>{SIGNUP_TEXT.continueButton}</Button>
 
-            <Pressable >
+            <Pressable>
               <Text style={styles.termsText}>
                 By signing up, you agree to our{" "}
-                
-                <Text style={{ color: "#FFFFFF" }} onPress={() => handleText1()} >Terms </Text>and{" "}
-                <Text style={{ color: "#FFFFFF" }} onPress={() => handleText2()}>Privacy Policy.</Text>
+                <Text style={{ color: "#FFFFFF", textDecorationLine: "underline" }} onPress={() => handleText1()}>
+                  Terms of Use (EULA)
+                </Text>{" "}
+                and{" "}
+                <Text style={{ color: "#FFFFFF", textDecorationLine: "underline" }} onPress={() => handleText2()}>
+                  Privacy Policy
+                </Text>
+                .{"\n"}
+                FastMatch enforces strict zero tolerance for objectionable content and abusive users.
               </Text>
             </Pressable>
           </View>

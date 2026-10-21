@@ -22,6 +22,7 @@ import { DataManager } from "../helpers/dataManager";
 import { useSocialAuthMutation } from "../redux/services/auth";
 import { ShowAlertMessage, popTypes } from "../helpers/commonFunctions";
 import { colors } from "../utils/colors";
+import { GOOGLE_WEB_CLIENT_ID } from "../config/env";
 
 export const GoogleIcon = ({ size = 22 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
@@ -85,6 +86,7 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
       GoogleSignin.configure({
         scopes: ["email", "profile"],
         iosClientId: "205547608843-go7vud6rut8qtijonakr8oiuhbp2vp6h.apps.googleusercontent.com",
+        webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
         offlineAccess: false,
       });
     } catch (e) {
@@ -196,10 +198,17 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
         ShowAlertMessage("Google Play Services is not available.", popTypes.error);
       } else {
         console.warn("Google Sign-In Error:", error);
-        ShowAlertMessage(
-          error?.message || "Google Sign-In failed. Please try again.",
-          popTypes.error
-        );
+        if (error?.message?.includes("DEVELOPER_ERROR") || error?.code === "10" || String(error?.code) === "DEVELOPER_ERROR") {
+          ShowAlertMessage(
+            "Google Sign-In configuration error: Please register the release SHA-1 fingerprint in Firebase Console.",
+            popTypes.error
+          );
+        } else {
+          ShowAlertMessage(
+            error?.message || "Google Sign-In failed. Please try again.",
+            popTypes.error
+          );
+        }
       }
     }
   };

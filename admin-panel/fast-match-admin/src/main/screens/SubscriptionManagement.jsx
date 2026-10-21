@@ -23,7 +23,8 @@ import {
   Calendar,
   Sparkles,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Gift
 } from 'lucide-react';
 import { Card } from '../../components/common/card';
 import { Button } from '../../components/common/Button';
@@ -375,6 +376,10 @@ export const SubscriptionManagement = () => {
 
   const [monthlyPrice, setMonthlyPrice] = useState(9.00);
   const [yearlyPrice, setYearlyPrice] = useState(90.00);
+  const [freeTrialEnabled, setFreeTrialEnabled] = useState(false);
+  const [freeTrialDurationDays, setFreeTrialDurationDays] = useState(3);
+  const [freeTrialBonusCoins, setFreeTrialBonusCoins] = useState(0);
+  const [freeTrialTitle, setFreeTrialTitle] = useState('VIP Free Trial');
   const [coinPackages, setCoinPackages] = useState([
     { id: 'com.fastmatch.coins_100', amount: 100, price: 0.99, bonus: 0 },
     { id: 'com.fastmatch.coins_500', amount: 500, price: 4.99, bonus: 50 },
@@ -385,6 +390,12 @@ export const SubscriptionManagement = () => {
     if (pricingRes?.data) {
       if (pricingRes.data.monthlyPrice !== undefined) setMonthlyPrice(pricingRes.data.monthlyPrice);
       if (pricingRes.data.yearlyPrice !== undefined) setYearlyPrice(pricingRes.data.yearlyPrice);
+      if (pricingRes.data.freeTrial) {
+        if (pricingRes.data.freeTrial.enabled !== undefined) setFreeTrialEnabled(pricingRes.data.freeTrial.enabled);
+        if (pricingRes.data.freeTrial.durationDays !== undefined) setFreeTrialDurationDays(pricingRes.data.freeTrial.durationDays);
+        if (pricingRes.data.freeTrial.bonusCoins !== undefined) setFreeTrialBonusCoins(pricingRes.data.freeTrial.bonusCoins);
+        if (pricingRes.data.freeTrial.trialTitle !== undefined) setFreeTrialTitle(pricingRes.data.freeTrial.trialTitle);
+      }
       if (Array.isArray(pricingRes.data.coinPackages) && pricingRes.data.coinPackages.length > 0) {
         setCoinPackages(pricingRes.data.coinPackages);
       }
@@ -396,6 +407,12 @@ export const SubscriptionManagement = () => {
     updatePricing({
       monthlyPrice: Number(monthlyPrice),
       yearlyPrice: Number(yearlyPrice),
+      freeTrial: {
+        enabled: Boolean(freeTrialEnabled),
+        durationDays: Math.max(1, Number(freeTrialDurationDays) || 3),
+        bonusCoins: Math.max(0, Number(freeTrialBonusCoins) || 0),
+        trialTitle: String(freeTrialTitle || "VIP Free Trial").trim()
+      },
       coinPackages: coinPackages.map(pkg => ({
         ...pkg,
         amount: Number(pkg.amount),
@@ -667,9 +684,13 @@ export const SubscriptionManagement = () => {
                         <td className="px-10 py-8 text-center">
                           <span className={cn(
                             "inline-block min-w-[100px] py-2 rounded-xl text-sm font-bold capitalize",
-                            user.subscriptionPlan === 'yearly' ? "bg-[#fef3c7] text-[#d97706]" : "bg-[#dbeafe] text-[#2563eb]"
+                            user.subscriptionPlan === 'yearly'
+                              ? "bg-[#fef3c7] text-[#d97706]"
+                              : user.subscriptionPlan === 'trial'
+                              ? "bg-purple-100 text-purple-700 border border-purple-200"
+                              : "bg-[#dbeafe] text-[#2563eb]"
                           )}>
-                            {user.subscriptionPlan || 'Premium'}
+                            {user.subscriptionPlan === 'trial' ? '🎁 Free Trial' : (user.subscriptionPlan || 'Premium')}
                           </span>
                         </td>
                         <td className="px-10 py-8 text-center">
@@ -860,6 +881,129 @@ export const SubscriptionManagement = () => {
               </div>
             </Card>
           </div>
+
+          {/* New User VIP Free Trial Configuration Card */}
+          <Card className="p-8 bg-gradient-to-br from-white via-purple-50/20 to-pink-50/30 rounded-3xl shadow-sm border border-purple-100 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center font-bold">
+                  <Gift size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-gray-900">New User VIP Free Trial</h3>
+                    <span className={cn(
+                      "px-2.5 py-0.5 rounded-full text-xs font-bold",
+                      freeTrialEnabled ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-gray-100 text-gray-500"
+                    )}>
+                      {freeTrialEnabled ? 'Active Promotion' : 'Disabled'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    Automatically grant all newly registered users free VIP access for a limited duration
+                  </p>
+                </div>
+              </div>
+
+              {/* Master Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setFreeTrialEnabled(!freeTrialEnabled)}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2",
+                  freeTrialEnabled
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-200"
+                    : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+                )}
+              >
+                <Sparkles size={16} />
+                {freeTrialEnabled ? 'Free Trial: ACTIVE' : 'Free Trial: OFF (Click to Enable)'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+              {/* Duration Days */}
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                  <Calendar size={15} className="text-purple-600" />
+                  Trial Duration (Days)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="30"
+                  required
+                  value={freeTrialDurationDays}
+                  onChange={(e) => setFreeTrialDurationDays(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl text-base font-bold text-gray-900 focus:border-[#7C3AED] outline-none"
+                  placeholder="e.g. 3 or 7"
+                />
+                <p className="text-xs text-gray-400">
+                  Users receive VIP access for this many days upon registration.
+                </p>
+              </div>
+
+              {/* Welcome Bonus Coins */}
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                  <Coins size={15} className="text-amber-500" />
+                  Welcome Bonus Coins
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="5000"
+                  value={freeTrialBonusCoins}
+                  onChange={(e) => setFreeTrialBonusCoins(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl text-base font-bold text-gray-900 focus:border-[#7C3AED] outline-none"
+                  placeholder="0 for none, or 50, 100"
+                />
+                <p className="text-xs text-gray-400">
+                  Optional coins credited to user wallet when trial activates.
+                </p>
+              </div>
+
+              {/* Trial Badge / Title */}
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                  <Crown size={15} className="text-purple-600" />
+                  Display Title / Badge
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={freeTrialTitle}
+                  onChange={(e) => setFreeTrialTitle(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-2xl text-base font-bold text-gray-900 focus:border-[#7C3AED] outline-none"
+                  placeholder="VIP Free Trial"
+                />
+                <p className="text-xs text-gray-400">
+                  Displayed in mobile app membership details page.
+                </p>
+              </div>
+            </div>
+
+            {/* Live Explanation Banner */}
+            <div className={cn(
+              "p-4 rounded-2xl flex items-start gap-3 border text-sm transition-all",
+              freeTrialEnabled
+                ? "bg-purple-50/80 border-purple-200 text-purple-900"
+                : "bg-gray-50 border-gray-200 text-gray-500"
+            )}>
+              <Sparkles size={18} className={freeTrialEnabled ? "text-purple-600 flex-shrink-0 mt-0.5" : "text-gray-400 flex-shrink-0 mt-0.5"} />
+              <div className="space-y-1">
+                <p className="font-bold">
+                  {freeTrialEnabled ? 'Active Promotion Preview' : 'Promotion Currently Inactive'}
+                </p>
+                <p className="text-xs leading-relaxed">
+                  {freeTrialEnabled
+                    ? `Every new user who registers will automatically receive ${freeTrialDurationDays} days of "${freeTrialTitle}" with ${freeTrialBonusCoins > 0 ? freeTrialBonusCoins + ' bonus coins' : '0 bonus coins'}. When the ${freeTrialDurationDays} days expire, their status will automatically revert to standard free tier with 0 manual intervention required.`
+                    : 'New users will register with standard free accounts. Toggle above and click "Save Pricing Configuration" to activate.'
+                  }
+                </p>
+              </div>
+            </div>
+          </Card>
 
           {/* Coin Packs Card */}
           <Card className="p-8 bg-white rounded-3xl shadow-sm border border-gray-100 space-y-6">

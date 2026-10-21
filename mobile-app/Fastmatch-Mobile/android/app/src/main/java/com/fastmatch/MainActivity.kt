@@ -13,6 +13,11 @@ class MainActivity : ReactActivity() {
    */
   override fun getMainComponentName(): String = "FastMatch"
 
+  override fun invokeDefaultOnBackPressed() {
+      // Minimize app to background rather than destroying the activity
+      moveTaskToBack(true)
+  }
+
   /**
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
    * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]

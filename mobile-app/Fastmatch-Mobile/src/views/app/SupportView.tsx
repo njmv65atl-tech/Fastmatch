@@ -941,6 +941,11 @@ const styles = StyleSheet.create({
     color: "#F59E0B",
     fontWeight: "bold",
   },
+  tabText: {
+    color: "#64748B",
+    fontSize: 14,
+    fontWeight: "600",
+  },
   sectionSubtitle: {
     color: "#94A3B8",
     fontSize: 13,

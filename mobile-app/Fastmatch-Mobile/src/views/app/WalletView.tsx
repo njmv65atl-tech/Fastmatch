@@ -8,6 +8,7 @@ import {
   BackHandler,
   Platform,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { MobileContainer, Header } from "../../components/UIComponents";
 import { AppView } from "../../types";
@@ -17,25 +18,73 @@ import LinearGradient from "react-native-linear-gradient";
 import { useSelector, useDispatch } from "react-redux";
 import { userSelector, setGlobalUser } from "../../redux/slices/persistedSlice";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
-import { useBuyCoinsMockMutation, useWalletHistoryQuery } from "../../redux/services/auth";
-import { purchaseProduct } from "../../utils/iap";
+import { useBuyCoinsMockMutation, useWalletHistoryQuery, useGetUserProfileQuery } from "../../redux/services/auth";
+import { purchaseProduct, fetchProducts, consumePendingPurchases, type Product } from "../../utils/iap";
 
 interface WalletViewProps {
   setView: (view: AppView) => void;
+  onBack?: () => void;
 }
 
-export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
+export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
   const user = useSelector(userSelector);
   const dispatch = useDispatch();
   
+  const [refreshing, setRefreshing] = React.useState(false);
   const [buyCoinsMock] = useBuyCoinsMockMutation();
   const { data: historyData, isLoading: isLoadingHistory, refetch: refetchHistory } = useWalletHistoryQuery({});
+  const { data: profileData, refetch: refetchProfile } = useGetUserProfileQuery({}, { refetchOnMountOrArgChange: true });
+  const [storeProducts, setStoreProducts] = React.useState<Product[]>([]);
+
+  // Sync fresh profile data from backend to Redux persisted store
+  React.useEffect(() => {
+    if (profileData?.data) {
+      dispatch(setGlobalUser(profileData.data));
+    }
+  }, [profileData, dispatch]);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const [newProfile] = await Promise.all([
+        refetchProfile(),
+        refetchHistory(),
+      ]);
+      if (newProfile?.data?.data) {
+        dispatch(setGlobalUser(newProfile.data.data));
+      }
+    } catch (e) {
+      console.warn("Pull to refresh error:", e);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchProfile, refetchHistory, dispatch]);
+
+  React.useEffect(() => {
+    fetchProducts().then((res) => {
+      if (res && res.length > 0) {
+        setStoreProducts(res);
+      }
+    }).catch((err) => console.warn("Error fetching store coin products:", err));
+  }, []);
   
   const coinPackages = [
     { id: "com.fastmatch.coins_100", amount: 100, price: "$0.99", bonus: 0 },
     { id: "com.fastmatch.coins_500", amount: 500, price: "$4.99", bonus: 50 },
     { id: "com.fastmatch.coins_1000", amount: 1000, price: "$9.99", bonus: 200 },
   ];
+
+  const getPackagePrice = (pkg: any) => {
+    const storeItem = storeProducts.find((p) => p.productId === pkg.id);
+    if (storeItem?.localizedPrice) {
+      return storeItem.localizedPrice;
+    }
+    if (storeItem?.price) {
+      const hasCurrency = /[\$\₹\€\£\¥\A-Za-z]/.test(storeItem.price);
+      return hasCurrency ? storeItem.price : `$${storeItem.price}`;
+    }
+    return pkg.price;
+  };
 
   const handlePurchase = async (pkg: any) => {
     try {
@@ -46,21 +95,29 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
     }
   };
 
-  React.useEffect(() => {
-    if (Platform.OS === 'android') {
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-        setView(AppView.HOME);
-        return true;
-      });
-      return () => backHandler.remove();
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      setView(AppView.HOME);
     }
-  }, [setView]);
+  };
 
   return (
     <MobileContainer>
-      <Header title="My Wallet" onBack={() => setView(AppView.HOME)} />
+      <Header title="My Wallet" onBack={handleBack} />
       
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Balance Card */}
         <View style={[styles.balanceCard, { backgroundColor: "#F59E0B", overflow: 'hidden' }]}>
           <LinearGradient
@@ -73,7 +130,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
             <Coins size={32} color="#451A03" />
             <View style={styles.balanceTextWrap}>
               <Text style={styles.balanceLabel}>Current Balance</Text>
-              <Text style={styles.balanceAmount}>{user?.walletBalance || 0} Coins</Text>
+              <Text style={styles.balanceAmount}>{profileData?.data?.walletBalance ?? user?.walletBalance ?? 0} Coins</Text>
             </View>
           </View>
         </View>
@@ -102,22 +159,24 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
               </View>
               <View style={styles.priceWrap}>
                 <Text style={styles.payMethodText}>{Platform.OS === 'ios' ? ' Pay' : 'G Pay'}</Text>
-                <Text style={styles.priceText}>{pkg.price}</Text>
+                <Text style={styles.priceText}>{getPackagePrice(pkg)}</Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
         <Text style={styles.infoText}>
-          Coins can be used to send Virtual Gifts during video calls and unlock Super Matches.
+          Coins can be used to send Virtual Gifts during video calls and unlock Super Matches. Pull down to refresh your balance at any time.
         </Text>
 
         <View style={styles.historyContainer}>
           <Text style={styles.sectionTitle}>Coins History</Text>
           {isLoadingHistory ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
-          ) : historyData?.data && historyData.data.length > 0 ? (
-            historyData.data.map((tx: any) => (
+          ) : historyData?.data && historyData.data.filter((tx: any) => tx.type !== 'subscription').length > 0 ? (
+            historyData.data
+              .filter((tx: any) => tx.type !== 'subscription')
+              .map((tx: any) => (
               <View key={tx._id} style={styles.historyCard}>
                 <View style={styles.historyIconBox}>
                   {tx.amount > 0 ? (
@@ -129,7 +188,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView }) => {
                 <View style={styles.historyDetails}>
                   <Text style={styles.historyTitle}>
                     {tx.type === 'daily_reward' ? 'Daily Reward' :
-                     tx.type === 'purchase' ? 'Purchased Coins' :
+                     tx.type === 'purchase' || tx.type === 'buy_coin' ? 'Purchased Coins' :
                      tx.type === 'gift_sent' ? 'Sent Gift' :
                      tx.type === 'gift_received' ? 'Received Gift' :
                      tx.type === 'converted_gift' ? 'Converted Gift to Coins' : 'Transaction'}

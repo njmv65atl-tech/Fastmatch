@@ -10,3 +10,5 @@ export const API_VERSION = cfg.API_VERSION || '/api/v1/';
 export const BASE_URL = `${API_URL}${API_VERSION}`;
 export const IMAGE_URL = API_URL;
 export const SOCKET_URL = API_URL;
+export const GOOGLE_WEB_CLIENT_ID = cfg.GOOGLE_WEB_CLIENT_ID || '205547608843-r3mnam3afl98n4l7p2s44ge8kngr5ekg.apps.googleusercontent.com';
+

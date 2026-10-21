@@ -157,8 +157,39 @@ export const SettingsView: React.FC<SettingsProps> = ({
         <View style={{ marginTop: 16 }}>
           <Text style={styles.account}>ACCOUNT</Text>
           <View style={styles.menuSection}>
-            {/* Temporarily removing this check */}
-            {user?.isPremium !== 'premium' && (
+            {user?.isPremium === 'premium' ? (
+              <Pressable
+                onPress={() => setView(AppView.MEMBERSHIP_DETAILS)}
+                style={({ pressed }) => [
+                  styles.wrapper,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <LinearGradient
+                  colors={[
+                    "rgba(245,158,11,0.15)",
+                    "rgba(245,158,11,0.02)",
+                  ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.container1}
+                >
+                  <View style={{ padding: 16 }}>
+                    <View style={styles.menuItemContent}>
+                      <View style={styles.premContent}>
+                        <View style={styles.menuIconUpgrade}>
+                          <Crown size={20} color="#F59E0B" />
+                        </View>
+                        <Text style={styles.menuLabelUpgrade}>
+                          VIP Membership Details
+                        </Text>
+                      </View>
+                      <ChevronRight size={18} color="rgba(245,158,11,0.8)" />
+                    </View>
+                  </View>
+                </LinearGradient>
+              </Pressable>
+            ) : (
               <Pressable
                 onPress={() => setView(AppView.SUBSCRIPTION)}
                 style={({ pressed }) => [
@@ -168,31 +199,25 @@ export const SettingsView: React.FC<SettingsProps> = ({
               >
                 <LinearGradient
                   colors={[
-                    "rgba(245,158,11,0.10)", // amber-500/10
-                    "rgba(245,158,11,0.00)", // transparent
+                    "rgba(245,158,11,0.10)",
+                    "rgba(245,158,11,0.00)",
                   ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.container1}
                 >
-                  <View
-                    style={{
-                      padding: 16,
-                    }}
-                  >
+                  <View style={{ padding: 16 }}>
                     <View style={styles.menuItemContent}>
                       <View style={styles.premContent}>
                         <View style={styles.menuIconUpgrade}>
                           <Crown size={20} color="#F59E0B" />
                         </View>
-
                         <Text style={styles.menuLabelUpgrade}>
                           Upgrade to Premium
                         </Text>
                       </View>
                       <ChevronRight size={18} color="rgba(245,158,11,0.5)" />
                     </View>
-                    {/* <View style={styles.menuIconRight}></View> */}
                   </View>
                 </LinearGradient>
               </Pressable>

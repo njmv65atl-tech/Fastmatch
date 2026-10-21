@@ -9,5 +9,11 @@ export interface PricingInterface extends Document {
         price: number;
         bonus: number;
     }[];
+    freeTrial?: {
+        enabled: boolean;
+        durationDays: number;
+        bonusCoins: number;
+        trialTitle: string;
+    };
     updatedAt: Date;
 }

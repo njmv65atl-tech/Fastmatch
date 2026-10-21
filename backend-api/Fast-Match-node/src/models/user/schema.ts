@@ -82,10 +82,18 @@ export const UserSchema = new Schema<UserInterface>({
     dailyMatchDate: { type: Date, default: null },
     subscriptionPlan: {
         type: String,
-        enum: ['monthly', 'yearly', null],
+        enum: ['monthly', 'yearly', 'trial', null],
         default: null
     },
     subscriptionExpiresAt: {
+        type: Date,
+        default: null
+    },
+    hasUsedFreeTrial: {
+        type: Boolean,
+        default: false
+    },
+    renewalReminderSentAt: {
         type: Date,
         default: null
     },

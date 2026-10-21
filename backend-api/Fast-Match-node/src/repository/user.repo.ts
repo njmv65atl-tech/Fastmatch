@@ -24,7 +24,12 @@ class AuthRepository {
     }
 
     async getUserDetails(_id: Types.ObjectId) {
-        const user = await User.findOne({ _id }).select('-password -forgotToken -otp').lean();
+        let user = await User.findOne({ _id }).select('-password -forgotToken -otp').lean() as any;
+        if (user && user.isPremium === 'premium' && user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt).getTime() < Date.now()) {
+            await User.updateOne({ _id }, { $set: { isPremium: 'free', subscriptionPlan: null } });
+            user.isPremium = 'free';
+            user.subscriptionPlan = null;
+        }
         return user || null;
     }
 

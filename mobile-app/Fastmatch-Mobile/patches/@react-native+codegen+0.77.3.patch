@@ -1,0 +1,162 @@
+diff --git a/node_modules/@react-native/codegen/lib/parsers/typescript/components/componentsUtils.js b/node_modules/@react-native/codegen/lib/parsers/typescript/components/componentsUtils.js
+index 3ba47fe..d899c69 100644
+--- a/node_modules/@react-native/codegen/lib/parsers/typescript/components/componentsUtils.js
++++ b/node_modules/@react-native/codegen/lib/parsers/typescript/components/componentsUtils.js
+@@ -294,17 +294,10 @@ function getTypeAnnotationForArray(
+     return arrayType;
+   }
+   const type =
+-    extractedTypeAnnotation.elementType === 'TSTypeReference'
+-      ? extractedTypeAnnotation.elementType.typeName.name
+-      : ((_extractedTypeAnnotat = extractedTypeAnnotation.elementType) ===
+-          null || _extractedTypeAnnotat === void 0
+-          ? void 0
+-          : _extractedTypeAnnotat.type) ||
+-        ((_extractedTypeAnnotat2 = extractedTypeAnnotation.typeName) === null ||
+-        _extractedTypeAnnotat2 === void 0
+-          ? void 0
+-          : _extractedTypeAnnotat2.name) ||
+-        extractedTypeAnnotation.type;
++    (extractedTypeAnnotation.elementType &&
++      parser.getTypeAnnotationName(extractedTypeAnnotation.elementType)) ||
++    parser.getTypeAnnotationName(extractedTypeAnnotation) ||
++    extractedTypeAnnotation.type;
+   const common = getCommonTypeAnnotation(
+     name,
+     true,
+@@ -436,8 +429,9 @@ function flattenProperties(typeDefinition, types, parser) {
+       if (property.type === 'TSPropertySignature') {
+         return property;
+       } else if (property.type === 'TSTypeReference') {
++        const refName = property.typeName.right ? property.typeName.right.name : property.typeName.name;
+         return flattenProperties(
+-          parser.getProperties(property.typeName.name, types),
++          parser.getProperties(refName, types),
+           types,
+           parser,
+         );
+diff --git a/node_modules/@react-native/codegen/lib/parsers/typescript/parseTopLevelType.js b/node_modules/@react-native/codegen/lib/parsers/typescript/parseTopLevelType.js
+index 0ef998d..4bc9162 100644
+--- a/node_modules/@react-native/codegen/lib/parsers/typescript/parseTopLevelType.js
++++ b/node_modules/@react-native/codegen/lib/parsers/typescript/parseTopLevelType.js
+@@ -10,14 +10,24 @@
+ 
+ 'use strict';
+ 
++function getTypeName(typeNameNode) {
++  if (!typeNameNode) return undefined;
++  if (typeNameNode.type === 'TSQualifiedName') {
++    return typeNameNode.right ? typeNameNode.right.name : undefined;
++  }
++  return typeNameNode.name;
++}
++
+ function getValueFromTypes(value, types) {
+   switch (value.type) {
+-    case 'TSTypeReference':
+-      if (types[value.typeName.name]) {
+-        return getValueFromTypes(types[value.typeName.name], types);
++    case 'TSTypeReference': {
++      const name = getTypeName(value.typeName);
++      if (name && types[name]) {
++        return getValueFromTypes(types[name], types);
+       } else {
+         return value;
+       }
++    }
+     case 'TSTypeAliasDeclaration':
+       return getValueFromTypes(value.typeAnnotation, types);
+     default:
+@@ -88,10 +98,11 @@ function handleUnionAndParen(type, result, knownTypes) {
+       }
+       break;
+     }
+-    case 'TSTypeReference':
+-      if (type.typeName.name === 'Readonly') {
++    case 'TSTypeReference': {
++      const typeName = getTypeName(type.typeName);
++      if (typeName === 'Readonly') {
+         handleUnionAndParen(type.typeParameters.params[0], result, knownTypes);
+-      } else if (type.typeName.name === 'WithDefault') {
++      } else if (typeName === 'WithDefault') {
+         if (result.optional) {
+           throw new Error(
+             'WithDefault<> is optional and does not need to be marked as optional. Please remove the union of undefined and/or null',
+@@ -116,7 +127,7 @@ function handleUnionAndParen(type, result, knownTypes) {
+         const resolvedType = getValueFromTypes(type, knownTypes);
+         if (
+           resolvedType.type === 'TSTypeReference' &&
+-          resolvedType.typeName.name === type.typeName.name
++          getTypeName(resolvedType.typeName) === typeName
+         ) {
+           result.unions.push(type);
+         } else {
+@@ -124,6 +135,7 @@ function handleUnionAndParen(type, result, knownTypes) {
+         }
+       }
+       break;
++    }
+     default:
+       result.unions.push(type);
+   }
+@@ -165,14 +177,15 @@ function handleIntersectionAndParen(type, result, knownTypes) {
+       }
+       break;
+     }
+-    case 'TSTypeReference':
+-      if (type.typeName.name === 'Readonly') {
++    case 'TSTypeReference': {
++      const typeName = getTypeName(type.typeName);
++      if (typeName === 'Readonly') {
+         handleIntersectionAndParen(
+           type.typeParameters.params[0],
+           result,
+           knownTypes,
+         );
+-      } else if (type.typeName.name === 'WithDefault') {
++      } else if (typeName === 'WithDefault') {
+         throw new Error('WithDefault<> is now allowed in intersection types.');
+       } else if (!knownTypes) {
+         result.push(type);
+@@ -180,7 +193,7 @@ function handleIntersectionAndParen(type, result, knownTypes) {
+         const resolvedType = getValueFromTypes(type, knownTypes);
+         if (
+           resolvedType.type === 'TSTypeReference' &&
+-          resolvedType.typeName.name === type.typeName.name
++          getTypeName(resolvedType.typeName) === typeName
+         ) {
+           result.push(type);
+         } else {
+@@ -188,6 +201,7 @@ function handleIntersectionAndParen(type, result, knownTypes) {
+         }
+       }
+       break;
++    }
+     default:
+       result.push(type);
+   }
+diff --git a/node_modules/@react-native/codegen/lib/parsers/typescript/parser.js b/node_modules/@react-native/codegen/lib/parsers/typescript/parser.js
+index 61690c8..7a0f30f 100644
+--- a/node_modules/@react-native/codegen/lib/parsers/typescript/parser.js
++++ b/node_modules/@react-native/codegen/lib/parsers/typescript/parser.js
+@@ -100,13 +100,13 @@ class TypeScriptParser {
+     return 'TypeScript';
+   }
+   getTypeAnnotationName(typeAnnotation) {
+-    var _typeAnnotation$typeN;
+-    return typeAnnotation === null ||
+-      typeAnnotation === void 0 ||
+-      (_typeAnnotation$typeN = typeAnnotation.typeName) === null ||
+-      _typeAnnotation$typeN === void 0
+-      ? void 0
+-      : _typeAnnotation$typeN.name;
++    if (!typeAnnotation) return undefined;
++    const typeName = typeAnnotation.typeName;
++    if (!typeName) return undefined;
++    if (typeName.type === 'TSQualifiedName') {
++      return typeName.right ? typeName.right.name : undefined;
++    }
++    return typeName.name;
+   }
+   checkIfInvalidModule(typeArguments) {
+     return (

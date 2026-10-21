@@ -23,6 +23,7 @@ import { GracefulShutdownManager } from "@config/cleanUps";
 import { clientEvents, initializeSocket, serverEvents } from "./config/socket";
 import { seedAdmin } from "./helpers/seeder";
 import { Server } from "socket.io";
+import { startSubscriptionWatcher } from "./services/subscriptionWatcher";
 
 // Declare global extensions
 declare global {
@@ -95,6 +96,7 @@ app.set("view engine", "ejs");
     try {
         await dbConnection();
         await seedAdmin();
+        startSubscriptionWatcher();
         serverSetupManager();
 
         let server: http.Server | https.Server;

@@ -62,14 +62,14 @@ export const TermsOfService: React.FC<PrivacyProps> = ({ onAgree, goBack}) => {
               {`You must be at least 18 years of age to use Fastmatch. By registering or using the service, you represent and warrant that you are at least 18 years old. We operate a zero-tolerance policy regarding underage users, and any account found to belong to an individual under 18 will be permanently deleted immediately.\n\n`}
 
               <Text style={{ color: colors.white, fontWeight: "bold" }}>
-                2. Community Conduct & Zero Tolerance Policy{"\n"}
+                2. Zero Tolerance Policy for Objectionable Content & Abusive Behavior{"\n"}
               </Text>
-              {`Fastmatch is committed to maintaining a safe, respectful environment. You agree that you will NOT:\n`}
-              {`• Display nudity, pornography, sexually explicit acts, or solicit sexual content.\n`}
-              {`• Harass, bully, intimidate, stalk, defame, or threaten any other user.\n`}
-              {`• Transmit hate speech, promote violence, discrimination, or illegal activities.\n`}
-              {`• Impersonate any person or entity or misrepresent your affiliation.\n`}
-              {`Any violation will result in immediate suspension, permanent hardware-level ban, and may be reported to law enforcement where applicable.\n\n`}
+              {`FastMatch strictly enforces a ZERO-TOLERANCE policy for objectionable content and abusive users. You agree that you will NOT post, share, stream, or transmit any content that:\n`}
+              {`• Contains nudity, sexually explicit acts, pornography, or sexual solicitations.\n`}
+              {`• Harasses, bullies, intimidates, stalks, defames, or threatens any other user.\n`}
+              {`• Transmits hate speech, promotes violence, discrimination, or unlawful acts.\n`}
+              {`• Impersonates any person or entity or misrepresents your affiliation.\n`}
+              {`Any violation will result in immediate account termination, a permanent hardware-level ban, and potential referral to law enforcement. There is zero tolerance for objectionable content or abusive users.\n\n`}
 
               <Text style={{ color: colors.white, fontWeight: "bold" }}>
                 3. Strict Ban on Unauthorized Recording & Screenshots{"\n"}
@@ -88,9 +88,9 @@ export const TermsOfService: React.FC<PrivacyProps> = ({ onAgree, goBack}) => {
               {`• Virtual Coins: Coins are digital consumables purchased for in-app interactions (e.g., virtual gifts, priority matching). Coins have no monetary cash value, are non-refundable, non-transferable, and cannot be redeemed for real currency.\n\n`}
 
               <Text style={{ color: colors.white, fontWeight: "bold" }}>
-                6. Reporting & Moderation{"\n"}
+                6. User-Generated Content Moderation, Reporting & Immediate Blocking{"\n"}
               </Text>
-              {`Fastmatch provides automated and human moderation tools. Users can instantly skip, block, or report any misconduct during a call or from their profile. Reports are reviewed promptly by our 24/7 trust and safety team.\n\n`}
+              {`FastMatch provides built-in automated filtering and 24/7 human moderation. Users can instantly block any user or report objectionable content from any profile, global discovery, chat conversation, or live video call. All reports are reviewed within 24 hours, and content or users in violation will be permanently removed immediately.\n\n`}
 
               <Text style={{ color: colors.white, fontWeight: "bold" }}>
                 7. Contact Us{"\n"}

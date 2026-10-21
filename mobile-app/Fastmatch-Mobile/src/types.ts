@@ -31,6 +31,7 @@ export enum AppView {
   FAVORITES = "FAVORITES",
   CONNECTION_REQUESTS = "CONNECTION_REQUESTS",
   SUPPORT = "SUPPORT",
+  MEMBERSHIP_DETAILS = "MEMBERSHIP_DETAILS",
 }
 
 export enum UserRole {
@@ -67,6 +68,8 @@ export interface User {
   age?: number | string;
   location?: string;
   language?: string;
+  subscriptionPlan?: 'monthly' | 'yearly' | string;
+  subscriptionExpiresAt?: string | Date;
 }
 
 export interface ChatMessage {

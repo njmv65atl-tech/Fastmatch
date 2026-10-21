@@ -267,6 +267,14 @@ export const authApi = emptySplitApi.injectEndpoints({
         headers: header1,
       }),
     }),
+    redeemCoupon: builder.mutation({
+      query: (data) => ({
+        url: apiEndPoints.redeemCoupon,
+        method: "POST",
+        body: data,
+        headers: header1,
+      }),
+    }),
     getPricing: builder.query({
       query: () => ({
         url: apiEndPoints.getPricing,
@@ -279,6 +287,13 @@ export const authApi = emptySplitApi.injectEndpoints({
         url: apiEndPoints.verifyPurchase,
         method: "POST",
         body: data,
+        headers: header1,
+      }),
+    }),
+    getUserProfile: builder.query({
+      query: () => ({
+        url: apiEndPoints.userProfile,
+        method: "GET",
         headers: header1,
       }),
     }),
@@ -330,6 +345,8 @@ export const {
   useGetUserSupportTicketsQuery,
   useReplySupportTicketMutation,
   useApplyCouponMutation,
+  useRedeemCouponMutation,
   useGetPricingQuery,
   useVerifyPurchaseMutation,
+  useGetUserProfileQuery,
 } = authApi;

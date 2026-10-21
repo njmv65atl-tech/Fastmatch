@@ -328,7 +328,29 @@ const findCompatibleOnlineUser = async (currentUser: any, candidates: any[]): Pr
 import { createAdapter } from '@socket.io/redis-streams-adapter';
 import redisClient from '@services/redis.service';
 
+let globalIO: Server | null = null;
+
+export const forceLogoutUser = (userId: string, reason: string = 'Your account has been logged into on another device.') => {
+    try {
+        if (globalIO) {
+            globalIO.to(userId).emit('force_logout', { message: reason });
+        }
+        const oldSocketId = userSocketMap.get(userId);
+        if (oldSocketId && globalIO) {
+            const oldSocket = globalIO.sockets.sockets.get(oldSocketId);
+            if (oldSocket) {
+                oldSocket.emit('force_logout', { message: reason });
+                oldSocket.disconnect(true);
+            }
+            userSocketMap.delete(userId);
+        }
+    } catch (e) {
+        console.error('Error in forceLogoutUser:', e);
+    }
+};
+
 export const initializeSocket = (io: Server): Server => {
+    globalIO = io;
     // 🚨 Redis Adapter setup
     io.adapter(createAdapter(redisClient));
 
@@ -445,6 +467,17 @@ export const initializeSocket = (io: Server): Server => {
     io.on('connection', async (socket: Socket) => {
         const user = (socket as any).user;
         const userId = user._id.toString();
+
+        // Single session enforcement: evict previous socket if any
+        const oldSocketId = userSocketMap.get(userId);
+        if (oldSocketId && oldSocketId !== socket.id) {
+            const oldSocket = io.sockets.sockets.get(oldSocketId);
+            if (oldSocket) {
+                oldSocket.emit('force_logout', { message: 'Your account has been logged into on another device.' });
+                oldSocket.disconnect(true);
+            }
+        }
+
         userSocketMap.set(userId, socket.id);
         socketUserMap.set(socket.id, userId);
 

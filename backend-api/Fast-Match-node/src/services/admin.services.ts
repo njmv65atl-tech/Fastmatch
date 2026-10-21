@@ -176,6 +176,8 @@ class AdminService {
         const expiresAt = new Date();
         if (plan === 'yearly') {
             expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        } else if (plan === 'trial') {
+            expiresAt.setDate(expiresAt.getDate() + 7);
         } else {
             expiresAt.setMonth(expiresAt.getMonth() + 1);
         }

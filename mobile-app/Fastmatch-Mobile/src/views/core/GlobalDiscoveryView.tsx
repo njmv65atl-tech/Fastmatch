@@ -12,9 +12,10 @@ import {
   RefreshControl,
   Dimensions,
   ScrollView,
+  Alert,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { ArrowLeft, Globe, Search, SlidersHorizontal, X } from "lucide-react-native";
+import { ArrowLeft, Globe, Search, SlidersHorizontal, X, Flag, Ban, ShieldAlert } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import { MobileContainer, Button } from "../../components/UIComponents";
 import { AppView } from "../../types";
@@ -25,6 +26,8 @@ import {
   useSendFriendRequestMutation,
   useToggleFavoriteMutation,
   useGetFavoritesQuery,
+  useBlockUserMutation,
+  useUserReportMutation,
 } from "../../redux/services/auth";
 import { IMAGE_URL } from "../../config/env";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
@@ -186,6 +189,51 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   );
 
   const activeFilterCount = countActiveFilters(filters);
+
+  // ─── UGC Safety Hooks & Handlers (Apple Review Guideline 1.2.0) ──
+  const [blockUserApi] = useBlockUserMutation();
+  const [reportUserApi, { isLoading: isSubmittingReport }] = useUserReportMutation();
+  const [showReportModal, setShowReportModal] = React.useState(false);
+
+  const handleBlockUser = () => {
+    if (!selectedUser) return;
+    Alert.alert(
+      "Block User",
+      `Are you sure you want to block ${selectedUser.displayName}? You will no longer see their profile or receive messages from them.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await blockUserApi({ targetUserId: selectedUser._id }).unwrap();
+              ShowAlertMessage(`${selectedUser.displayName} has been blocked.`, popTypes.info);
+              setSelectedUser(null);
+              refetchGlobalUsers();
+            } catch (err: any) {
+              ShowAlertMessage(err?.data?.message || "Failed to block user", popTypes.error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleReportSubmit = async (reason: string) => {
+    if (!selectedUser) return;
+    try {
+      await reportUserApi({
+        reportedUser: selectedUser._id,
+        category: [reason],
+        message: `Reported via Global Discovery: ${reason}`,
+      }).unwrap();
+      setShowReportModal(false);
+      ShowAlertMessage("Report received. Our moderation team reviews all reports within 24 hours.", popTypes.success);
+    } catch (err: any) {
+      ShowAlertMessage(err?.data?.message || "Failed to submit report", popTypes.error);
+    }
+  };
 
   // ─── Handlers ──────────────────────────────────────────────
 
@@ -569,6 +617,74 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             >
               {isSending ? "Sending..." : "Send Request"}
             </Button>
+
+            {/* Safety & UGC Actions (Apple Guideline 1.2.0) */}
+            <View style={styles.ugcActionsRow}>
+              <TouchableOpacity
+                style={styles.ugcBtn}
+                onPress={() => setShowReportModal(true)}
+              >
+                <Flag size={14} color="#EF4444" style={{ marginRight: 6 }} />
+                <Text style={styles.ugcBtnTextReport}>Report Profile</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.ugcBtn}
+                onPress={handleBlockUser}
+              >
+                <Ban size={14} color="#94A3B8" style={{ marginRight: 6 }} />
+                <Text style={styles.ugcBtnTextBlock}>Block User</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ─── UGC REPORT MODAL ─── */}
+      <Modal visible={showReportModal} transparent animationType="fade">
+        <View style={styles.reportModalOverlay}>
+          <View style={styles.reportModalContent}>
+            <View style={styles.reportModalHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Flag size={20} color="#EF4444" />
+                <Text style={styles.reportModalTitle}>Report Profile</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowReportModal(false)} style={{ padding: 4 }}>
+                <X color={colors.textPrimary} size={20} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.reportModalSub}>
+              Select a reason for reporting {selectedUser?.displayName}. Reports are strictly confidential and investigated within 24 hours.
+            </Text>
+
+            <View style={{ marginVertical: 12 }}>
+              {[
+                "Inappropriate Profile Photo",
+                "Nudity or Sexual Content",
+                "Harassment, Bullying, or Hate Speech",
+                "Fake Profile or Impersonation",
+                "Suspected Underage Account (< 18)",
+                "Spam or Commercial Solicitation",
+                "Other Policy Violation",
+              ].map((reason) => (
+                <TouchableOpacity
+                  key={reason}
+                  style={styles.reportReasonItem}
+                  onPress={() => handleReportSubmit(reason)}
+                  disabled={isSubmittingReport}
+                >
+                  <Text style={styles.reportReasonText}>{reason}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.cancelReportBtn}
+              onPress={() => setShowReportModal(false)}
+            >
+              <Text style={styles.cancelReportBtnText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -581,6 +697,91 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
 // ═══════════════════════════════════════════════════════════════
 
 const styles = StyleSheet.create({
+  // UGC Safety styles (Apple Guideline 1.2.0)
+  ugcActionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
+  },
+  ugcBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+  ugcBtnTextReport: {
+    color: "#EF4444",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  ugcBtnTextBlock: {
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  reportModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  reportModalContent: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+  },
+  reportModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  reportModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  reportModalSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  reportReasonItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 10,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
+  },
+  reportReasonText: {
+    fontSize: 13,
+    color: colors.textPrimary,
+    fontWeight: "500",
+  },
+  cancelReportBtn: {
+    alignItems: "center",
+    paddingVertical: 10,
+    marginTop: 6,
+  },
+  cancelReportBtnText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontWeight: "600",
+  },
   // ── Header ──
   header: {
     flexDirection: "row",

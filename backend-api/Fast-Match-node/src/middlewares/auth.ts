@@ -43,7 +43,14 @@ export const verifyToken = async (req: Request, res: Response, next: NextFunctio
 
         // Check if the session matches the one in DB (Single Session Enforcement)
         if (userDetails.loginSessionId && payload.loginSessionId && userDetails.loginSessionId !== payload.loginSessionId) {
-            return res.status(constants.diffDevice || 402).send(responseEncryptor(req, false, message.loggedInAnotherDevice));
+            return res.status(401).send(responseEncryptor(req, false, message.loggedInAnotherDevice, { sessionExpired: true }));
+        }
+
+        // Auto-downgrade expired subscription
+        if (userDetails.isPremium === 'premium' && userDetails.subscriptionExpiresAt && new Date(userDetails.subscriptionExpiresAt).getTime() < Date.now()) {
+            userDetails.isPremium = 'free';
+            userDetails.subscriptionPlan = null;
+            await User.updateOne({ _id: userDetails._id }, { $set: { isPremium: 'free', subscriptionPlan: null } });
         }
 
         req.user = userDetails;

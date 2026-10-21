@@ -7,7 +7,7 @@ import UseInternetConnectivity from "./useInternetConnectivity";
 import { socket } from "./socket";
 import { AppView } from "../types";
 import { IMAGE_URL } from "../config/env";
-import { ShowAlertMessage, popTypes } from "../helpers/commonFunctions";
+import { ShowAlertMessage, popTypes, onLogout } from "../helpers/commonFunctions";
 
 const SocketConnection = ({ setView }) => {
   const { token } = useSelector((state) => state.persist);
@@ -104,6 +104,12 @@ const SocketConnection = ({ setView }) => {
         }
       });
 
+      socket.on("force_logout", (data) => {
+        console.log("🚨 [Global] force_logout received:", data);
+        onLogout();
+        ShowAlertMessage(data?.message || "Your account was logged into on another device. You have been logged out.", popTypes.error);
+      });
+
       socket.on("connect_error", (error) => {
         console.error("Socket connection error:", error);
       });
@@ -118,6 +124,7 @@ const SocketConnection = ({ setView }) => {
       console.log(token, "Cleaning up socket connection...");
       socket.off("connect_error");
       socket.off("connect");
+      socket.off("force_logout");
       socket.off("new-message-notification");
 
       socket.off("incoming-match-canceled");

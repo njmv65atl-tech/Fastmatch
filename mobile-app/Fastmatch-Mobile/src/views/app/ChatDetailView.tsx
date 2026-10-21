@@ -413,13 +413,14 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
       return true;
     };
 
+    let subscription: any = null;
     if (Platform.OS === "android") {
-      BackHandler.addEventListener("hardwareBackPress", handleBackPress);
+      subscription = BackHandler.addEventListener("hardwareBackPress", handleBackPress);
     }
 
     return () => {
-      if (Platform.OS === "android") {
-        BackHandler.removeEventListener("hardwareBackPress", handleBackPress);
+      if (subscription && typeof subscription.remove === "function") {
+        subscription.remove();
       }
     };
   }, [onBack]);

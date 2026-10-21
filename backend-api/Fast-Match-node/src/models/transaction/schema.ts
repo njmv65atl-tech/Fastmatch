@@ -10,13 +10,20 @@ export const TransactionSchema = new Schema<TransactionInterface>({
     },
     type: {
         type: String,
-        enum: ['purchase', 'gift_sent', 'gift_received', 'super_match', 'rewind', 'daily_reward', 'converted_gift'],
+        enum: ['purchase', 'buy_coin', 'subscription', 'gift_sent', 'gift_received', 'super_match', 'rewind', 'daily_reward', 'converted_gift', 'trial'],
         required: true
     },
     amount: {
         type: Number,
         required: true
     },
+    purchaseToken: {
+        type: String,
+        default: null,
+        sparse: true,
+        index: true,
+    },
+    productId: stringType(false),
     description: stringType(false),
     relatedUserId: {
         type: Schema.Types.ObjectId,

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { userSocketMap } from '@config/socket';
+import { userSocketMap, forceLogoutUser } from '@config/socket';
+import { randomUUID } from 'crypto';
 import { userConstant, authConstant, constants } from '@config/constant/index';
 import authServices from '@services/auth.services';
 import { ResponseHandler } from '@config/responseHandler';
@@ -17,6 +18,7 @@ import SupportTicket from '@models/supportTicket';
 import Coupon from '@models/coupon';
 import Pricing from '@models/pricing';
 import { sendEmail } from '@helpers/email';
+import { applyFreeTrialIfEligible } from '@services/subscriptionWatcher';
 import { RekognitionClient, DetectModerationLabelsCommand } from "@aws-sdk/client-rekognition";
 import notificationServices from '@services/notification.services';
 import { createCircuitBreaker } from '@config/circuitBreaker';
@@ -76,6 +78,7 @@ class UserController extends ResponseHandler {
         this.getUserSupportTickets = this.getUserSupportTickets.bind(this);
         this.replySupportTicket = this.replySupportTicket.bind(this);
         this.applyCoupon = this.applyCoupon.bind(this);
+        this.redeemCoupon = this.redeemCoupon.bind(this);
         this.getAppPricing = this.getAppPricing.bind(this);
         this.verifyPurchase = this.verifyPurchase.bind(this);
     }
@@ -837,6 +840,8 @@ class UserController extends ResponseHandler {
             let user = await User.findOne({ email: cleanEmail });
             let isNewUser = false;
 
+            const loginSessionId = randomUUID();
+
             if (!user) {
                 isNewUser = true;
                 user = await User.create({
@@ -851,24 +856,47 @@ class UserController extends ResponseHandler {
                     isVerified: true,
                     isProfileComplete: false,
                     role: 'user',
-                    isPremium: 'free'
+                    isPremium: 'free',
+                    loginSessionId,
+                    isLogin: true
                 });
+                // Grant VIP free trial if enabled
+                await applyFreeTrialIfEligible(user._id);
             } else {
+                user.loginSessionId = loginSessionId;
+                user.isLogin = true;
                 if (deviceId) user.deviceId = deviceId;
                 if (deviceName) user.deviceName = deviceName;
                 if (platform) user.platform = platform;
                 if (fcmToken) user.fcmToken = fcmToken;
                 if (!user.isVerified) user.isVerified = true;
+                // Auto-downgrade if expired
+                if (user.isPremium === 'premium' && user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt).getTime() < Date.now()) {
+                    user.isPremium = 'free';
+                    user.subscriptionPlan = null;
+                }
                 // If existing record was saved with Apple relay hash as name, clean it up
                 if (isRelayOrAppleId(user.fullName)) user.fullName = cleanFullName || "User";
                 if (isRelayOrAppleId(user.displayName)) user.displayName = cleanDisplayName || "User";
                 await user.save();
             }
 
-            const token = this.jwt.generateToken({ _id: user._id as Types.ObjectId, password: null }, false);
+            // Invalidate/disconnect previous device session
+            forceLogoutUser((user._id as Types.ObjectId).toString());
+
+            const freshUser = await userRepos.getUserDetails(user._id as Types.ObjectId);
+
+            const token = this.jwt.generateToken({
+                _id: user._id as Types.ObjectId,
+                password: null,
+                loginSessionId,
+                deviceId,
+                deviceName,
+                platform
+            }, false);
             return res.status(200).send(responseEncryptor(req, true, isNewUser ? "Account created via social login" : "Signed in successfully", {
                 token,
-                user
+                user: freshUser || user
             }));
         } catch (error: any) {
             return res.status(500).send(responseEncryptor(req, false, error.message));
@@ -998,6 +1026,68 @@ class UserController extends ResponseHandler {
         }
     }
 
+    async redeemCoupon(req: Request, res: Response) {
+        try {
+            const currentUserId = req.user._id;
+            const { code, plan } = req.body;
+            if (!code) {
+                return res.status(400).send(responseEncryptor(req, false, "Coupon code is required"));
+            }
+
+            const coupon = await Coupon.findOne({ code: code.toUpperCase().trim(), isActive: true });
+            if (!coupon) {
+                return res.status(404).send(responseEncryptor(req, false, "Invalid or inactive promo code"));
+            }
+
+            if (coupon.expiresAt && new Date() > new Date(coupon.expiresAt)) {
+                return res.status(400).send(responseEncryptor(req, false, "This promo code has expired"));
+            }
+
+            if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) {
+                return res.status(400).send(responseEncryptor(req, false, "This promo code has reached maximum redemptions"));
+            }
+
+            if (coupon.applicablePlan !== 'all' && plan && coupon.applicablePlan !== plan.toLowerCase()) {
+                return res.status(400).send(responseEncryptor(req, false, `This code is only applicable to the ${coupon.applicablePlan} plan`));
+            }
+
+            if (coupon.discountPercent !== 100) {
+                return res.status(400).send(responseEncryptor(req, false, "Only 100% discount VIP coupons can be redeemed directly. For store-billed discounts, redeem a Google Play Promo Code in Google Pay checkout."));
+            }
+
+            const user = await User.findById(currentUserId);
+            if (!user) {
+                return res.status(404).send(responseEncryptor(req, false, "User not found"));
+            }
+
+            const isYearly = plan && plan.toLowerCase() === 'yearly';
+            user.isPremium = 'premium';
+            user.subscriptionPlan = isYearly ? 'yearly' : 'monthly';
+            const expires = new Date();
+            if (isYearly) {
+                expires.setFullYear(expires.getFullYear() + 1);
+            } else {
+                expires.setMonth(expires.getMonth() + 1);
+            }
+            user.subscriptionExpiresAt = expires;
+            await user.save();
+
+            coupon.usedCount = (coupon.usedCount || 0) + 1;
+            await coupon.save();
+
+            await Transaction.create({
+                userId: user._id,
+                type: 'subscription',
+                amount: 0,
+                description: `VIP Premium unlocked via 100% discount promo code (${coupon.code})`,
+            });
+
+            return res.status(200).send(responseEncryptor(req, true, "VIP Premium activated successfully!", user));
+        } catch (error: any) {
+            return res.status(500).send(responseEncryptor(req, false, error.message));
+        }
+    }
+
     async getAppPricing(req: Request, res: Response) {
         try {
             let pricing = await Pricing.findOne();
@@ -1032,15 +1122,43 @@ class UserController extends ResponseHandler {
                 return res.status(404).send(responseEncryptor(req, false, "User not found"));
             }
 
+            const tokenToVerify = purchaseToken || receipt;
+
+            // Deduplication: If this purchaseToken was already processed, do NOT credit again
+            if (tokenToVerify) {
+                const existingTx = await Transaction.findOne({ purchaseToken: tokenToVerify });
+                if (existingTx) {
+                    console.log(`[verifyPurchase] Duplicate purchaseToken already processed: ${tokenToVerify}. Skipping credit.`);
+                    if (productId === 'com.fastmatch.premium.monthly' || productId === 'com.fastmatch.premium.yearly') {
+                        user.isPremium = 'premium';
+                        user.subscriptionPlan = productId === 'com.fastmatch.premium.yearly' ? 'yearly' : 'monthly';
+                        await user.save();
+                    }
+                    return res.status(200).send(responseEncryptor(req, true, "Purchase already verified and active", user));
+                }
+            }
+
             // Subscription products
             if (productId === 'com.fastmatch.premium.monthly' || productId === 'com.fastmatch.premium.yearly') {
+                const isYearly = productId === 'com.fastmatch.premium.yearly';
                 user.isPremium = 'premium';
+                user.subscriptionPlan = isYearly ? 'yearly' : 'monthly';
+                const now = new Date();
+                const expires = new Date(now);
+                if (isYearly) {
+                    expires.setFullYear(expires.getFullYear() + 1);
+                } else {
+                    expires.setMonth(expires.getMonth() + 1);
+                }
+                user.subscriptionExpiresAt = expires;
                 await user.save();
 
                 await Transaction.create({
                     userId: user._id,
                     type: 'subscription',
-                    amount: productId === 'com.fastmatch.premium.yearly' ? 90 : 9,
+                    amount: 0, // Subscription confers VIP status, not wallet coins
+                    purchaseToken: tokenToVerify || null,
+                    productId,
                     description: `Premium subscription unlocked via ${platform === 'ios' ? 'Apple App Store' : 'Google Play'} (${productId})`,
                 });
 
@@ -1063,21 +1181,27 @@ class UserController extends ResponseHandler {
                 return res.status(400).send(responseEncryptor(req, false, "Unknown product ID"));
             }
 
-            const maxWalletLimit = 50000;
             const currentBalance = user.walletBalance || 0;
-            user.walletBalance = Math.min(maxWalletLimit, currentBalance + coinsToAdd);
+            user.walletBalance = currentBalance + coinsToAdd;
             await user.save();
 
             await Transaction.create({
                 userId: user._id,
-                type: 'buy_coin',
+                type: 'purchase',
                 amount: coinsToAdd,
+                purchaseToken: tokenToVerify || null,
+                productId,
                 description: `${coinsToAdd} Coins purchased via ${platform === 'ios' ? 'Apple App Store' : 'Google Play'} ($${pricePaid})`,
             });
 
             return res.status(200).send(responseEncryptor(req, true, `Successfully added ${coinsToAdd} coins to your wallet!`, user));
         } catch (error: any) {
             console.error("verifyPurchase Error:", error);
+            if (error?.code === 11000) {
+                // Duplicate key error from MongoDB index
+                const user = await User.findById(req.user._id);
+                return res.status(200).send(responseEncryptor(req, true, "Purchase already processed", user));
+            }
             return res.status(500).send(responseEncryptor(req, false, error.message));
         }
     }

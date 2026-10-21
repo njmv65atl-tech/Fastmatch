@@ -1,6 +1,7 @@
 import * as React from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   BackHandler,
   Image,
@@ -16,7 +17,7 @@ import {
   Dimensions,
 } from "react-native";
 import { AppView, User } from "../../types";
-import { SkipForward, Video, ArrowLeft, Star, AlertTriangle, MapPin, Sparkles } from "lucide-react-native";
+import { SkipForward, Video, ArrowLeft, Star, AlertTriangle, MapPin, Sparkles, ShieldAlert, Flag, Ban } from "lucide-react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Svg, { Circle as SvgCircle } from "react-native-svg";
 
@@ -27,7 +28,8 @@ import { saveUser } from "../../utils/storage";
 import { IMAGE_URL } from "../../config/env";
 import { useDispatch } from "react-redux";
 import { pushSkippedUser } from "../../redux/slices/globalSlice";
-import { useRateMatchMutation } from "../../redux/services/auth";
+import { useRateMatchMutation, useUserReportMutation, useBlockUserMutation } from "../../redux/services/auth";
+import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import LinearGradient from "react-native-linear-gradient";
 import { UserAvatar } from "../../components/UserAvatar";
 
@@ -420,6 +422,58 @@ export const MatchFoundView: React.FC<CoreProps> = ({
     }
   }, [handleGlobalStopSearch, dispatch, searchPayload]);
 
+  // ─── UGC Safety: Report & Block Match (Apple Review Guideline 1.2.0) ──
+  const [userReportApi] = useUserReportMutation();
+  const [blockUserApi] = useBlockUserMutation();
+
+  const handleReportAndBlockMatch = () => {
+    const remote = remoteUserRef.current;
+    const mid = matchIdRef.current;
+    if (!remote && !mid) return;
+    const targetUserId = remote?._id || remote?.id;
+    const targetName = matchName || "User";
+
+    Alert.alert(
+      "Safety & Moderation",
+      `Report or block ${targetName}? FastMatch enforces zero tolerance for objectionable content and abusive behavior.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Report Objectionable Content",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (targetUserId) {
+                await userReportApi({
+                  reportedUser: targetUserId,
+                  matchId: mid,
+                  category: ["inappropriate_match"],
+                  message: "Inappropriate match reported prior to call",
+                }).unwrap();
+              }
+              ShowAlertMessage("Report received. Our moderation team reviews all reports within 24 hours.", popTypes.success);
+            } catch (e) {}
+            handleDecline();
+          },
+        },
+        {
+          text: "Block & Skip User",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (targetUserId) {
+                await blockUserApi({ targetUserId }).unwrap();
+                socket.emit("blockUser", { targetId: targetUserId });
+              }
+              ShowAlertMessage(`${targetName} has been blocked.`, popTypes.info);
+            } catch (e) {}
+            handleDecline();
+          },
+        },
+      ]
+    );
+  };
+
   const [showLowRatingModal, setShowLowRatingModal] = useState(false);
 
   const handleAccept = () => {
@@ -571,6 +625,11 @@ export const MatchFoundView: React.FC<CoreProps> = ({
           {/* Back button */}
           <TouchableOpacity onPress={handleGlobalStopSearch} style={styles.matchBackBtn}>
             <ArrowLeft color={colors.white} size={20} />
+          </TouchableOpacity>
+
+          {/* UGC Safety: Report & Block Match (Apple Guideline 1.2.0) */}
+          <TouchableOpacity onPress={handleReportAndBlockMatch} style={styles.matchReportBtn} activeOpacity={0.8}>
+            <ShieldAlert color="#EF4444" size={20} />
           </TouchableOpacity>
 
           {/* Top badge */}
@@ -804,6 +863,20 @@ const styles = StyleSheet.create({
 
   // ── Match Found ──
   matchWrap: { flex: 1 },
+  matchReportBtn: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 20,
+  },
   matchBackBtn: {
     position: "absolute",
     top: 8,

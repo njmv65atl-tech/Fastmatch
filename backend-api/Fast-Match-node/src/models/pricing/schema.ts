@@ -16,5 +16,11 @@ export const PricingSchema = new Schema<PricingInterface>({
             { id: "com.fastmatch.coins_500", amount: 500, price: 4.99, bonus: 50 },
             { id: "com.fastmatch.coins_1000", amount: 1000, price: 9.99, bonus: 200 }
         ]
+    },
+    freeTrial: {
+        enabled: { type: Boolean, default: false },
+        durationDays: { type: Number, default: 3 },
+        bonusCoins: { type: Number, default: 0 },
+        trialTitle: { type: String, default: "VIP Free Trial" }
     }
 }, { timestamps: true });

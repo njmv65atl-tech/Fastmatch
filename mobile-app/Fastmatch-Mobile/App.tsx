@@ -11,6 +11,7 @@ import {
   FriendsView,
   FavoritesView,
   SupportView,
+  MembershipDetailsView,
 } from "./src/views/AppViews";
 import {
   Alert,
@@ -25,6 +26,7 @@ import {
   Image,
   ScrollView,
   BackHandler,
+  ToastAndroid,
 } from "react-native";
 import { AppView, Gender, User, UserRole } from "./src/types";
 import {
@@ -83,7 +85,7 @@ import { socket } from "./src/socket/socket";
 import { useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
 import { useRateMatchMutation, useUpgradePremiumMockMutation, useVerifyPurchaseMutation } from "./src/redux/services/auth";
-import { setupIAP, purchaseErrorListener, purchaseUpdatedListener, finishTransaction, closeIAPConnection, subscribeToProduct } from "./src/utils/iap";
+import { setupIAP, purchaseErrorListener, purchaseUpdatedListener, finishTransaction, closeIAPConnection, subscribeToProduct, restoreActivePurchases } from "./src/utils/iap";
 const { width } = Dimensions.get("window");
 const App: React.FC = () => {
 
@@ -168,28 +170,71 @@ const App: React.FC = () => {
     return [AppView.WELCOME];
   });
 
+  const currentViewRef = React.useRef(currentView);
+  currentViewRef.current = currentView;
+  const viewHistoryRef = React.useRef(viewHistory);
+  viewHistoryRef.current = viewHistory;
+
   const handleGoBack = React.useCallback(() => {
     // If in active video chat, handled by video chat component
-    if (currentView === AppView.VIDEO_CHAT) {
+    if (currentViewRef.current === AppView.VIDEO_CHAT) {
       return true;
     }
 
-    // If user is authenticated
-    if (token) {
-      // If at HOME or ADMIN_DASHBOARD, allow default app exit
-      if (currentView === AppView.HOME || currentView === AppView.ADMIN_DASHBOARD) {
-        return false;
-      }
-      // If profile is incomplete, keep on PROFILE_SETUP
-      if ((!completeProfile || !user?.isProfileComplete) && currentView === AppView.PROFILE_SETUP) {
-        return false;
-      }
+    // Dismiss rating modal if open
+    if (showRatingModal) {
+      setShowRatingModal(false);
+      return true;
+    }
 
-      // Pop from history if more than 1 view
-      if (viewHistory.length > 1) {
-        const nextHistory = [...viewHistory];
-        nextHistory.pop(); // remove current view
+    const current = currentViewRef.current;
+    const history = viewHistoryRef.current;
 
+    // Exit confirmation prompt on root HOME or WELCOME screens
+    if (current === AppView.HOME || current === AppView.WELCOME || current === AppView.ADMIN_DASHBOARD) {
+      Alert.alert(
+        "Exit FastMatch",
+        "Are you sure you want to exit the app?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Exit", style: "destructive", onPress: () => BackHandler.exitApp() }
+        ]
+      );
+      return true;
+    }
+
+    // If on auth sub-views, go back to WELCOME instead of closing the app
+    if (
+      current === AppView.LOGIN ||
+      current === AppView.SIGNUP ||
+      current === AppView.FORGOT_PASSWORD ||
+      current === AppView.RESET_PASSWORD ||
+      current === AppView.OTP
+    ) {
+      setCurrentView(AppView.WELCOME);
+      setViewHistory([AppView.WELCOME]);
+      return true;
+    }
+
+    // If profile is incomplete, keep on PROFILE_SETUP
+    if (token && (!completeProfile || !user?.isProfileComplete) && current === AppView.PROFILE_SETUP) {
+      Alert.alert(
+        "Exit FastMatch",
+        "Are you sure you want to exit the app?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Exit", style: "destructive", onPress: () => BackHandler.exitApp() }
+        ]
+      );
+      return true;
+    }
+
+    // Pop from history if more than 1 view
+    if (history.length > 1) {
+      const nextHistory = [...history];
+      nextHistory.pop(); // remove current view
+
+      if (token) {
         // Filter out any auth views that shouldn't be reached when logged in
         let prevView = nextHistory[nextHistory.length - 1];
         while (
@@ -210,44 +255,36 @@ const App: React.FC = () => {
           setCurrentView(prevView);
           return true;
         }
+      } else {
+        const prevView = nextHistory[nextHistory.length - 1];
+        if (prevView) {
+          setViewHistory(nextHistory);
+          setCurrentView(prevView);
+          return true;
+        }
       }
+    }
 
-      // Fallback: If on any inner screen and history is exhausted, navigate safely to HOME
+    // Fallback: If on any inner screen and history is exhausted, navigate safely to HOME or WELCOME
+    if (token) {
       setCurrentView(AppView.HOME);
       setViewHistory([AppView.HOME]);
-      return true;
+    } else {
+      setCurrentView(AppView.WELCOME);
+      setViewHistory([AppView.WELCOME]);
     }
-
-    // If user is NOT authenticated
-    if (viewHistory.length > 1) {
-      const nextHistory = [...viewHistory];
-      nextHistory.pop();
-      const prevView = nextHistory[nextHistory.length - 1];
-      setViewHistory(nextHistory);
-      setCurrentView(prevView);
-      return true;
-    }
-
-    // If at root unauthenticated view, allow default app exit
-    if (
-      currentView === AppView.WELCOME ||
-      currentView === AppView.LOGIN ||
-      currentView === AppView.SIGNUP ||
-      currentView === AppView.FORGOT_PASSWORD ||
-      currentView === AppView.RESET_PASSWORD
-    ) {
-      return false;
-    }
-
-    // Fallback for unauthenticated users
-    setCurrentView(AppView.WELCOME);
-    setViewHistory([AppView.WELCOME]);
     return true;
-  }, [currentView, viewHistory, token, completeProfile, user]);
+  }, [token, completeProfile, user, showRatingModal]);
+
+  const handleGoBackRef = React.useRef(handleGoBack);
+  handleGoBackRef.current = handleGoBack;
 
   React.useEffect(() => {
     const onBackPress = () => {
-      return handleGoBack();
+      if (handleGoBackRef.current) {
+        return handleGoBackRef.current();
+      }
+      return true;
     };
 
     const backHandler = BackHandler.addEventListener(
@@ -256,13 +293,16 @@ const App: React.FC = () => {
     );
 
     return () => backHandler.remove();
-  }, [handleGoBack]);
+  }, []);
 
   React.useEffect(() => {
     setDispatch(dispatch);
     notificationService.requestUserPermission();
     notificationService.createNotificationListeners();
   }, []);
+
+  const processingPurchasesRef = React.useRef<Set<string>>(new Set());
+  const completedPurchasesRef = React.useRef<Set<string>>(new Set());
 
   React.useEffect(() => {
     let purchaseUpdateSub: any = null;
@@ -274,34 +314,99 @@ const App: React.FC = () => {
       purchaseUpdateSub = purchaseUpdatedListener(async (purchase: any) => {
         console.log('purchaseUpdatedListener', purchase);
         const receipt = purchase.transactionReceipt || purchase.purchaseToken;
+        const token = purchase.purchaseToken || purchase.transactionId || receipt;
         const productId = purchase.productId || (purchase.productIds && purchase.productIds[0]);
-        if (receipt || productId) {
-          try {
-            const isSub = productId?.includes('premium');
-            const verifyPayload = {
-              productId: productId,
-              purchaseToken: purchase.purchaseToken || purchase.transactionId || receipt,
-              receipt: receipt,
-              platform: Platform.OS,
-            };
-            const res: any = await verifyPurchaseApi(verifyPayload).unwrap();
-            if (res?.data) {
-              setUser(res.data);
-              dispatch(setGlobalUser(res.data));
-            }
-            await finishTransaction({ purchase, isConsumable: !isSub });
-            ShowAlertMessage(res?.message || "Purchase successful!", popTypes.success);
-          } catch (ackErr: any) {
-            console.warn('IAP verification error:', ackErr);
-            ShowAlertMessage(ackErr?.data?.message || "Purchase verification failed.", popTypes.error);
+        const isSub = productId?.includes('premium');
+
+        if (!token || !productId) return;
+
+        // Prevent processing the exact same token concurrently or repeatedly in this session
+        if (processingPurchasesRef.current.has(token) || completedPurchasesRef.current.has(token)) {
+          console.log('[IAP] Purchase already processed or in-flight in session, skipping:', token);
+          return;
+        }
+
+        processingPurchasesRef.current.add(token);
+
+        try {
+          const verifyPayload = {
+            productId: productId,
+            purchaseToken: token,
+            receipt: receipt,
+            platform: Platform.OS,
+          };
+          const res: any = await verifyPurchaseApi(verifyPayload).unwrap();
+          if (res?.data) {
+            setUser(res.data);
+            dispatch(setGlobalUser(res.data));
           }
+          await finishTransaction({ purchase, isConsumable: !isSub });
+          completedPurchasesRef.current.add(token);
+
+          // Only display success banner if it's not a duplicate/re-verification
+          const msg = res?.message || "";
+          if (msg && !msg.toLowerCase().includes("already")) {
+            ShowAlertMessage(msg, popTypes.success);
+          }
+        } catch (ackErr: any) {
+          console.warn('IAP verification error:', ackErr);
+          if (!isSub) {
+            try {
+              await finishTransaction({ purchase, isConsumable: true });
+            } catch (fe) {
+              console.warn('Failed to finish consumable transaction:', fe);
+            }
+          }
+          const errMsg = ackErr?.data?.message || "";
+          if (errMsg && !errMsg.toLowerCase().includes("already")) {
+            ShowAlertMessage(errMsg, popTypes.error);
+          }
+        } finally {
+          processingPurchasesRef.current.delete(token);
         }
       });
 
-      purchaseErrorSub = purchaseErrorListener((error) => {
+      purchaseErrorSub = purchaseErrorListener(async (error: any) => {
         console.warn('purchaseErrorListener', error);
         if (error && error.responseCode !== 2) { // 2 is user cancelled
-          ShowAlertMessage("Purchase failed", popTypes.error);
+          const errCode = error?.responseCode;
+          const errMsg = (error?.message || error?.debugMessage || '').toLowerCase();
+          if (errCode === 7 || errMsg.includes('already') || errMsg.includes('owned')) {
+            console.log('[IAP] Item already owned in Google Play. Attempting auto-restore...');
+            try {
+              const purchases = await restoreActivePurchases();
+              let restored = false;
+              for (const p of purchases) {
+                const prodId = p.productId || (p as any).productIds?.[0];
+                const receipt = p.transactionReceipt || p.purchaseToken;
+                if (prodId?.includes('premium') && receipt) {
+                  const verifyPayload = {
+                    productId: prodId,
+                    purchaseToken: p.purchaseToken || p.transactionId || receipt,
+                    receipt: receipt,
+                    platform: Platform.OS,
+                  };
+                  const res: any = await verifyPurchaseApi(verifyPayload).unwrap();
+                  if (res?.data) {
+                    setUser(res.data);
+                    dispatch(setGlobalUser(res.data));
+                    restored = true;
+                    completedPurchasesRef.current.add(verifyPayload.purchaseToken);
+                  }
+                }
+              }
+              if (restored) {
+                ShowAlertMessage("Google Play VIP subscription restored successfully!", popTypes.success);
+                setCurrentView(AppView.MEMBERSHIP_DETAILS);
+                return;
+              }
+            } catch (autoErr) {
+              console.warn('[IAP] Auto-restore on already_owned error:', autoErr);
+            }
+            ShowAlertMessage("Google Play: You already have an active FastMatch subscription. Manage it in Google Play.", popTypes.info);
+            return;
+          }
+          ShowAlertMessage(error?.message || "Purchase failed", popTypes.error);
         }
       });
     } catch (iapInitErr) {
@@ -385,9 +490,12 @@ const App: React.FC = () => {
     }
 
     setViewHistory((prev) => {
-      // If navigating to HOME from auth views, reset stack
-      if (view === AppView.HOME && (prev[prev.length - 1] === AppView.LOGIN || prev[prev.length - 1] === AppView.SIGNUP || prev[prev.length - 1] === AppView.WELCOME)) {
+      // If navigating to root views, reset stack
+      if (view === AppView.HOME) {
         return [AppView.HOME];
+      }
+      if (view === AppView.WELCOME) {
+        return [AppView.WELCOME];
       }
       if (prev[prev.length - 1] === view) {
         return prev;
@@ -425,12 +533,12 @@ const App: React.FC = () => {
     switch (currentView) {
 
       case AppView.WELCOME:
-        return <WelcomeView setView={setCurrentView} setUser={setUser} />;
+        return <WelcomeView setView={handleSetView} setUser={setUser} />;
 
       case AppView.LOGIN:
         return (
           <LoginView
-            setView={setCurrentView}
+            setView={handleSetView}
             login={handleLogin}
             setUser={setUser}
           />
@@ -439,7 +547,7 @@ const App: React.FC = () => {
       case AppView.SIGNUP:
         return (
           <SignupView
-            setView={setCurrentView}
+            setView={handleSetView}
             login={handleLogin}
             setUser={setUser}
           />
@@ -448,7 +556,7 @@ const App: React.FC = () => {
       case AppView.OTP:
         return (
           <OTPView
-            setView={setCurrentView}
+            setView={handleSetView}
             login={handleLogin}
             user={user}
             type={otpContext.type}
@@ -461,7 +569,7 @@ const App: React.FC = () => {
       case AppView.PROFILE_SETUP:
         return (
           <ProfileSetupView
-            setView={setCurrentView}
+            setView={handleSetView}
             login={handleLogin}
             user={user}
             setUser={setUser}
@@ -474,7 +582,7 @@ const App: React.FC = () => {
             setView={handleSetView}
             onOtpRequested={(email) => {
               setOtpContext({ type: "forgot", email });
-              setCurrentView(AppView.OTP);
+              handleSetView(AppView.OTP);
             }}
           />
         );
@@ -489,7 +597,7 @@ const App: React.FC = () => {
 
       case AppView.HOME:
         return (
-          <HomeView user={user} setView={setCurrentView} setUser={setUser} />
+          <HomeView user={user} setView={handleSetView} setUser={setUser} />
         );
 
       case AppView.MATCH_FILTERS:
@@ -505,7 +613,7 @@ const App: React.FC = () => {
         return (
           <SearchingView
             user={user!}
-            setView={setCurrentView}
+            setView={handleSetView}
             setUser={setUser}
           />
         );
@@ -539,7 +647,7 @@ const App: React.FC = () => {
       case AppView.CHAT_INBOX:
         return (
           <ChatInboxView
-            setView={(view) => setCurrentView(view)}
+            setView={handleSetView}
             onSelectUser={(id, name, avatarUrl, unreadCount, item) =>
               handleSetView(AppView.CHAT_DETAIL, {
                 userId: id,
@@ -564,7 +672,7 @@ const App: React.FC = () => {
             currentUserId={currentUser?._id}
             unreadCount={selectedChatUnreadCount}
             chatUser={selectedChatUser}
-            onBack={() => setCurrentView(AppView.CHAT_INBOX)}
+            onBack={handleGoBack}
           />
         );
 
@@ -589,6 +697,7 @@ const App: React.FC = () => {
           <SubscriptionView
             setView={handleSetView}
             onUpgrade={handleUpgrade}
+            onBack={handleGoBack}
           />
         );
 
@@ -609,7 +718,10 @@ const App: React.FC = () => {
         );
 
       case AppView.WALLET:
-        return <WalletView setView={handleSetView} />;
+        return <WalletView setView={handleSetView} onBack={handleGoBack} />;
+
+      case AppView.MEMBERSHIP_DETAILS:
+        return <MembershipDetailsView setView={handleSetView} onBack={handleGoBack} />;
 
       case AppView.MONETIZATION:
         return <MonetizationView setView={handleSetView} />;
@@ -671,7 +783,7 @@ const App: React.FC = () => {
         {renderView()}
 
         {showNav && (
-          <BottomNav currentView={currentView} setView={setCurrentView} />
+          <BottomNav currentView={currentView} setView={handleSetView} />
         )}
 
         <FlashMessage
