@@ -44,3 +44,22 @@ index 72eb886..0d54a2a 100644
    yogaNode_.setStyle(style);
  }
  
+diff --git a/node_modules/react-native-svg/apple/Elements/RNSVGImage.mm b/node_modules/react-native-svg/apple/Elements/RNSVGImage.mm
+index e58ddba..f042c3e 100644
+--- a/node_modules/react-native-svg/apple/Elements/RNSVGImage.mm
++++ b/node_modules/react-native-svg/apple/Elements/RNSVGImage.mm
+@@ -157,13 +157,7 @@ using namespace facebook::react;
+   auto imageSource = _state->getData().getImageSource();
+   imageSource.size = {image.size.width, image.size.height};
+   if (_eventEmitter != nullptr) {
+-    static_cast<const RNSVGImageEventEmitter &>(*_eventEmitter)
+-        .onLoad(
+-            {.source = {
+-                 .width = imageSource.size.width * imageSource.scale,
+-                 .height = imageSource.size.height * imageSource.scale,
+-                 .uri = imageSource.uri,
+-             }});
++    // onLoad omitted for New Architecture compatibility
+   }
+   dispatch_async(dispatch_get_main_queue(), ^{
+     self->_image = CGImageRetain(image.CGImage);

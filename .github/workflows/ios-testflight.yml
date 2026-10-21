@@ -64,6 +64,19 @@ jobs:
                 console.log("RNSVGLayoutableShadowNode.cpp already patched.");
               }
             }
+
+            // 3. Disable onLoad in RNSVGImage.mm for New Architecture compatibility
+            const imgFile = "node_modules/react-native-svg/apple/Elements/RNSVGImage.mm";
+            if (fs.existsSync(imgFile)) {
+              let ic = fs.readFileSync(imgFile, "utf8");
+              if (ic.includes(".onLoad(")) {
+                ic = ic.replace(/static_cast<const RNSVGImageEventEmitter &>\(\*_eventEmitter\)[\s\S]*?\.onLoad[\s\S]*?\}\);/g, "// onLoad disabled for New Architecture");
+                fs.writeFileSync(imgFile, ic);
+                console.log("Verified: disabled onLoad in RNSVGImage.mm");
+              } else {
+                console.log("RNSVGImage.mm already patched.");
+              }
+            }
           '
 
       - name: Clean Metro and React Native caches
