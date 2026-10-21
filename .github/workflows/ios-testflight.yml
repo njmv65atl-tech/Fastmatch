@@ -46,6 +46,16 @@ jobs:
           rm -rf ~/Library/Developer/Xcode/DerivedData/*
           rm -f Podfile.lock
           pod install --repo-update
+
+      - name: Patch fmt for Xcode 16 C++20 consteval compatibility
+        working-directory: mobile-app/Fastmatch-Mobile/ios
+        run: |
+          echo "Patching any remaining fmt headers for Xcode 16..."
+          find Pods -name "base.h" -o -name "format.h" -o -name "format-inl.h" 2>/dev/null | grep fmt | while read f; do
+            echo "Patching $f..."
+            sed -i '' 's/#\([[:space:]]*\)define FMT_USE_CONSTEVAL 1/#\1define FMT_USE_CONSTEVAL 0/g' "$f" || true
+            sed -i '' 's/#define FMT_USE_CONSTEVAL 1/#define FMT_USE_CONSTEVAL 0/g' "$f" || true
+          done
           
       - name: Run Fastlane to TestFlight
         working-directory: mobile-app/Fastmatch-Mobile/ios

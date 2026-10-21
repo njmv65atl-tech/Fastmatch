@@ -63,10 +63,39 @@ target 'FastMatch' do
         config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
         config.build_settings['WARNING_CFLAGS'] = '-Wno-everything'
         
+        # Disable FMT_USE_CONSTEVAL for Xcode 16 / Apple Clang C++20 consteval compatibility
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'FMT_USE_CONSTEVAL=0'
+
         # Fix for Undefined symbol: __swift_FORCE_LOAD_$_swiftCompatibility56 on newer Xcode versions
         config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)']
         config.build_settings['OTHER_LDFLAGS'] << '-Wl,-U,__swift_FORCE_LOAD_$_swiftCompatibility56'
         config.build_settings['OTHER_LDFLAGS'] << '-Wl,-U,__swift_FORCE_LOAD_$_swiftCompatibility51'
+      end
+
+      # Specific fix for fmt pod: compile with C++17 to avoid Xcode 16 consteval error
+      if target.name == 'fmt'
+        target.build_configurations.each do |config|
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        end
+      end
+    end
+
+    # Ensure FMT_USE_CONSTEVAL is disabled in fmt header files for Xcode 16 compatibility
+    Dir.glob(File.join(installer.sandbox.root, '**', 'fmt', '**', '*.h')).each do |header|
+      begin
+        content = File.read(header)
+        modified = false
+        if content.include?('FMT_USE_CONSTEVAL 1')
+          content = content.gsub(/#\s*define\s+FMT_USE_CONSTEVAL\s+1/, '#define FMT_USE_CONSTEVAL 0')
+          modified = true
+        end
+        if modified
+          File.write(header, content)
+          puts "Patched #{header} to set FMT_USE_CONSTEVAL 0"
+        end
+      rescue => e
+        puts "Error reading/patching #{header}: #{e}"
       end
     end
     
