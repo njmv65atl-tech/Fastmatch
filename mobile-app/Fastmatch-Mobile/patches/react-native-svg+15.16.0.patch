@@ -29,3 +29,18 @@ index 455f242..ad3ff04 100644
  #else
    if (self.onSvgLayout) {
      self.onSvgLayout(@{
+diff --git a/node_modules/react-native-svg/common/cpp/react/renderer/components/rnsvg/RNSVGLayoutableShadowNode.cpp b/node_modules/react-native-svg/common/cpp/react/renderer/components/rnsvg/RNSVGLayoutableShadowNode.cpp
+index 72eb886..0d54a2a 100644
+--- a/node_modules/react-native-svg/common/cpp/react/renderer/components/rnsvg/RNSVGLayoutableShadowNode.cpp
++++ b/node_modules/react-native-svg/common/cpp/react/renderer/components/rnsvg/RNSVGLayoutableShadowNode.cpp
+@@ -28,8 +28,8 @@ void RNSVGLayoutableShadowNode::updatePosition() {
+   auto style = yogaNode_.style();
+   style.setPositionType(yoga::PositionType::Absolute);
+   style.setPosition(yoga::Edge::All, yoga::Style::Length::points(0));
+-  style.setDimension(yoga::Dimension::Width, yoga::StyleSizeLength::percent(100));
+-  style.setDimension(yoga::Dimension::Height, yoga::StyleSizeLength::percent(100));
++  style.setDimension(yoga::Dimension::Width, yoga::StyleLength::percent(100));
++  style.setDimension(yoga::Dimension::Height, yoga::StyleLength::percent(100));
+   yogaNode_.setStyle(style);
+ }
+ 

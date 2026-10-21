@@ -38,6 +38,8 @@ jobs:
         run: |
           node -e '
             const fs = require("fs");
+
+            // 1. Disable onSvgLayout in RNSVGNode.mm if present
             const file = "node_modules/react-native-svg/apple/RNSVGNode.mm";
             if (fs.existsSync(file)) {
               let c = fs.readFileSync(file, "utf8");
@@ -47,6 +49,19 @@ jobs:
                 console.log("Verified: disabled onSvgLayout in RNSVGNode.mm");
               } else {
                 console.log("RNSVGNode.mm already patched.");
+              }
+            }
+
+            // 2. Fix StyleSizeLength -> StyleLength in RNSVGLayoutableShadowNode.cpp for Yoga in RN 0.77+
+            const shadowFile = "node_modules/react-native-svg/common/cpp/react/renderer/components/rnsvg/RNSVGLayoutableShadowNode.cpp";
+            if (fs.existsSync(shadowFile)) {
+              let sc = fs.readFileSync(shadowFile, "utf8");
+              if (sc.includes("StyleSizeLength")) {
+                sc = sc.replace(/yoga::StyleSizeLength::percent/g, "yoga::StyleLength::percent");
+                fs.writeFileSync(shadowFile, sc, "utf8");
+                console.log("Verified: replaced StyleSizeLength with StyleLength in RNSVGLayoutableShadowNode.cpp");
+              } else {
+                console.log("RNSVGLayoutableShadowNode.cpp already patched.");
               }
             }
           '
