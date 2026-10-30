@@ -86,6 +86,8 @@ import { useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
 import { useRateMatchMutation, useUpgradePremiumMockMutation, useVerifyPurchaseMutation } from "./src/redux/services/auth";
 import { setupIAP, purchaseErrorListener, purchaseUpdatedListener, finishTransaction, closeIAPConnection, subscribeToProduct, restoreActivePurchases } from "./src/utils/iap";
+import "./src/i18n";
+import { initLanguage } from "./src/i18n";
 const { width } = Dimensions.get("window");
 const App: React.FC = () => {
 
@@ -156,12 +158,13 @@ const App: React.FC = () => {
   return () => unsubscribe();
 }, []); // Empty array so it sets up the listener once for the whole app session
   React.useEffect(() => {
-  const timer = setTimeout(() => {
-    setShowSplash(false);
-  }, 2000); // 2000ms = 2 seconds
+    initLanguage();
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000); // 2000ms = 2 seconds
 
-  return () => clearTimeout(timer); // Cleanup timer on unmount
-}, []);
+    return () => clearTimeout(timer); // Cleanup timer on unmount
+  }, []);
 
   const [viewHistory, setViewHistory] = useState<AppView[]>(() => {
     if (token) {

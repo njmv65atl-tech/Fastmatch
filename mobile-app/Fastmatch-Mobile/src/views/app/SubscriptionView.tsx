@@ -22,6 +22,7 @@ import { Check, Crown, Tag, Sparkles, AlertCircle, RotateCcw } from "lucide-reac
 import { colors } from "../../utils/colors";
 import { fetchProducts, fetchSubscriptions, subscribeToProduct, restoreActivePurchases, type Product, type Subscription as IAPSubscription } from "../../utils/iap";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
+import { useTranslation } from "react-i18next";
 import { useApplyCouponMutation, useRedeemCouponMutation, useGetPricingQuery, useVerifyPurchaseMutation } from "../../redux/services/auth";
 import { useDispatch, useSelector } from "react-redux";
 import { setGlobalUser, userSelector } from "../../redux/slices/persistedSlice";
@@ -30,11 +31,13 @@ const { width, height } = Dimensions.get("window");
 
 type PlanType = "YEARLY" | "MONTHLY";
 
+// i18n hook added below
 export const SubscriptionView: React.FC<{
   setView: (v: AppView) => void;
   onUpgrade: (plan: PlanType) => void;
   onBack?: () => void;
 }> = ({ setView, onUpgrade, onBack }) => {
+  const { t } = useTranslation();
   const [selectedPlan, setSelectedPlan] = React.useState<PlanType>("YEARLY");
   const [disabledPlan, setDisabledPlan] = React.useState<PlanType | null>(null);
   const [products, setProducts] = React.useState<Product[]>([]);
@@ -252,8 +255,8 @@ export const SubscriptionView: React.FC<{
           <Crown size={40} color="#78350F" fill="#78350F" />
         </View>
 
-        <Text style={styles.title}>Go Premium</Text>
-        <Text style={styles.subtitle}>Random chat is free. Premium gives you more control over who you meet.</Text>
+        <Text style={styles.title}>{t("subscription.title")}</Text>
+        <Text style={styles.subtitle}>{t("subscription.subtitle")}</Text>
 
         {isPremium && (
           <TouchableOpacity
@@ -298,14 +301,14 @@ export const SubscriptionView: React.FC<{
                 >
                   <View style={styles.planCardInner}>
                     <Text style={[styles.planName, styles.planNameActive]}>
-                      YEARLY
+                      {t("subscription.yearly")}
                     </Text>
                     <Text style={styles.planPrice}>{getPriceForPlan("YEARLY")}</Text>
-                    <Text style={styles.planPeriod}>/year</Text>
+                    <Text style={styles.planPeriod}>{t("subscription.perYear")}</Text>
                   </View>
                 </LinearGradient>
                 <View style={styles.bestBadge}>
-                  <Text style={styles.bestBadgeText}>BEST VALUE</Text>
+                  <Text style={styles.bestBadgeText}>{t("subscription.bestValue")}</Text>
                 </View>
               </View>
             ) : disabledPlan === "YEARLY" ? (
@@ -342,7 +345,7 @@ export const SubscriptionView: React.FC<{
                     MONTHLY
                   </Text>
                   <Text style={styles.planPrice}>{getPriceForPlan("MONTHLY")}</Text>
-                  <Text style={styles.planPeriod}>/month</Text>
+                  <Text style={styles.planPeriod}>{t("subscription.perMonth")}</Text>
                 </View>
               </LinearGradient>
             ) : disabledPlan === "MONTHLY" ? (
@@ -459,7 +462,7 @@ export const SubscriptionView: React.FC<{
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <RotateCcw size={14} color="#94A3B8" style={{ marginRight: 6 }} />
                 <Text style={styles.restoreBtnText}>
-                  Already subscribed? Restore Purchases
+                  {t("subscription.restorePurchases")}
                 </Text>
               </View>
             )}
@@ -500,7 +503,7 @@ export const SubscriptionView: React.FC<{
                 }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.legalLinkText}>Terms of Use (EULA)</Text>
+                <Text style={styles.legalLinkText}>{t("subscription.termsLink")}</Text>
               </TouchableOpacity>
               <Text style={styles.legalDivider}>•</Text>
               <TouchableOpacity
@@ -511,7 +514,7 @@ export const SubscriptionView: React.FC<{
                 }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                <Text style={styles.legalLinkText}>{t("subscription.privacyLink")}</Text>
               </TouchableOpacity>
               <Text style={styles.legalDivider}>•</Text>
               <TouchableOpacity

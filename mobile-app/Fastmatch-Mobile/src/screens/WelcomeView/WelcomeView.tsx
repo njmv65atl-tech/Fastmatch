@@ -13,6 +13,11 @@ import {
   AppLogo,
 } from "./../../components/UIComponents";
 import { SocialAuthButtons } from "../../components/SocialAuthButtons";
+import { TouchableOpacity } from "react-native";
+import { useTranslation } from "react-i18next";
+import { Globe } from "lucide-react-native";
+import { LanguageSelectorModal } from "../../components/LanguageSelectorModal";
+import { AVAILABLE_LANGUAGES, SupportedLanguage } from "../../i18n";
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,20 +27,34 @@ interface AuthProps {
 }
 
 export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
+  const { t, i18n } = useTranslation();
+  const [showLanguageModal, setShowLanguageModal] = React.useState(false);
+
+  const activeLanguageObj = AVAILABLE_LANGUAGES.find(
+    (l: SupportedLanguage) => l.code === i18n.language || (i18n.language && i18n.language.startsWith(l.code))
+  ) || AVAILABLE_LANGUAGES[0];
   return (
     <LinearGradient colors={["#312E81", "#020617"]} style={styles.container}>
-      <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" />
+
+      {/* Language Switcher Pill */}
+      <TouchableOpacity
+        onPress={() => setShowLanguageModal(true)}
+        style={styles.langPill}
+        activeOpacity={0.8}
+      >
+        <Globe size={14} color="#CBD5E1" />
+        <Text style={styles.langPillText}>{activeLanguageObj.flag} {activeLanguageObj.nativeName}</Text>
+      </TouchableOpacity>
 
       <View style={styles.content}>
         <View style={styles.logoCard}>
           <AppLogo size="xl" />
         </View>
 
-        <Text style={styles.title}>Connect Instantly</Text>
+        <Text style={styles.title}>{t("welcome.title")}</Text>
 
-        <Text style={styles.subtitle}>
-          Experience premium video chat with people around the globe.
-        </Text>
+        <Text style={styles.subtitle}>{t("welcome.subtitle")}</Text>
 
         <View style={styles.buttonContainer}>
           <Button
@@ -43,7 +62,7 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
             fullWidth
             onClick={() => setView(AppView.SIGNUP)}
           >
-            Create Account
+            {t("auth.signupBtn")}
           </Button>
 
           <Button
@@ -52,7 +71,7 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
             style={{ borderWidth: 0, borderColor: "#555", marginTop: 8 }}
             onClick={() => setView(AppView.LOGIN)}
           >
-            Sign In with Password
+            {t("auth.loginBtn")}
           </Button>
 
           <SocialAuthButtons setView={setView} setUser={setUser} />
@@ -76,11 +95,15 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
               </Text>.
             </Text>
             <Text style={styles.zeroToleranceText}>
-              FastMatch enforces strict zero tolerance for objectionable content and abusive users.
+              {t("welcome.zeroTolerance")}
             </Text>
           </View>
         </View>
       </View>
+      <LanguageSelectorModal
+        visible={showLanguageModal}
+        onClose={() => setShowLanguageModal(false)}
+      />
     </LinearGradient>
   );
 };
@@ -178,5 +201,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 4,
     lineHeight: 14,
+  },
+  langPill: {
+    position: "absolute",
+    top: 50,
+    right: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.15)",
+    zIndex: 20,
+  },
+  langPillText: {
+    fontSize: 12,
+    color: "#E2E8F0",
+    fontWeight: "600",
   },
 });

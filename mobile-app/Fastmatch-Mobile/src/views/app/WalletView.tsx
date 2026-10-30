@@ -18,6 +18,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { useSelector, useDispatch } from "react-redux";
 import { userSelector, setGlobalUser } from "../../redux/slices/persistedSlice";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
+import { useTranslation } from "react-i18next";
 import { useBuyCoinsMockMutation, useWalletHistoryQuery, useGetUserProfileQuery } from "../../redux/services/auth";
 import { purchaseProduct, fetchProducts, consumePendingPurchases, type Product } from "../../utils/iap";
 
@@ -28,6 +29,7 @@ interface WalletViewProps {
 
 export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
   const user = useSelector(userSelector);
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   
   const [refreshing, setRefreshing] = React.useState(false);
@@ -105,7 +107,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
 
   return (
     <MobileContainer>
-      <Header title="My Wallet" onBack={handleBack} />
+      <Header title={t("wallet.title")} onBack={handleBack} />
       
       <ScrollView
         contentContainerStyle={styles.container}
@@ -129,13 +131,13 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
           <View style={styles.balanceInner}>
             <Coins size={32} color="#451A03" />
             <View style={styles.balanceTextWrap}>
-              <Text style={styles.balanceLabel}>Current Balance</Text>
-              <Text style={styles.balanceAmount}>{profileData?.data?.walletBalance ?? user?.walletBalance ?? 0} Coins</Text>
+              <Text style={styles.balanceLabel}>{t("wallet.balance")}</Text>
+              <Text style={styles.balanceAmount}>{profileData?.data?.walletBalance ?? user?.walletBalance ?? 0} {t("wallet.coins")}</Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Get More Coins</Text>
+        <Text style={styles.sectionTitle}>{t("wallet.buyCoins")}</Text>
         
         {/* Coin Packages */}
         <View style={styles.packagesContainer}>
@@ -170,7 +172,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
         </Text>
 
         <View style={styles.historyContainer}>
-          <Text style={styles.sectionTitle}>Coins History</Text>
+          <Text style={styles.sectionTitle}>{t("wallet.history")}</Text>
           {isLoadingHistory ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 20 }} />
           ) : historyData?.data && historyData.data.filter((tx: any) => tx.type !== 'subscription').length > 0 ? (
@@ -204,7 +206,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
               </View>
             ))
           ) : (
-            <Text style={styles.noHistoryText}>No transactions yet.</Text>
+            <Text style={styles.noHistoryText}>{t("wallet.noHistory")}</Text>
           )}
         </View>
       </ScrollView>

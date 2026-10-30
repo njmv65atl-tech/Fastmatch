@@ -35,6 +35,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch } from "react-redux";
 import { setGlobalUser } from "../../redux/slices/persistedSlice";
 import { useClaimDailyRewardMutation, useOnlineCountQuery } from "../../redux/services/auth";
+import { useTranslation } from "react-i18next";
 
 
 
@@ -99,6 +100,7 @@ const OnlineCounter = ({ count }: { count: number }) => {
 
 export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
 
+  const { t } = useTranslation();
   const [showDailyReward, setShowDailyReward] = React.useState(false);
   const [rewardMessage, setRewardMessage] = React.useState("You earned 10 coins for logging in today.");
   const [claimDailyRewardMutation] = useClaimDailyRewardMutation();
@@ -270,7 +272,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                   <View style={[styles.gridIconWrap, { backgroundColor: "rgba(245, 158, 11, 0.2)" }]}>
                     <Crown color={colors.gold} size={28} />
                   </View>
-                  <Text style={styles.gridTitle}>Super Match</Text>
+                  <Text style={styles.gridTitle}>{t("home.superMatch")}</Text>
                   <Text style={styles.gridSubtitle}>Find who's online</Text>
                 </TouchableOpacity>
 
@@ -290,7 +292,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                   <View style={[styles.gridIconWrap, { backgroundColor: "rgba(59, 130, 246, 0.2)" }]}>
                     <Globe color="#3b82f6" size={28} />
                   </View>
-                  <Text style={styles.gridTitle}>Global Network</Text>
+                  <Text style={styles.gridTitle}>{t("discovery.title")}</Text>
                   <Text style={styles.gridSubtitle}>Browse all users</Text>
                 </TouchableOpacity>
               </View>

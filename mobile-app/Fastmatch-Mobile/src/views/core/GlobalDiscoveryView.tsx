@@ -15,7 +15,8 @@ import {
   Alert,
 } from "react-native";
 import { useSelector } from "react-redux";
-import { ArrowLeft, Globe, Search, SlidersHorizontal, X, Flag, Ban, ShieldAlert } from "lucide-react-native";
+import { ArrowLeft, Globe, Search, SlidersHorizontal, X, Flag, Ban, ShieldAlert, EyeOff } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import Svg, { Path } from "react-native-svg";
 import { MobileContainer, Button } from "../../components/UIComponents";
 import { AppView } from "../../types";
@@ -173,7 +174,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   const [sendFriendRequest, { isLoading: isSending }] = useSendFriendRequestMutation();
   const [toggleFavorite] = useToggleFavoriteMutation();
 
+  const { t } = useTranslation();
   const [selectedUser, setSelectedUser] = React.useState<any>(null);
+  const [removedUserIds, setRemovedUserIds] = React.useState<string[]>([]);
   const [message, setMessage] = React.useState("");
 
   // UI state
@@ -183,10 +186,11 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   const [tempFilters, setTempFilters] = React.useState<Filters>(DEFAULT_FILTERS);
 
   const rawUsers = globalUsersData?.data?.users || [];
-  const users = React.useMemo(
-    () => applyFiltersAndSearch(rawUsers, searchText, filters),
-    [rawUsers, searchText, filters]
-  );
+  const users = React.useMemo(() => {
+    const list = applyFiltersAndSearch(rawUsers, searchText, filters);
+    if (removedUserIds.length === 0) return list;
+    return list.filter((u) => !removedUserIds.includes(u._id));
+  }, [rawUsers, searchText, filters, removedUserIds]);
 
   const activeFilterCount = countActiveFilters(filters);
 
@@ -194,6 +198,13 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
   const [blockUserApi] = useBlockUserMutation();
   const [reportUserApi, { isLoading: isSubmittingReport }] = useUserReportMutation();
   const [showReportModal, setShowReportModal] = React.useState(false);
+
+    const handleHideUser = () => {
+    if (!selectedUser) return;
+    setRemovedUserIds((prev) => [...prev, selectedUser._id]);
+    ShowAlertMessage(t("discovery.profileRemovedFromFeed"), popTypes.info);
+    setSelectedUser(null);
+  };
 
   const handleBlockUser = () => {
     if (!selectedUser) return;
@@ -209,6 +220,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             try {
               await blockUserApi({ targetUserId: selectedUser._id }).unwrap();
               ShowAlertMessage(`${selectedUser.displayName} has been blocked.`, popTypes.info);
+              setRemovedUserIds((prev) => [...prev, selectedUser._id]);
               setSelectedUser(null);
               refetchGlobalUsers();
             } catch (err: any) {
@@ -229,7 +241,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
         message: `Reported via Global Discovery: ${reason}`,
       }).unwrap();
       setShowReportModal(false);
-      ShowAlertMessage("Report received. Our moderation team reviews all reports within 24 hours.", popTypes.success);
+      setRemovedUserIds((prev) => [...prev, selectedUser._id]);
+      setSelectedUser(null);
+      ShowAlertMessage(t("safety.reportSubmitted"), popTypes.success);
     } catch (err: any) {
       ShowAlertMessage(err?.data?.message || "Failed to submit report", popTypes.error);
     }
@@ -624,16 +638,24 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
                 style={styles.ugcBtn}
                 onPress={() => setShowReportModal(true)}
               >
-                <Flag size={14} color="#EF4444" style={{ marginRight: 6 }} />
-                <Text style={styles.ugcBtnTextReport}>Report Profile</Text>
+                <Flag size={13} color="#EF4444" style={{ marginRight: 4 }} />
+                <Text style={styles.ugcBtnTextReport}>{t("discovery.reportProfile")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.ugcBtn}
                 onPress={handleBlockUser}
               >
-                <Ban size={14} color="#94A3B8" style={{ marginRight: 6 }} />
-                <Text style={styles.ugcBtnTextBlock}>Block User</Text>
+                <Ban size={13} color="#94A3B8" style={{ marginRight: 4 }} />
+                <Text style={styles.ugcBtnTextBlock}>{t("discovery.blockUser")}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.ugcBtn}
+                onPress={handleHideUser}
+              >
+                <EyeOff size={13} color="#FBBF24" style={{ marginRight: 4 }} />
+                <Text style={[styles.ugcBtnTextBlock, { color: "#FBBF24" }]}>{t("discovery.hideUser")}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -16,7 +16,10 @@ import { User, AppView, UserRole } from "../../types";
 import { colors } from "../../utils/colors";
 import GradientButton from "../../components/GradientButton";
 
-import {
+import { useTranslation } from "react-i18next";
+import { LanguageSelectorModal } from "../../components/LanguageSelectorModal";
+import { AVAILABLE_LANGUAGES } from "../../i18n";
+import { Globe,
   Crown,
   ChevronRight,
   Settings as SettingsIcon,
@@ -51,7 +54,13 @@ export const SettingsView: React.FC<SettingsProps> = ({
   onLogout,
 }) => {
 
-  const user = useSelector(userSelector)
+  const user = useSelector(userSelector);
+  const { t, i18n } = useTranslation();
+  const [showLanguageModal, setShowLanguageModal] = React.useState(false);
+
+  const activeLanguageObj = AVAILABLE_LANGUAGES.find(
+    (l) => l.code === i18n.language || (i18n.language && i18n.language.startsWith(l.code))
+  ) || AVAILABLE_LANGUAGES[0];
 
 
   console.log(user);
@@ -155,7 +164,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
           </LinearGradient>
         </View>
         <View style={{ marginTop: 16 }}>
-          <Text style={styles.account}>ACCOUNT</Text>
+          <Text style={styles.account}>{t("settings.account")}</Text>
           <View style={styles.menuSection}>
             {user?.isPremium === 'premium' ? (
               <Pressable
@@ -181,7 +190,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                           <Crown size={20} color="#F59E0B" />
                         </View>
                         <Text style={styles.menuLabelUpgrade}>
-                          VIP Membership Details
+                          {t("settings.vipDetails")}
                         </Text>
                       </View>
                       <ChevronRight size={18} color="rgba(245,158,11,0.8)" />
@@ -213,7 +222,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                           <Crown size={20} color="#F59E0B" />
                         </View>
                         <Text style={styles.menuLabelUpgrade}>
-                          Upgrade to Premium
+                          {t("settings.upgrade")}
                         </Text>
                       </View>
                       <ChevronRight size={18} color="rgba(245,158,11,0.5)" />
@@ -235,7 +244,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   <View style={styles.slateIconBox}>
                     <Crown size={20} color="#F59E0B" />
                   </View>
-                  <Text style={styles.menuText}>My Wallet</Text>
+                  <Text style={styles.menuText}>{t("settings.myWallet")}</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />
@@ -255,7 +264,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   <View style={styles.slateIconBox}>
                     <Gift size={20} color="#EC4899" />
                   </View>
-                  <Text style={styles.menuText}>My Gifts</Text>
+                  <Text style={styles.menuText}>{t("settings.myGifts")}</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />
@@ -275,10 +284,35 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   <View style={styles.slateIconBox}>
                     <Heart size={20} color="#F43F5E" />
                   </View>
-                  <Text style={styles.menuText}>Favorites</Text>
+                  <Text style={styles.menuText}>{t("settings.favorites")}</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />
+              </View>
+            </Pressable>
+
+            {/* Language Selector Button */}
+            <Pressable
+              onPress={() => setShowLanguageModal(true)}
+              style={({ pressed }) => [
+                styles.menuWrapper,
+                pressed && styles.slatePressed,
+              ]}
+            >
+              <View style={styles.slateMenuItem}>
+                <View style={styles.leftSection}>
+                  <View style={styles.slateIconBox}>
+                    <Globe size={20} color="#38BDF8" />
+                  </View>
+                  <Text style={styles.menuText}>{t("settings.language")}</Text>
+                </View>
+
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Text style={{ fontSize: 13, color: "#94A3B8", fontWeight: "600" }}>
+                    {activeLanguageObj.flag} {activeLanguageObj.nativeName}
+                  </Text>
+                  <ChevronRight size={18} color="#475569" />
+                </View>
               </View>
             </Pressable>
 
@@ -295,7 +329,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   <View style={styles.slateIconBox}>
                     <Shield size={20} color="#94A3B8" />
                   </View>
-                  <Text style={styles.menuText}>Privacy & Safety</Text>
+                  <Text style={styles.menuText}>{t("settings.privacySafety")}</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />
@@ -316,7 +350,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   <View style={styles.slateIconBox}>
                     <Image source={AppIcon.doc} style={{width : 17 , height : 17 , resizeMode : "contain" , tintColor : "#94A3B8"}}/>
                   </View>
-                  <Text style={styles.menuText}>Terms of Service</Text>
+                  <Text style={styles.menuText}>{t("settings.terms")}</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />
@@ -336,7 +370,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   <View style={styles.slateIconBox}>
                     <HelpCircle size={20} color="#38BDF8" />
                   </View>
-                  <Text style={styles.menuText}>Help & Support Desk</Text>
+                  <Text style={styles.menuText}>{t("settings.helpSupport")}</Text>
                 </View>
 
                 <ChevronRight size={18} color="#475569" />
@@ -345,11 +379,15 @@ export const SettingsView: React.FC<SettingsProps> = ({
           </View>
         </View>
         <GradientButton
-          title="Log Out"
+          title={t("settings.logout")}
           onPress={() => onLogoutHandler()}
           disabled={false}
         />
 
+      <LanguageSelectorModal
+          visible={showLanguageModal}
+          onClose={() => setShowLanguageModal(false)}
+        />
       </ScrollView>
 
     </MobileContainer>
