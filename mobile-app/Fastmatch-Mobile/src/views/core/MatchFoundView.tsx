@@ -32,6 +32,7 @@ import { useRateMatchMutation, useUserReportMutation, useBlockUserMutation } fro
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import LinearGradient from "react-native-linear-gradient";
 import { UserAvatar } from "../../components/UserAvatar";
+import { useTranslation } from "react-i18next";
 
 const IMAGE_BASE_URL = IMAGE_URL;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -108,6 +109,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({
   lastMatchId,
   lastPartnerName,
 }) => {
+  const { t } = useTranslation();
   const searchPayload = React.useMemo(() => {
     const p: any = { preference };
     if (locationMode && locationMode !== 'any') p.locationMode = locationMode;
@@ -525,24 +527,32 @@ export const MatchFoundView: React.FC<CoreProps> = ({
               </View>
             </View>
 
-            <Text style={styles.searchTitle}>Finding Your Match</Text>
-            <Text style={styles.searchSubtitle}>Looking for someone amazing to connect with...</Text>
+            <Text style={styles.searchTitle}>
+              {t("matching.findingMatch", { defaultValue: "Finding Your Match" })}
+            </Text>
+            <Text style={styles.searchSubtitle}>
+              {t("matching.lookingForSomeone", { defaultValue: "Looking for someone amazing to connect with..." })}
+            </Text>
 
             {/* Filter Pills preview */}
             <View style={styles.filterPillsRow}>
               <View style={styles.filterPill}>
                 <Text style={styles.filterPillText}>
-                  {preference === 'male' ? '👨 Male Only' : preference === 'female' ? '👩 Female Only' : '👥 Everyone'}
+                  {preference === 'male' ? t("matching.maleOnly", { defaultValue: "👨 Male Only" }) : preference === 'female' ? t("matching.femaleOnly", { defaultValue: "👩 Female Only" }) : t("matching.everyone", { defaultValue: "👥 Everyone" })}
                 </Text>
               </View>
               {locationMode === 'my_country' && (
                 <View style={styles.filterPill}>
-                  <Text style={styles.filterPillText}>📍 My Country</Text>
+                  <Text style={styles.filterPillText}>
+                    {t("matching.myCountry", { defaultValue: "📍 My Country" })}
+                  </Text>
                 </View>
               )}
               {languageMode === 'my_language' && (
                 <View style={styles.filterPill}>
-                  <Text style={styles.filterPillText}>🌐 My Language</Text>
+                  <Text style={styles.filterPillText}>
+                    {t("matching.myLanguage", { defaultValue: "🌐 My Language" })}
+                  </Text>
                 </View>
               )}
               {ageRange !== 'any' && (
@@ -555,14 +565,16 @@ export const MatchFoundView: React.FC<CoreProps> = ({
             {freeCallsRemaining !== null && (
               <View style={styles.callsRemainingBadge}>
                 <Text style={styles.callsRemainingText}>
-                  {freeCallsRemaining}/10 free calls remaining today
+                  {t("matching.freeCallsRemaining", { count: freeCallsRemaining, defaultValue: `${freeCallsRemaining}/10 free calls remaining today` })}
                 </Text>
               </View>
             )}
 
             <TouchableOpacity onPress={handleGlobalStopSearch} style={styles.cancelBtn} activeOpacity={0.8}>
               <ArrowLeft color={colors.textMuted} size={18} />
-              <Text style={styles.cancelText}>Cancel Search</Text>
+              <Text style={styles.cancelText}>
+                {t("matching.cancelSearch", { defaultValue: "Cancel Search" })}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -571,9 +583,11 @@ export const MatchFoundView: React.FC<CoreProps> = ({
             <View style={styles.ratingOverlay}>
               <View style={styles.ratingContent}>
                 <Sparkles color={colors.primary} size={32} />
-                <Text style={styles.ratingTitle}>Rate Your Call</Text>
+                <Text style={styles.ratingTitle}>
+                  {t("matching.rateYourCall", { defaultValue: "Rate Your Call" })}
+                </Text>
                 <Text style={styles.ratingSubtitle}>
-                  How was your conversation with {lastPartnerName || "your partner"}?
+                  {t("matching.rateSubtitle", { name: lastPartnerName || "your partner", defaultValue: `How was your conversation with ${lastPartnerName || "your partner"}?` })}
                 </Text>
                 <View style={styles.starsRow}>
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -593,7 +607,9 @@ export const MatchFoundView: React.FC<CoreProps> = ({
                     if (socket.connected) socket.emit("find-match", searchPayload);
                   }}
                 >
-                  <Text style={styles.ratingSubmitText}>Submit</Text>
+                  <Text style={styles.ratingSubmitText}>
+                    {t("matching.submit", { defaultValue: "Submit" })}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={{ marginTop: 12 }}
@@ -602,7 +618,9 @@ export const MatchFoundView: React.FC<CoreProps> = ({
                     if (socket.connected) socket.emit("find-match", searchPayload);
                   }}
                 >
-                  <Text style={{ color: colors.textMuted, fontSize: 14 }}>Skip</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 14 }}>
+                    {t("matching.skip", { defaultValue: "Skip" })}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -636,7 +654,9 @@ export const MatchFoundView: React.FC<CoreProps> = ({
           <View style={styles.matchBadgeRow}>
             <View style={styles.matchFoundBadge}>
               <View style={styles.matchFoundDot} />
-              <Text style={styles.matchFoundText}>Match Found!</Text>
+              <Text style={styles.matchFoundText}>
+                {t("matching.matchFound", { defaultValue: "Match Found!" })}
+              </Text>
             </View>
           </View>
 
@@ -685,7 +705,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({
 
             {/* Info chips row */}
             <View style={styles.chipRow}>
-              {matchAge ? <View style={styles.infoChip}><Text style={styles.infoChipText}>{matchAge} yrs</Text></View> : null}
+              {matchAge ? <View style={styles.infoChip}><Text style={styles.infoChipText}>{matchAge} {t("matching.yrs", { defaultValue: "yrs" })}</Text></View> : null}
               {matchGender ? <View style={styles.infoChip}><Text style={styles.infoChipText}>{matchGender}</Text></View> : null}
               {matchLocation ? (
                 <View style={styles.infoChip}>
@@ -695,7 +715,9 @@ export const MatchFoundView: React.FC<CoreProps> = ({
               ) : null}
               <View style={[styles.infoChip, { borderColor: "rgba(34,197,94,0.3)" }]}>
                 <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success }} />
-                <Text style={[styles.infoChipText, { color: colors.success }]}>Online</Text>
+                <Text style={[styles.infoChipText, { color: colors.success }]}>
+                  {t("matching.online", { defaultValue: "Online" })}
+                </Text>
               </View>
             </View>
 
@@ -703,7 +725,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({
             <View style={styles.matchTypePill}>
               <Sparkles color="#818cf8" size={12} />
               <Text style={styles.matchTypeLabel}>
-                {matchType === 'interest' ? 'Interest Match' : 'Random Match'}
+                {matchType === 'interest' ? t("matching.interestMatch", { defaultValue: "Interest Match" }) : t("matching.randomMatch", { defaultValue: "Random Match" })}
               </Text>
             </View>
 
@@ -711,7 +733,9 @@ export const MatchFoundView: React.FC<CoreProps> = ({
             {ratingCount > 0 && rating < 2.0 && (
               <View style={styles.lowRatingBanner}>
                 <AlertTriangle color="#f59e0b" size={14} />
-                <Text style={styles.lowRatingBannerText}>Low rated profile ({rating.toFixed(1)})</Text>
+                <Text style={styles.lowRatingBannerText}>
+                  {t("matching.lowRatedProfile", { rating: rating.toFixed(1), defaultValue: `Low rated profile (${rating.toFixed(1)})` })}
+                </Text>
               </View>
             )}
 
@@ -737,14 +761,20 @@ export const MatchFoundView: React.FC<CoreProps> = ({
             <View style={styles.actionRow}>
               <TouchableOpacity onPress={handleDecline} style={styles.skipBtn}>
                 <SkipForward color={colors.tertiary} size={20} />
-                <Text style={styles.skipBtnText}>{data ? "Decline" : "Skip"}</Text>
+                <Text style={styles.skipBtnText}>{data ? t("matching.decline", { defaultValue: "Decline" }) : t("matching.skip", { defaultValue: "Skip" })}</Text>
               </TouchableOpacity>
 
               <CountdownRing timeLeft={timeLeft} />
 
               <TouchableOpacity onPress={handleAccept} style={[styles.acceptBtn, { backgroundColor: buttonClr }]}>
                 <Video color={colors.white} size={20} />
-                <Text style={styles.acceptBtnText}>{buttonState}</Text>
+                <Text style={styles.acceptBtnText}>
+                  {buttonState === "Accept"
+                    ? t("matching.accept", { defaultValue: "Accept" })
+                    : buttonState === "Request"
+                    ? t("matching.connect", { defaultValue: "Connect" })
+                    : buttonState}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -755,16 +785,18 @@ export const MatchFoundView: React.FC<CoreProps> = ({
           <View style={styles.warningOverlay}>
             <View style={styles.warningContent}>
               <AlertTriangle color="#f59e0b" size={40} />
-              <Text style={styles.warningTitle}>Low Rated Profile</Text>
+              <Text style={styles.warningTitle}>
+                {t("matching.lowRatedProfile", { rating: rating.toFixed(1), defaultValue: "Low Rated Profile" })}
+              </Text>
               <Text style={styles.warningBody}>
-                This user has a rating of {rating.toFixed(1)}. They may have violated guidelines. Continue?
+                {t("matching.lowRatedBody", { rating: rating.toFixed(1), defaultValue: `This user has a rating of ${rating.toFixed(1)}. They may have violated guidelines. Continue?` })}
               </Text>
               <View style={styles.warningBtns}>
                 <TouchableOpacity style={styles.warningCancel} onPress={() => setShowLowRatingModal(false)}>
-                  <Text style={styles.warningCancelText}>Cancel</Text>
+                  <Text style={styles.warningCancelText}>{t("common.cancel", { defaultValue: "Cancel" })}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.warningConfirm} onPress={proceedWithAccept}>
-                  <Text style={styles.warningConfirmText}>Connect</Text>
+                  <Text style={styles.warningConfirmText}>{t("matching.connect", { defaultValue: "Connect" })}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -775,7 +807,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({
         <Modal visible={showAllInterests} transparent animationType="fade" onRequestClose={() => setShowAllInterests(false)}>
           <View style={styles.warningOverlay}>
             <View style={styles.warningContent}>
-              <Text style={styles.warningTitle}>All Interests</Text>
+              <Text style={styles.warningTitle}>{t("matching.allInterests", { defaultValue: "All Interests" })}</Text>
               <View style={styles.allInterestsWrap}>
                 {matchInterests.map((int, i) => (
                   <View key={i} style={styles.interestPillModal}>
@@ -784,7 +816,7 @@ export const MatchFoundView: React.FC<CoreProps> = ({
                 ))}
               </View>
               <TouchableOpacity style={styles.warningCancel} onPress={() => setShowAllInterests(false)}>
-                <Text style={styles.warningCancelText}>Close</Text>
+                <Text style={styles.warningCancelText}>{t("common.close", { defaultValue: "Close" })}</Text>
               </TouchableOpacity>
             </View>
           </View>

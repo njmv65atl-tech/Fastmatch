@@ -1,4 +1,4 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -19,6 +19,7 @@ import { userSelector } from "../../redux/slices/persistedSlice";
 import { socket } from "../../socket/socket";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import { RotateCcw } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 interface CoreProps {
   user: User;
@@ -27,6 +28,7 @@ interface CoreProps {
 }
 
 export const SearchingView: React.FC<CoreProps> = ({ setView }) => {
+  const { t } = useTranslation();
   const opacity = useRef(new Animated.Value(1)).current;
   const rippleAnim = useRef(new Animated.Value(0)).current;
 
@@ -149,7 +151,7 @@ export const SearchingView: React.FC<CoreProps> = ({ setView }) => {
         {lastSkipped && (
           <TouchableOpacity style={styles.rewindBtn} onPress={handleRewind}>
             <RotateCcw color="#F59E0B" size={20} />
-            <Text style={styles.rewindText}>Rewind {lastSkipped.displayName || "User"} (10 Coins)</Text>
+            <Text style={styles.rewindText}>{t("matching.rewindUser", { name: lastSkipped.displayName || "User", defaultValue: `Rewind ${lastSkipped.displayName || "User"} (10 Coins)` })}</Text>
           </TouchableOpacity>
         )}
 

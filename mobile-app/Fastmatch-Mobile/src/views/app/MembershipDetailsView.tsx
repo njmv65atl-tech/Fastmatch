@@ -36,6 +36,7 @@ import {
   useVerifyPurchaseMutation,
 } from "../../redux/services/auth";
 import { restoreActivePurchases } from "../../utils/iap";
+import { useTranslation } from "react-i18next";
 
 interface MembershipDetailsViewProps {
   setView: (view: AppView) => void;
@@ -48,6 +49,7 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
 }) => {
   const user = useSelector(userSelector);
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const [refreshing, setRefreshing] = React.useState(false);
   const [isRestoring, setIsRestoring] = React.useState(false);
@@ -187,22 +189,22 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
     const expDate = new Date(currentUser.subscriptionExpiresAt).getTime();
     const now = Date.now();
     const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) return "Expires today";
-    return `${diffDays} days remaining`;
+    if (diffDays <= 0) return t("membership.expiresToday", { defaultValue: "Expires today" });
+    return t("membership.daysRemaining", { days: diffDays, defaultValue: `${diffDays} days remaining` });
   };
 
   const isTrial = isPremium && currentUser?.subscriptionPlan === "trial";
 
   const planName =
     currentUser?.subscriptionPlan === "yearly"
-      ? "FastMatch VIP (Yearly)"
+      ? t("membership.yearlyPlan", { defaultValue: "FastMatch VIP (Yearly)" })
       : currentUser?.subscriptionPlan === "monthly"
-      ? "FastMatch VIP (Monthly)"
+      ? t("membership.monthlyPlan", { defaultValue: "FastMatch VIP (Monthly)" })
       : isTrial
-      ? "🎁 FastMatch VIP (Free Trial)"
+      ? t("membership.trialPlan", { defaultValue: "🎁 FastMatch VIP (Free Trial)" })
       : isPremium
-      ? "FastMatch VIP Access"
-      : "Free Plan";
+      ? t("membership.vipAccess", { defaultValue: "FastMatch VIP Access" })
+      : t("membership.freePlan", { defaultValue: "Free Plan" });
 
   // Filter subscription billing history and deduplicate
   const seenDates = new Set<string>();
@@ -224,7 +226,7 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
 
   return (
     <MobileContainer>
-      <Header title="VIP Membership" onBack={handleBack} />
+      <Header title={t("membership.title", { defaultValue: "VIP Membership" })} onBack={handleBack} />
 
       <ScrollView
         contentContainerStyle={styles.container}
@@ -291,7 +293,7 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
                     },
                   ]}
                 >
-                  {isTrial ? "FREE TRIAL" : isPremium ? "ACTIVE" : "INACTIVE"}
+                  {isTrial ? t("membership.trial", { defaultValue: "FREE TRIAL" }) : isPremium ? t("membership.active", { defaultValue: "ACTIVE" }) : t("membership.inactive", { defaultValue: "INACTIVE" })}
                 </Text>
               </View>
             </View>
@@ -299,23 +301,23 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
             <Text style={styles.planTitle}>{planName}</Text>
             <Text style={styles.planSubtitle}>
               {isTrial
-                ? "You are currently enjoying the Welcome VIP Free Trial. Upgrade anytime to keep full premium features uninterrupted!"
+                ? t("membership.trialSubtitle", { defaultValue: "You are currently enjoying the Welcome VIP Free Trial. Upgrade anytime to keep full premium features uninterrupted!" })
                 : isPremium
-                ? "Full unrestricted access to all premium dating & matching features."
-                : "Upgrade to FastMatch VIP to unlock premium features & filters."}
+                ? t("membership.activeSubtitle", { defaultValue: "Full unrestricted access to all premium dating & matching features." })
+                : t("membership.inactiveSubtitle", { defaultValue: "Upgrade to FastMatch VIP to unlock premium features & filters." })}
             </Text>
 
             {isPremium && (
               <View style={styles.metaContainer}>
                 <View style={styles.metaRow}>
                   <Calendar size={16} color="#FDE68A" />
-                  <Text style={styles.metaLabel}>Renewal / Expiry:</Text>
+                  <Text style={styles.metaLabel}>{t("membership.renewalExpiry", { defaultValue: "Renewal / Expiry:" })}</Text>
                   <Text style={styles.metaValue}>{formatExpiryDate()}</Text>
                 </View>
                 {getDaysRemaining() && (
                   <View style={styles.metaRow}>
                     <Clock size={16} color="#FDE68A" />
-                    <Text style={styles.metaLabel}>Validity:</Text>
+                    <Text style={styles.metaLabel}>{t("membership.validity", { defaultValue: "Validity:" })}</Text>
                     <Text style={[styles.metaValue, { color: "#34D399" }]}>
                       {getDaysRemaining()}
                     </Text>
@@ -335,7 +337,9 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
               onPress={() => setView(AppView.SUBSCRIPTION)}
             >
               <Crown size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.actionBtnTextPrimary}>Upgrade to Full VIP Plan</Text>
+              <Text style={styles.actionBtnTextPrimary}>
+                {t("membership.upgradeFullVip", { defaultValue: "Upgrade to Full VIP Plan" })}
+              </Text>
             </TouchableOpacity>
           ) : isPremium ? (
             <TouchableOpacity
@@ -345,7 +349,7 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
             >
               <ExternalLink size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
               <Text style={styles.actionBtnTextPrimary}>
-                Manage in {Platform.OS === "ios" ? "App Store" : "Google Play"}
+                {t("membership.manageInStore", { store: Platform.OS === "ios" ? "App Store" : "Google Play", defaultValue: `Manage in ${Platform.OS === "ios" ? "App Store" : "Google Play"}` })}
               </Text>
             </TouchableOpacity>
           ) : (
@@ -355,7 +359,9 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
               onPress={() => setView(AppView.SUBSCRIPTION)}
             >
               <Zap size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-              <Text style={styles.actionBtnTextPrimary}>Upgrade to VIP</Text>
+              <Text style={styles.actionBtnTextPrimary}>
+                {t("membership.upgradeVip", { defaultValue: "Upgrade to VIP" })}
+              </Text>
             </TouchableOpacity>
           )}
 
@@ -370,7 +376,9 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
             ) : (
               <>
                 <RotateCcw size={16} color="#CBD5E1" style={{ marginRight: 8 }} />
-                <Text style={styles.actionBtnTextSecondary}>Restore Purchases</Text>
+                <Text style={styles.actionBtnTextSecondary}>
+                  {t("membership.restorePurchases", { defaultValue: "Restore Purchases" })}
+                </Text>
               </>
             )}
           </TouchableOpacity>
@@ -378,30 +386,32 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
 
         {/* VIP Benefits Overview */}
         <View style={styles.sectionWrap}>
-          <Text style={styles.sectionTitle}>Your VIP Privileges</Text>
+          <Text style={styles.sectionTitle}>
+            {t("membership.privilegesTitle", { defaultValue: "Your VIP Privileges" })}
+          </Text>
           <View style={styles.benefitsCard}>
             <BenefitRow
               icon={Zap}
-              title="Unlimited Video Calls & Rewinds"
-              desc="Meet verified partners with no daily call limits or wait times."
+              title={t("membership.privilege1Title", { defaultValue: "Unlimited Video Calls & Rewinds" })}
+              desc={t("membership.privilege1Desc", { defaultValue: "Meet verified partners with no daily call limits or wait times." })}
               active={isPremium}
             />
             <BenefitRow
               icon={Sparkles}
-              title="Super Match Search Filters"
-              desc="Filter matches by country, gender, and preferred age bracket."
+              title={t("membership.privilege2Title", { defaultValue: "Super Match Search Filters" })}
+              desc={t("membership.privilege2Desc", { defaultValue: "Filter matches by country, gender, and preferred age bracket." })}
               active={isPremium}
             />
             <BenefitRow
               icon={ShieldCheck}
-              title="Zero Ads & Priority Connect"
-              desc="Enjoy uninterrupted conversations with priority low-latency servers."
+              title={t("membership.privilege3Title", { defaultValue: "Zero Ads & Priority Connect" })}
+              desc={t("membership.privilege3Desc", { defaultValue: "Enjoy uninterrupted conversations with priority low-latency servers." })}
               active={isPremium}
             />
             <BenefitRow
               icon={Crown}
-              title="Exclusive Gold VIP Badge"
-              desc="Stand out with a verified Gold VIP crown on your profile & live video."
+              title={t("membership.privilege4Title", { defaultValue: "Exclusive Gold VIP Badge" })}
+              desc={t("membership.privilege4Desc", { defaultValue: "Stand out with a verified Gold VIP crown on your profile & live video." })}
               active={isPremium}
             />
           </View>
@@ -409,7 +419,9 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
 
         {/* Membership Billing History */}
         <View style={styles.sectionWrap}>
-          <Text style={styles.sectionTitle}>Subscription History</Text>
+          <Text style={styles.sectionTitle}>
+            {t("membership.historyTitle", { defaultValue: "Subscription History" })}
+          </Text>
           {isLoadingHistory ? (
             <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 15 }} />
           ) : subscriptionHistory.length > 0 ? (
@@ -434,7 +446,9 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
                 </View>
                 <View style={styles.historyStatusPill}>
                   <CheckCircle2 size={12} color="#10B981" />
-                  <Text style={styles.historyStatusText}>Billed</Text>
+                  <Text style={styles.historyStatusText}>
+                    {t("membership.billed", { defaultValue: "Billed" })}
+                  </Text>
                 </View>
               </View>
             ))
@@ -442,8 +456,8 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
             <View style={styles.emptyHistoryBox}>
               <Text style={styles.emptyHistoryText}>
                 {isPremium
-                  ? "Active subscription managed securely by Google Play Billing."
-                  : "No subscription history recorded yet."}
+                  ? t("membership.activeManaged", { defaultValue: "Active subscription managed securely by Google Play Billing." })
+                  : t("membership.emptyHistory", { defaultValue: "No subscription history recorded yet." })}
               </Text>
             </View>
           )}
@@ -451,9 +465,11 @@ export const MembershipDetailsView: React.FC<MembershipDetailsViewProps> = ({
 
         {/* Management Note */}
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Subscription & Cancellation Policy</Text>
+          <Text style={styles.infoTitle}>
+            {t("membership.policyTitle", { defaultValue: "Subscription & Cancellation Policy" })}
+          </Text>
           <Text style={styles.infoDesc}>
-            Subscriptions automatically renew unless canceled in your Google Play Store account at least 24 hours before the end of the current billing cycle. You can change plans or cancel anytime in Google Play without losing access until your current period ends.
+            {t("membership.policyDesc", { defaultValue: "Subscriptions automatically renew unless canceled in your Google Play Store account at least 24 hours before the end of the current billing cycle. You can change plans or cancel anytime in Google Play without losing access until your current period ends." })}
           </Text>
         </View>
       </ScrollView>

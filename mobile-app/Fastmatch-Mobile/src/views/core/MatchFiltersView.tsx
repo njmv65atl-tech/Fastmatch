@@ -27,6 +27,7 @@ import { colors } from "../../utils/colors";
 import { useBackHandler } from "../../components/BackHandlerWrapper";
 import NetInfo from "@react-native-community/netinfo";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
+import { useTranslation } from "react-i18next";
 
 // ─── Image Avatar Components (Using User's Provided Art) ──────
 const BoyAvatar = ({ size = 56 }: { size?: number }) => (
@@ -104,6 +105,7 @@ interface CoreProps {
 }
 
 export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
+  const { t } = useTranslation();
   const [selectedGender, setSelectedGender] = useState<Gender>(Gender.ANY);
   const [selectedLocation, setSelectedLocation] = useState<
     "any" | "my_country"
@@ -124,7 +126,7 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
   const checkPremium = (isFreeFeature: boolean, featureName: string) => {
     if (!isFreeFeature && user?.isPremium !== "premium") {
       ShowAlertMessage(
-        `Premium required for ${featureName} preference`,
+        t("matchFilters.premiumRequired", { feature: featureName, defaultValue: `Premium required for ${featureName} preference` }),
         popTypes.info
       );
       setView(AppView.SUBSCRIPTION);
@@ -340,10 +342,10 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
             </TouchableOpacity>
             <View style={styles.headerTitleGroup}>
               <Text style={styles.headerTitle} numberOfLines={1}>
-                Match Preferences
+                {t("matchFilters.title", { defaultValue: "Match Preferences" })}
               </Text>
               <Text style={styles.headerSubtitle} numberOfLines={1}>
-                Customize who you connect with
+                {t("matchFilters.subtitle", { defaultValue: "Customize who you connect with" })}
               </Text>
             </View>
             <TouchableOpacity
@@ -358,7 +360,9 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 style={StyleSheet.absoluteFill}
               />
               <View style={styles.headerStartInner}>
-                <Text style={styles.headerStartText}>Explore</Text>
+                <Text style={styles.headerStartText}>
+                  {t("matchFilters.explore", { defaultValue: "Explore" })}
+                </Text>
                 <ArrowRight size={13} color="#FFF" strokeWidth={2.5} />
               </View>
             </TouchableOpacity>
@@ -381,30 +385,32 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 <Users size={14} color="#6366F1" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>GENDER PREFERENCE</Text>
+                <Text style={styles.sectionTitle}>
+                  {t("matchFilters.genderTitle", { defaultValue: "GENDER PREFERENCE" })}
+                </Text>
                 <Text style={styles.sectionSubtitle}>
-                  Choose who you'd like to see in your matches.
+                  {t("matchFilters.genderSubtitle", { defaultValue: "Choose who you'd like to see in your matches." })}
                 </Text>
               </View>
             </View>
             <View style={styles.genderRow}>
               <GenderCard
-                label="Everyone"
-                subtitle="Men & Women"
+                label={t("matchFilters.everyone", { defaultValue: "Everyone" })}
+                subtitle={t("matchFilters.everyoneSub", { defaultValue: "Men & Women" })}
                 value={Gender.ANY}
                 avatar={<CoupleAvatar size={54} />}
                 isFree={true}
               />
               <GenderCard
-                label="Male Only"
-                subtitle="Men"
+                label={t("matchFilters.maleOnly", { defaultValue: "Male Only" })}
+                subtitle={t("matchFilters.maleSub", { defaultValue: "Men" })}
                 value={Gender.MALE}
                 avatar={<BoyAvatar size={54} />}
                 isFree={false}
               />
               <GenderCard
-                label="Female Only"
-                subtitle="Women"
+                label={t("matchFilters.femaleOnly", { defaultValue: "Female Only" })}
+                subtitle={t("matchFilters.femaleSub", { defaultValue: "Women" })}
                 value={Gender.FEMALE}
                 avatar={<GirlAvatar size={54} />}
                 isFree={false}
@@ -424,34 +430,36 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 <SlidersHorizontal size={14} color="#F59E0B" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>AGE RANGE</Text>
+                <Text style={styles.sectionTitle}>
+                  {t("matchFilters.ageTitle", { defaultValue: "AGE RANGE" })}
+                </Text>
                 <Text style={styles.sectionSubtitle}>
-                  Select the age range for your matches.
+                  {t("matchFilters.ageSubtitle", { defaultValue: "Select the age range for your matches." })}
                 </Text>
               </View>
             </View>
             <View style={styles.ageGrid}>
               <AgeCard
-                label="Any Age"
-                subtitle="All age ranges"
+                label={t("matchFilters.anyAge", { defaultValue: "Any Age" })}
+                subtitle={t("matchFilters.anyAgeSub", { defaultValue: "All age ranges" })}
                 value="any"
                 isFree={true}
               />
               <AgeCard
-                label="18 – 24 years"
-                subtitle="Late teens to mid 20s"
+                label={t("matchFilters.age18_24", { defaultValue: "18 – 24 years" })}
+                subtitle={t("matchFilters.age18_24Sub", { defaultValue: "Late teens to mid 20s" })}
                 value="18-24"
                 isFree={false}
               />
               <AgeCard
-                label="25 – 34 years"
-                subtitle="Mid 20s to early 30s"
+                label={t("matchFilters.age25_34", { defaultValue: "25 – 34 years" })}
+                subtitle={t("matchFilters.age25_34Sub", { defaultValue: "Mid 20s to early 30s" })}
                 value="25-34"
                 isFree={false}
               />
               <AgeCard
-                label="35+ years"
-                subtitle="35 and older"
+                label={t("matchFilters.age35Plus", { defaultValue: "35+ years" })}
+                subtitle={t("matchFilters.age35PlusSub", { defaultValue: "35 and older" })}
                 value="35+"
                 isFree={false}
               />
@@ -470,16 +478,18 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 <MapPin size={14} color="#10B981" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>LOCATION</Text>
+                <Text style={styles.sectionTitle}>
+                  {t("matchFilters.locationTitle", { defaultValue: "LOCATION" })}
+                </Text>
                 <Text style={styles.sectionSubtitle}>
-                  Choose where you'd like to find matches.
+                  {t("matchFilters.locationSubtitle", { defaultValue: "Choose where you'd like to find matches." })}
                 </Text>
               </View>
             </View>
             <View style={styles.simpleList}>
               <SimpleOptionCard
-                label="Global (Anywhere)"
-                subtitle="Match with people worldwide"
+                label={t("matchFilters.globalAnywhere", { defaultValue: "Global (Anywhere)" })}
+                subtitle={t("matchFilters.globalAnywhereSub", { defaultValue: "Match with people worldwide" })}
                 value="any"
                 currentValue={selectedLocation}
                 setValue={setSelectedLocation}
@@ -487,8 +497,8 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 featureName="Location"
               />
               <SimpleOptionCard
-                label="My Country Only"
-                subtitle="Match within your country"
+                label={t("matchFilters.myCountryOnly", { defaultValue: "My Country Only" })}
+                subtitle={t("matchFilters.myCountryOnlySub", { defaultValue: "Match within your country" })}
                 value="my_country"
                 currentValue={selectedLocation}
                 setValue={setSelectedLocation}
@@ -510,16 +520,18 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 <Globe size={14} color="#3B82F6" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>LANGUAGE</Text>
+                <Text style={styles.sectionTitle}>
+                  {t("matchFilters.languageTitle", { defaultValue: "LANGUAGE" })}
+                </Text>
                 <Text style={styles.sectionSubtitle}>
-                  Prefer matches who speak your language.
+                  {t("matchFilters.languageSubtitle", { defaultValue: "Prefer matches who speak your language." })}
                 </Text>
               </View>
             </View>
             <View style={styles.simpleList}>
               <SimpleOptionCard
-                label="Any Language"
-                subtitle="No language preference"
+                label={t("matchFilters.anyLanguage", { defaultValue: "Any Language" })}
+                subtitle={t("matchFilters.anyLanguageSub", { defaultValue: "No language preference" })}
                 value="any"
                 currentValue={selectedLanguage}
                 setValue={setSelectedLanguage}
@@ -527,8 +539,8 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
                 featureName="Language"
               />
               <SimpleOptionCard
-                label="My Language"
-                subtitle="Speak the same language"
+                label={t("matchFilters.myLanguage", { defaultValue: "My Language" })}
+                subtitle={t("matchFilters.myLanguageSub", { defaultValue: "Speak the same language" })}
                 value="my_language"
                 currentValue={selectedLanguage}
                 setValue={setSelectedLanguage}
@@ -553,7 +565,9 @@ export const MatchFiltersView: React.FC<CoreProps> = ({ user, setView }) => {
               style={StyleSheet.absoluteFill}
             />
             <View style={styles.startMatchInner}>
-              <Text style={styles.startMatchBtnText}>Explore Matches</Text>
+              <Text style={styles.startMatchBtnText}>
+                {t("matchFilters.exploreMatches", { defaultValue: "Explore Matches" })}
+              </Text>
               <View style={styles.roundIconBadge}>
                 <ArrowRight size={14} color="#7C3AED" strokeWidth={3} />
               </View>

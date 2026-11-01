@@ -26,11 +26,13 @@ import { resetPersistStore } from '../../redux/slices/persistedSlice';
 import { resetGlobalStore } from '../../redux/slices/globalSlice';
 import { DataManager } from '../../helpers/dataManager';
 import { AppView } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 const BASE_URL = IMAGE_URL;
 
 const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any, setView: any }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [currentUser, setCurrentUser] = useState(user);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -38,16 +40,16 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'Are you sure you want to permanently delete your account? This action cannot be undone.',
+      t('profile.deleteAccountTitle', { defaultValue: 'Delete Account' }),
+      t('profile.deleteAccountConfirm', { defaultValue: 'Are you sure you want to permanently delete your account? This action cannot be undone.' }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel', { defaultValue: 'Cancel' }), style: 'cancel' },
         { 
-          text: 'Delete', 
+          text: t('common.delete', { defaultValue: 'Delete' }), 
           style: 'destructive',
           onPress: () => {
             managerApiCall(deleteAccount, {}, async (res: any) => {
-               ShowAlertMessage('Account deleted successfully', popTypes.success);
+               ShowAlertMessage(t('profile.deleteAccountSuccess', { defaultValue: 'Account deleted successfully' }), popTypes.success);
                dispatch(resetPersistStore());
                dispatch(resetGlobalStore());
                await DataManager.clearDataManager();
@@ -122,16 +124,20 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
           <View style={styles.successIcon}>
             <Text style={styles.successCheckmark}>✓</Text>
           </View>
-          <Text style={styles.successTitle}>Profile Updated!</Text>
+          <Text style={styles.successTitle}>
+            {t("profile.updatedTitle", { defaultValue: "Profile Updated!" })}
+          </Text>
           <Text style={styles.successMessage}>
-            Your profile has been successfully updated.
+            {t("profile.updatedMessage", { defaultValue: "Your profile has been successfully updated." })}
           </Text>
           <TouchableOpacity
             style={styles.successButton}
             onPress={() => setShowSuccessModal(false)}
             activeOpacity={0.8}
           >
-            <Text style={styles.successButtonText}>Got it!</Text>
+            <Text style={styles.successButtonText}>
+              {t("profile.gotIt", { defaultValue: "Got it!" })}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -182,34 +188,47 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
           {currentUser?.isOnline && (
             <View style={styles.onlineBadge}>
               <View style={styles.onlineDot} />
-              <Text style={styles.onlineText}>Online</Text>
+              <Text style={styles.onlineText}>
+                {t("profile.online", { defaultValue: "Online" })}
+              </Text>
             </View>
           )}
 
           {!currentUser?.isVerified && (
             <TouchableOpacity style={styles.verifyBtn} onPress={handleVerify}>
-              <Text style={styles.verifyText}>Get Verified (Blue Check)</Text>
+              <Text style={styles.verifyText}>
+                {t("profile.getVerified", { defaultValue: "Get Verified (Blue Check)" })}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* ── Contact Info ── */}
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>Contact</Text>
+          <Text style={styles.cardLabel}>
+            {t("profile.contact", { defaultValue: "Contact" })}
+          </Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Email</Text>
+            <Text style={styles.infoKey}>
+              {t("profile.email", { defaultValue: "Email" })}
+            </Text>
             <Text style={styles.infoValue}>{currentUser?.email ?? '—'}</Text>
           </View>
         </View>
 
-
         {/* ── Gender Info ── */}
         <View style={styles.card}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>GENDER</Text>
+            <Text style={styles.infoKey}>
+              {t("profile.genderLabel", { defaultValue: "GENDER" })}
+            </Text>
             <Text style={styles.infoValue}>
               {currentUser?.gender
-                ? currentUser.gender.charAt(0).toUpperCase() + currentUser.gender.slice(1)
+                ? currentUser.gender.toLowerCase() === 'male'
+                  ? t("profile.male", { defaultValue: "Male" })
+                  : currentUser.gender.toLowerCase() === 'female'
+                  ? t("profile.female", { defaultValue: "Female" })
+                  : currentUser.gender
                 : '—'}
             </Text>
           </View>
@@ -217,45 +236,47 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
 
         {/* ── Age Info ── */}
         <View style={styles.card}>
-          {/* <Text style={styles.cardLabel}>Age</Text> */}
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>AGE</Text>
+            <Text style={styles.infoKey}>
+              {t("profile.ageLabel", { defaultValue: "AGE" })}
+            </Text>
             <Text style={styles.infoValue}>{currentUser?.age ?? '—'}</Text>
           </View>
         </View>
 
-
         {/* ── Location Info ── */}
         <View style={styles.card}>
-          {/* <Text style={styles.cardLabel}>Location</Text> */}
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>LOCATION</Text>
+            <Text style={styles.infoKey}>
+              {t("profile.locationLabel", { defaultValue: "LOCATION" })}
+            </Text>
             <Text style={styles.infoValue}>{currentUser?.location ?? '—'}</Text>
           </View>
         </View>
 
         {/* ── Language Info ── */}
         <View style={styles.card}>
-          {/* <Text style={styles.cardLabel}>Language</Text> */}
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>LANGUAGE</Text>
+            <Text style={styles.infoKey}>
+              {t("profile.languageLabel", { defaultValue: "LANGUAGE" })}
+            </Text>
             <Text style={styles.infoValue}>{currentUser?.language ?? '—'}</Text>
           </View>
         </View>
 
-
         {/* ── Interests ── */}
         { currentUser?.interests?.length > 0 && (
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Interests</Text>
+            <Text style={styles.cardLabel}>
+              {t("profile.interestsLabel", { defaultValue: "Interests" })}
+            </Text>
             <View style={styles.interestsRow}>
               {currentUser.interests.map((item: any, index: any) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.interestBadge}
                   activeOpacity={0.8}
-                  >
-
+                >
                   <Text style={styles.interestText}>{typeof item === 'string' ? item.trim() : item}</Text>
                 </TouchableOpacity>
               ))}
@@ -267,24 +288,26 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>
-              {currentUser?.isVerified ? 'Verified' : 'Unverified'}
+              {currentUser?.isVerified ? t("profile.verified", { defaultValue: "Verified" }) : t("profile.unverified", { defaultValue: "Unverified" })}
             </Text>
-            <Text style={styles.statLabel}>Account</Text>
+            <Text style={styles.statLabel}>
+              {t("profile.account", { defaultValue: "Account" })}
+            </Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statValue}>
               {currentUser?.createdAt
-                ? new Date(currentUser.createdAt).toLocaleDateString('en-US', {
+                ? new Date(currentUser.createdAt).toLocaleDateString(undefined, {
                     month: 'short',
                     day: 'numeric',
                   })
                 : '—'}
             </Text>
-            <Text style={styles.statLabel}>Joined</Text>
+            <Text style={styles.statLabel}>
+              {t("profile.joined", { defaultValue: "Joined" })}
+            </Text>
           </View>
         </View>
-
-
 
         {/* ── Edit Button ── */}
         <TouchableOpacity
@@ -293,7 +316,9 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
           onPress={() => setIsEditing(true)}
         >
           <Text style={styles.editButtonIcon}>✎</Text>
-          <Text style={styles.editButtonText}>Edit Profile</Text>
+          <Text style={styles.editButtonText}>
+            {t("profile.editProfile", { defaultValue: "Edit Profile" })}
+          </Text>
         </TouchableOpacity>
 
         {/* ── Delete Account Button ── */}
@@ -303,7 +328,9 @@ const ProfileScreen = ({ user, setCancel, setView }: { user: any, setCancel: any
           onPress={handleDeleteAccount}
         >
           <Text style={[styles.editButtonIcon, { color: '#d32f2f' }]}>🗑️</Text>
-          <Text style={[styles.editButtonText, { color: '#d32f2f' }]}>Delete Account</Text>
+          <Text style={[styles.editButtonText, { color: '#d32f2f' }]}>
+            {t("profile.deleteAccount", { defaultValue: "Delete Account" })}
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.bottomSpacer} />

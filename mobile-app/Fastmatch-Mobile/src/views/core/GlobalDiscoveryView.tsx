@@ -561,7 +561,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             </View>
 
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>
-              <Text style={styles.connectTitle}>Connect with {selectedUser?.displayName}</Text>
+              <Text style={styles.connectTitle}>
+                {t("discovery.connectWith", { name: selectedUser?.displayName, defaultValue: `Connect with ${selectedUser?.displayName}` })}
+              </Text>
               <TouchableOpacity onPress={handleFavoriteToggle}>
                 <HeartIcon
                   filled={favData?.data?.some((f: any) => f._id === selectedUser?._id)}
@@ -575,7 +577,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             <View style={styles.connectChips}>
               {selectedUser?.age && (
                 <View style={styles.connectChip}>
-                  <Text style={styles.connectChipText}>{selectedUser.age} yrs</Text>
+                  <Text style={styles.connectChipText}>
+                    {selectedUser.age} {t("discovery.yrs", { defaultValue: "yrs" })}
+                  </Text>
                 </View>
               )}
               {selectedUser?.gender && (
@@ -591,7 +595,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
               {selectedUser?.isOnline && (
                 <View style={[styles.connectChip, { borderColor: "rgba(34,197,94,0.4)" }]}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.success, marginRight: 4 }} />
-                  <Text style={[styles.connectChipText, { color: colors.success }]}>Online</Text>
+                  <Text style={[styles.connectChipText, { color: colors.success }]}>
+                    {t("discovery.online", { defaultValue: "Online" })}
+                  </Text>
                 </View>
               )}
             </View>
@@ -612,11 +618,13 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
               </View>
             )}
 
-            <Text style={styles.connectSubtitle}>Include a personal message (optional)</Text>
+            <Text style={styles.connectSubtitle}>
+              {t("discovery.personalMessageOptional", { defaultValue: "Include a personal message (optional)" })}
+            </Text>
 
             <TextInput
               style={styles.connectInput}
-              placeholder="e.g. Hi! I'd love to connect..."
+              placeholder={t("discovery.messagePlaceholder", { defaultValue: "e.g. Hi! I'd love to connect..." })}
               placeholderTextColor="rgba(255,255,255,0.4)"
               multiline
               maxLength={200}
@@ -629,33 +637,44 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
               disabled={isSending}
               style={{ marginTop: 16 }}
             >
-              {isSending ? "Sending..." : "Send Request"}
+              {isSending ? t("discovery.sending", { defaultValue: "Sending..." }) : t("discovery.sendRequest", { defaultValue: "Send Request" })}
             </Button>
 
             {/* Safety & UGC Actions (Apple Guideline 1.2.0) */}
             <View style={styles.ugcActionsRow}>
-              <TouchableOpacity
-                style={styles.ugcBtn}
-                onPress={() => setShowReportModal(true)}
-              >
-                <Flag size={13} color="#EF4444" style={{ marginRight: 4 }} />
-                <Text style={styles.ugcBtnTextReport}>{t("discovery.reportProfile")}</Text>
-              </TouchableOpacity>
+              <View style={styles.ugcTopRow}>
+                <TouchableOpacity
+                  style={[styles.ugcBtn, styles.ugcBtnFlex]}
+                  onPress={() => setShowReportModal(true)}
+                  activeOpacity={0.75}
+                >
+                  <Flag size={13} color="#EF4444" style={{ marginRight: 6 }} />
+                  <Text style={styles.ugcBtnTextReport} numberOfLines={1}>
+                    {t("discovery.reportProfile")}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.ugcBtn, styles.ugcBtnFlex]}
+                  onPress={handleBlockUser}
+                  activeOpacity={0.75}
+                >
+                  <Ban size={13} color="#94A3B8" style={{ marginRight: 6 }} />
+                  <Text style={styles.ugcBtnTextBlock} numberOfLines={1}>
+                    {t("discovery.blockUser")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity
-                style={styles.ugcBtn}
-                onPress={handleBlockUser}
-              >
-                <Ban size={13} color="#94A3B8" style={{ marginRight: 4 }} />
-                <Text style={styles.ugcBtnTextBlock}>{t("discovery.blockUser")}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.ugcBtn}
+                style={[styles.ugcBtn, styles.ugcBtnFull]}
                 onPress={handleHideUser}
+                activeOpacity={0.75}
               >
-                <EyeOff size={13} color="#FBBF24" style={{ marginRight: 4 }} />
-                <Text style={[styles.ugcBtnTextBlock, { color: "#FBBF24" }]}>{t("discovery.hideUser")}</Text>
+                <EyeOff size={13} color="#FBBF24" style={{ marginRight: 6 }} />
+                <Text style={[styles.ugcBtnTextBlock, { color: "#FBBF24" }]} numberOfLines={1}>
+                  {t("discovery.hideUser")}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -669,7 +688,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             <View style={styles.reportModalHeader}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Flag size={20} color="#EF4444" />
-                <Text style={styles.reportModalTitle}>Report Profile</Text>
+                <Text style={styles.reportModalTitle}>
+                  {t("discovery.reportModalTitle", { defaultValue: "Report Profile" })}
+                </Text>
               </View>
               <TouchableOpacity onPress={() => setShowReportModal(false)} style={{ padding: 4 }}>
                 <X color={colors.textPrimary} size={20} />
@@ -677,7 +698,7 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
             </View>
 
             <Text style={styles.reportModalSub}>
-              Select a reason for reporting {selectedUser?.displayName}. Reports are strictly confidential and investigated within 24 hours.
+              {t("discovery.reportModalSub", { name: selectedUser?.displayName, defaultValue: `Select a reason for reporting ${selectedUser?.displayName}. Reports are strictly confidential and investigated within 24 hours.` })}
             </Text>
 
             <View style={{ marginVertical: 12 }}>
@@ -705,7 +726,9 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
               style={styles.cancelReportBtn}
               onPress={() => setShowReportModal(false)}
             >
-              <Text style={styles.cancelReportBtnText}>Cancel</Text>
+              <Text style={styles.cancelReportBtnText}>
+                {t("common.cancel", { defaultValue: "Cancel" })}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -721,21 +744,31 @@ export const GlobalDiscoveryView: React.FC<{ setView: (v: AppView) => void }> = 
 const styles = StyleSheet.create({
   // UGC Safety styles (Apple Guideline 1.2.0)
   ugcActionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     marginTop: 14,
     paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
+    gap: 8,
+  },
+  ugcTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   ugcBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    justifyContent: "center",
+    paddingVertical: 9,
+    paddingHorizontal: 10,
     borderRadius: 8,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+  ugcBtnFlex: {
+    flex: 1,
+  },
+  ugcBtnFull: {
+    width: "100%",
   },
   ugcBtnTextReport: {
     color: "#EF4444",
