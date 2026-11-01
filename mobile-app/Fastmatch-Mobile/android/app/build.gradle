@@ -83,8 +83,8 @@ android {
         applicationId "com.fastmatch"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 15
-        versionName "1.1.0"
+        versionCode 16
+        versionName "1.1.1"
         missingDimensionStrategy 'store', 'play'
     }
     signingConfigs {
