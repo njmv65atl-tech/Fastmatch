@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import * as React from "react";
 
 import { useState, useCallback, useEffect } from "react";
@@ -46,6 +47,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
   onCancel,
   onSave,
 }) => {
+  const { t } = useTranslation();
   const interests = PROFILE_SETUP_TEXT.interests;
   const dispatch = useDispatch();
   const [completeProfile] = useCompleteProfileMutation();
@@ -304,8 +306,8 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
         {/* ── Display name ── */}
         <Input
-          label={PROFILE_SETUP_TEXT.displayNameLabel}
-          placeholder="Enter display name"
+          label={t("auth.displayName")}
+          placeholder={t("auth.enterDisplayName")}
           value={name}
           maxLength={12}
           onChangeText={(txt) => setName(txt.trimStart())}
@@ -313,8 +315,8 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         
         {/* ── Age ── */}
         <Input
-          label={PROFILE_SETUP_TEXT.age}
-          placeholder="Enter your age"
+          label={t("auth.age")}
+          placeholder={t("auth.enterAge")}
           value={age}
           maxLength={3}
           onChangeText={(txt) => setAge(txt.trimStart())}
@@ -324,8 +326,8 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
         {/* ── Location ── */}
         <Input
-          label={PROFILE_SETUP_TEXT.Location}
-          placeholder="Enter your location"
+          label={t("auth.location")}
+          placeholder={t("auth.enterLocation")}
           value={location}
           maxLength={100}
           onChangeText={(txt) => setLocation(txt.trimStart())}
@@ -333,7 +335,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
         />
 
         <Dropdown
-          label={PROFILE_SETUP_TEXT.languageLabel}
+          label={t("settings.language")}
           options={PROFILE_SETUP_TEXT.languages}
           selectedValue={language}
           onSelect={(val) => setLanguage(val)}
@@ -347,7 +349,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
 
         {/* ── Interests ── */}
         <View style={styles.section}>
-          <Text style={styles.label}>{PROFILE_SETUP_TEXT.interestsLabel}</Text>
+          <Text style={styles.label}>{t("profile.interestsLabel")}</Text>
           <View style={styles.tagGrid}>
             {interests.map((interest) => (
               <TouchableOpacity
@@ -371,7 +373,7 @@ export const EditProfileScreen: React.FC<EditProfileScreenProps> = ({
           </View>
         </View>
 
-        <Button onClick={handleSave}>Save Changes</Button>
+        <Button onClick={handleSave}>{t("auth.saveChanges")}</Button>
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </View>

@@ -22,12 +22,14 @@ import {
 import { AppView } from "../../types";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import { UserAvatar } from "../../components/UserAvatar";
+import { useTranslation } from "react-i18next";
 
 interface FavoritesViewProps {
   setView: (view: AppView, params?: any) => void;
 }
 
 export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
+  const { t } = useTranslation();
   const { data: favData, isLoading, refetch } = useGetFavoritesQuery({});
   const [toggleFavorite] = useToggleFavoriteMutation();
   const [userToRemove, setUserToRemove] = useState<any | null>(null);
@@ -37,11 +39,11 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
     try {
       setIsRemoving(true);
       await toggleFavorite({ targetUserId: userId }).unwrap();
-      ShowAlertMessage("Removed from favorites", popTypes.success);
+      ShowAlertMessage(t("favorites.removedSuccess"), popTypes.success);
       refetch();
     } catch (e) {
       console.warn("Failed to remove favorite:", e);
-      ShowAlertMessage("Failed to remove favorite", popTypes.error);
+      ShowAlertMessage(t("favorites.removeFailed"), popTypes.error);
     } finally {
       setIsRemoving(false);
       setUserToRemove(null);
@@ -70,7 +72,6 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
           </View>
         </View>
 
-        {/* Pure Red Heart Icon - Transparent background, no square box */}
         <TouchableOpacity 
           style={styles.removeBtn}
           onPress={() => setUserToRemove(user)}
@@ -98,7 +99,7 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
         <TouchableOpacity style={styles.backBtn} onPress={() => setView(AppView.SETTINGS)}>
           <ChevronLeft size={moderateScale(24)} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Favorites</Text>
+        <Text style={styles.headerTitle}>{t("favorites.title")}</Text>
         <View style={{ width: moderateScale(40) }} />
       </View>
 
@@ -121,13 +122,13 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
                 strokeLinejoin="round" 
               />
             </Svg>
-            <Text style={styles.emptyTitle}>No favorites yet</Text>
-            <Text style={styles.emptySubtitle}>Users you bookmark will appear here.</Text>
+            <Text style={styles.emptyTitle}>{t("favorites.emptyTitle")}</Text>
+            <Text style={styles.emptySubtitle}>{t("favorites.emptySubtitle")}</Text>
             <TouchableOpacity 
               style={styles.discoverBtn}
               onPress={() => setView(AppView.GLOBAL_DISCOVERY)}
             >
-              <Text style={styles.discoverBtnText}>Discover Users</Text>
+              <Text style={styles.discoverBtnText}>{t("favorites.discoverUsers")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -157,13 +158,11 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
               </Svg>
             </View>
 
-            <Text style={styles.modalTitle}>Remove from Favorites?</Text>
+            <Text style={styles.modalTitle}>{t("favorites.removeTitle")}</Text>
             <Text style={styles.modalMessage}>
-              Are you sure you want to remove{" "}
-              <Text style={styles.modalHighlight}>
-                {userToRemove?.displayName || userToRemove?.fullName || "this user"}
-              </Text>{" "}
-              from your favorites list?
+              {t("favorites.removeConfirm", {
+                name: userToRemove?.displayName || userToRemove?.fullName || "this user"
+              })}
             </Text>
 
             <View style={styles.modalBtnRow}>
@@ -173,23 +172,19 @@ export const FavoritesView: React.FC<FavoritesViewProps> = ({ setView }) => {
                 disabled={isRemoving}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelBtnText}>{t("favorites.cancel")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.confirmRemoveBtn}
-                onPress={() => {
-                  if (userToRemove?._id) {
-                    handleRemoveFavorite(userToRemove._id);
-                  }
-                }}
+                onPress={() => handleRemoveFavorite(userToRemove?._id)}
                 disabled={isRemoving}
                 activeOpacity={0.7}
               >
                 {isRemoving ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.confirmRemoveBtnText}>Remove</Text>
+                  <Text style={styles.confirmRemoveBtnText}>{t("favorites.remove")}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -205,13 +200,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: scale(15),
-    paddingVertical: verticalScale(15),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(14),
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.05)",
   },
   backBtn: {
-    padding: moderateScale(5),
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: moderateScale(12),
+    padding: moderateScale(4),
   },
   headerTitle: {
     fontSize: moderateScale(18),
@@ -219,18 +214,19 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   contentContainer: {
+    padding: scale(16),
     flexGrow: 1,
-    paddingHorizontal: scale(15),
-    paddingBottom: 100,
   },
   friendCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.surface,
-    padding: moderateScale(15),
+    padding: moderateScale(14),
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
     borderRadius: moderateScale(16),
-    marginBottom: verticalScale(10),
+    marginBottom: verticalScale(12),
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
   },
   friendInfo: {
     flexDirection: "row",
@@ -239,38 +235,20 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: "relative",
-    marginRight: scale(15),
-  },
-  avatar: {
-    width: moderateScale(50),
-    height: moderateScale(50),
-    borderRadius: moderateScale(25),
-  },
-  avatarFallback: {
-    width: moderateScale(50),
-    height: moderateScale(50),
-    borderRadius: moderateScale(25),
-    backgroundColor: colors.primary + '20',
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarFallbackText: {
-    color: colors.primary,
-    fontSize: moderateScale(20),
-    fontWeight: "bold",
   },
   onlineBadge: {
     position: "absolute",
     bottom: 2,
     right: 2,
-    width: moderateScale(12),
-    height: moderateScale(12),
-    borderRadius: moderateScale(6),
-    backgroundColor: colors.success,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#22C55E",
     borderWidth: 2,
-    borderColor: colors.surface,
+    borderColor: "#0F172A",
   },
   friendDetails: {
+    marginLeft: scale(14),
     flex: 1,
   },
   friendName: {
@@ -280,115 +258,118 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(2),
   },
   friendSubtext: {
-    fontSize: moderateScale(12),
-    color: colors.textMuted,
+    fontSize: moderateScale(13),
+    color: colors.textPlaceholder,
   },
   removeBtn: {
     padding: moderateScale(8),
-    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
   },
   emptyState: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: verticalScale(100),
+    paddingVertical: verticalScale(80),
   },
   emptyTitle: {
     fontSize: moderateScale(18),
     fontWeight: "bold",
     color: colors.textPrimary,
-    marginTop: verticalScale(15),
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(6),
   },
   emptySubtitle: {
     fontSize: moderateScale(14),
-    color: colors.textMuted,
-    marginTop: verticalScale(5),
-    marginBottom: verticalScale(20),
+    color: colors.textPlaceholder,
+    textAlign: "center",
+    marginBottom: verticalScale(24),
+    paddingHorizontal: scale(32),
   },
   discoverBtn: {
     backgroundColor: colors.primary,
-    paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(10),
-    borderRadius: moderateScale(20),
+    paddingHorizontal: scale(24),
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(25),
   },
   discoverBtnText: {
     color: colors.white,
-    fontWeight: "bold",
+    fontSize: moderateScale(14),
+    fontWeight: "600",
   },
-
-  // ── Confirmation Modal Styles ──
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    backgroundColor: "rgba(0,0,0,0.75)",
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: scale(24),
+    padding: scale(20),
   },
   modalContent: {
     width: "100%",
-    backgroundColor: colors.surface,
-    borderRadius: moderateScale(20),
-    padding: moderateScale(24),
+    maxWidth: 340,
+    backgroundColor: "#1E293B",
+    borderRadius: 20,
+    padding: 24,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: "rgba(255,255,255,0.1)",
   },
   modalIconWrap: {
-    width: moderateScale(60),
-    height: moderateScale(60),
-    borderRadius: moderateScale(30),
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: "rgba(239, 68, 68, 0.12)",
-    justifyContent: "center",
     alignItems: "center",
-    marginBottom: verticalScale(16),
+    justifyContent: "center",
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: moderateScale(18),
+    fontSize: 18,
     fontWeight: "bold",
-    color: colors.textPrimary,
-    marginBottom: verticalScale(8),
+    color: "#FFFFFF",
+    marginBottom: 8,
+    textAlign: "center",
   },
   modalMessage: {
-    fontSize: moderateScale(14),
-    color: colors.textMuted,
+    fontSize: 14,
+    color: "#94A3B8",
     textAlign: "center",
-    lineHeight: moderateScale(20),
-    marginBottom: verticalScale(24),
+    lineHeight: 20,
+    marginBottom: 20,
   },
   modalHighlight: {
-    color: colors.textPrimary,
+    color: "#FFFFFF",
     fontWeight: "600",
   },
   modalBtnRow: {
     flexDirection: "row",
+    gap: 12,
     width: "100%",
-    gap: scale(12),
   },
   cancelBtn: {
     flex: 1,
-    paddingVertical: verticalScale(12),
-    borderRadius: moderateScale(12),
-    backgroundColor: colors.surfaceAlt,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center",
     justifyContent: "center",
   },
   cancelBtnText: {
-    color: colors.textPrimary,
-    fontSize: moderateScale(15),
+    color: "#94A3B8",
+    fontSize: 14,
     fontWeight: "600",
   },
   confirmRemoveBtn: {
     flex: 1,
-    paddingVertical: verticalScale(12),
-    borderRadius: moderateScale(12),
+    paddingVertical: 12,
+    borderRadius: 12,
     backgroundColor: "#EF4444",
     alignItems: "center",
     justifyContent: "center",
   },
   confirmRemoveBtnText: {
     color: "#FFFFFF",
-    fontSize: moderateScale(15),
-    fontWeight: "bold",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

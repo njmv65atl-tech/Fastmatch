@@ -25,6 +25,7 @@ import {
 import { MobileContainer } from "../../components/UIComponents";
 import { colors } from "../../utils/colors";
 import { CHAT_DETAIL_TEXT } from "../../utils/commonText";
+import { useTranslation } from "react-i18next";
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useBlockUserMutation, useChatHistoryQuery, useClearChatMutation, useUnblockUserMutation, useBlockCallsMutation, useUnblockCallsMutation, useDeleteMessagesMutation, useEditMessageMutation, useReportBlockMutation, authApi, useMyFriendsQuery, useFriendRequestsQuery, useSendFriendRequestMutation, useAcceptFriendRequestMutation, useRemoveFriendMutation, useCheckFriendStatusQuery } from "../../redux/services/auth";
 import { useDispatch } from "react-redux";
@@ -96,6 +97,7 @@ interface ReportModalProps {
 }
 
 const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit }) => {
+  const { t } = useTranslation();
   const [selected, setSelected] = React.useState<string[]>([]);
   const [note, setNote] = React.useState("");
   
@@ -161,7 +163,7 @@ React.useEffect(() => {
         <View style={modalStyles.handle} />
 
         <View style={modalStyles.header}>
-          <Text style={modalStyles.title}>Report User</Text>
+          <Text style={modalStyles.title}>{t("chat.reportModalTitle")}</Text>
           <Text style={modalStyles.subtitle}>
             Select , or write your own.
           </Text>
@@ -190,7 +192,11 @@ React.useEffect(() => {
                 >
                   <Text style={modalStyles.reasonIcon}>{reason.icon}</Text>
                   <Text style={[modalStyles.reasonLabel, isActive && modalStyles.reasonLabelActive]}>
-                    {reason.label}
+                    {reason.id === 'inappropriate' ? t("chat.reasonInappropriate") :
+                     reason.id === 'harassment' ? t("chat.reasonHarassment") :
+                     reason.id === 'spam' ? t("chat.reasonSpam") :
+                     reason.id === 'hate_speech' ? t("chat.reasonHateSpeech") :
+                     reason.id === 'nudity' ? t("chat.reasonNudity") : reason.label}
                   </Text>
                   {isActive && (
                     <View style={modalStyles.checkBadge}>
@@ -210,7 +216,7 @@ React.useEffect(() => {
 
           <TextInput
             style={modalStyles.input}
-            placeholder="Describe the issue in your own words…"
+            placeholder={t("chat.additionalNotes")}
             placeholderTextColor="#555869"
             multiline
             numberOfLines={4}
@@ -224,7 +230,7 @@ React.useEffect(() => {
 
         <View style={modalStyles.actions}>
           <TouchableOpacity style={modalStyles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
-            <Text style={modalStyles.cancelText}>Cancel</Text>
+            <Text style={modalStyles.cancelText}>{t("common.cancel")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -234,7 +240,7 @@ React.useEffect(() => {
             activeOpacity={0.85}
           >
             <Text style={[modalStyles.submitText, !canSubmit && modalStyles.submitTextDisabled]}>
-              Submit Report
+              {t("chat.submitReport")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -254,6 +260,7 @@ export const ChatDetailView: React.FC<ChatDetailProps> = ({
   chatUser,
   onBack,
 }) => {
+  const { t } = useTranslation();
   // Sync current chat ID with notification service to suppress toast/notifications
   React.useEffect(() => {
     if (userId) {
@@ -1541,7 +1548,7 @@ React.useEffect(() => {
                 <TextInput
                   value={newMessage}
                   onChangeText={handleTextChange}
-                  placeholder={isEditing ? "Edit message..." : CHAT_DETAIL_TEXT.messagePlaceholder}
+                  placeholder={isEditing ? "Edit message..." : t("chat.typeMessage")}
                   placeholderTextColor={colors.textPlaceholder}
                   style={[styles.chatInput, isEditing && { borderColor: colors.primary }]}
                   multiline={false}

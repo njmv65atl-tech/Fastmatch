@@ -42,6 +42,7 @@ import {
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import { useSelector } from "react-redux";
 import { userSelector } from "../../redux/slices/persistedSlice";
+import { useTranslation } from "react-i18next";
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -75,6 +76,7 @@ const FAQS = [
 ];
 
 export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
+  const { t } = useTranslation();
   const user = useSelector(userSelector);
   const [activeTab, setActiveTab] = useState<"faq" | "ticket" | "history">("faq");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -195,7 +197,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
 
   return (
     <MobileContainer edges={["top", "bottom"]}>
-      <Header title="Help & Support" onBack={() => setView(AppView.SETTINGS)} />
+      <Header title={t("support.title")} onBack={() => setView(AppView.SETTINGS)} />
 
       {/* Navigation Tabs */}
       <View style={styles.tabContainer}>
@@ -205,7 +207,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         >
           <HelpCircle size={16} color={activeTab === "faq" ? "#F59E0B" : "#64748B"} />
           <Text style={[styles.tabText, activeTab === "faq" && styles.activeTabText]}>
-            FAQs
+            {t("support.faqsTab")}
           </Text>
         </TouchableOpacity>
 
@@ -215,7 +217,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         >
           <Send size={16} color={activeTab === "ticket" ? "#F59E0B" : "#64748B"} />
           <Text style={[styles.tabText, activeTab === "ticket" && styles.activeTabText]}>
-            Open Ticket
+            {t("support.openTicketTab")}
           </Text>
         </TouchableOpacity>
 
@@ -225,7 +227,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         >
           <MessageSquare size={16} color={activeTab === "history" ? "#F59E0B" : "#64748B"} />
           <Text style={[styles.tabText, activeTab === "history" && styles.activeTabText]}>
-            My Tickets
+            {t("support.myTicketsTab")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -347,10 +349,10 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
             </View>
 
             {/* Subject */}
-            <Text style={styles.inputLabel}>Subject</Text>
+            <Text style={styles.inputLabel}>{t("support.subject")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Question about my subscription renewal"
+              placeholder={t("support.subjectPlaceholder")}
               placeholderTextColor="#64748B"
               value={subject}
               onChangeText={setSubject}
@@ -358,10 +360,10 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
             />
 
             {/* Description */}
-            <Text style={styles.inputLabel}>Message</Text>
+            <Text style={styles.inputLabel}>{t("support.message")}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Provide as much detail as possible so we can help quickly..."
+              placeholder={t("support.messagePlaceholder")}
               placeholderTextColor="#64748B"
               value={message}
               onChangeText={setMessage}
@@ -372,7 +374,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
             />
 
             {/* Email */}
-            <Text style={styles.inputLabel}>Contact Email</Text>
+            <Text style={styles.inputLabel}>{t("support.contactEmail")}</Text>
             <TextInput
               style={styles.input}
               placeholder="your@email.com"
@@ -401,7 +403,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
                 ) : (
                   <>
                     <Send size={18} color="#0F172A" style={{ marginRight: 8 }} />
-                    <Text style={styles.submitBtnText}>Submit Support Ticket</Text>
+                    <Text style={styles.submitBtnText}>{t("support.submitBtn")}</Text>
                   </>
                 )}
               </LinearGradient>
@@ -413,8 +415,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
         {activeTab === "history" && (
           <View style={styles.section}>
             <View style={styles.historyTitleRow}>
-              <Text style={styles.sectionTitle}>My Support Tickets</Text>
-              <Text style={styles.pullToRefreshHint}>Pull down to refresh</Text>
+              <Text style={styles.sectionTitle}>{t("support.myTicketsTitle")}</Text>
+              <Text style={styles.pullToRefreshHint}>{t("support.pullToRefresh")}</Text>
             </View>
 
             {isLoadingTickets ? (
@@ -471,7 +473,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ setView }) => {
             ) : (
               <View style={styles.emptyWrap}>
                 <MessageSquare size={48} color="#334155" />
-                <Text style={styles.emptyText}>No support tickets yet</Text>
+                <Text style={styles.emptyText}>{t("support.noTickets")}</Text>
                 <Text style={styles.emptySubtext}>
                   If you experience any issues, submit a ticket and our team will get right back to you.
                 </Text>

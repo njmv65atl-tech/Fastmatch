@@ -16,6 +16,7 @@ import { AppView, UserRole, User } from "../../types";
 import { User as UserIcon, Mail, Lock } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { SIGNUP_TEXT } from "../../utils/commonText";
+import { useTranslation } from "react-i18next";
 import { fontFamily } from "../../assets/fonts/fontFamily";
 import { useBackHandler } from "../../components/BackHandlerWrapper";
 import { validateSignup } from "../../utils/validators";
@@ -34,6 +35,7 @@ interface AuthProps {
 }
 
 export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
+  const { t } = useTranslation();
   const [userSignUp] = useUserSignUpMutation();
   const [privacy, setPrivacy] = React.useState(false);
   const [terms, setTerms] = React.useState(false);
@@ -171,18 +173,18 @@ export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
               color={colors.textPlaceholder}
               style={{ marginRight: 6 }}
             />
-            <Text style={styles.backLink}>{SIGNUP_TEXT.backLink}</Text>
+            <Text style={styles.backLink}>{t("common.back")}</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.header}>
-          <Text style={styles.pageTitle}>{SIGNUP_TEXT.pageTitle}</Text>
-          <Text style={styles.pageSubtitle}>{SIGNUP_TEXT.pageSubtitle}</Text>
+          <Text style={styles.pageTitle}>{t("auth.signupTitle")}</Text>
+          <Text style={styles.pageSubtitle}>{t("auth.signupSubtitle")}</Text>
         </View>
 
         <View style={styles.form}>
           {/* Gender Selector */}
           <View style={styles.genderSection}>
-            <Text style={styles.genderLabel}>Gender *</Text>
+            <Text style={styles.genderLabel}>{t("profile.genderLabel")} *</Text>
             <View style={styles.genderOptions}>
               {(['male', 'female', 'other'] as const).map((gender) => (
                 <TouchableOpacity
@@ -198,7 +200,7 @@ export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
                     styles.genderOptionText,
                     fields.gender === gender && styles.genderOptionTextSelected
                   ]}>
-                    {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                    {gender === 'male' ? t("profile.male") : gender === 'female' ? t("profile.female") : t("profile.other")}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -207,8 +209,8 @@ export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
 
           <Input
             ref={emailRef}
-            label={SIGNUP_TEXT.emailLabel}
-            placeholder={SIGNUP_TEXT.emailPlaceholder}
+            label={t("auth.email")}
+            placeholder={t("auth.emailPlaceholder")}
             icon={<Mail color={colors.textPlaceholder} size={18} />}
             maxLength={35}
             returnKeyType="next"
@@ -222,8 +224,8 @@ export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
 
           <Input
             ref={passwordRef}
-            label={SIGNUP_TEXT.passwordLabel}
-            placeholder={SIGNUP_TEXT.passwordPlaceholder}
+            label={t("auth.password")}
+            placeholder={t("auth.passwordPlaceholder")}
             icon={<Lock color={colors.textPlaceholder} size={18} />}
             returnKeyType="done"
             secureTextEntry={true}
@@ -235,20 +237,20 @@ export const SignupView: React.FC<AuthProps> = ({ setView, setUser }) => {
           />
 
           <View style={styles.bottomActions}>
-            <Button onClick={handleSignUp}>{SIGNUP_TEXT.continueButton}</Button>
+            <Button onClick={handleSignUp}>{t("common.confirm")}</Button>
 
             <Pressable>
               <Text style={styles.termsText}>
-                By signing up, you agree to our{" "}
+                {t("welcome.bySigningUp")}{" "}
                 <Text style={{ color: "#FFFFFF", textDecorationLine: "underline" }} onPress={() => handleText1()}>
-                  Terms of Use (EULA)
+                  {t("welcome.termsOfUse")}
                 </Text>{" "}
-                and{" "}
+                {t("welcome.and")}{" "}
                 <Text style={{ color: "#FFFFFF", textDecorationLine: "underline" }} onPress={() => handleText2()}>
-                  Privacy Policy
+                  {t("welcome.privacyPolicy")}
                 </Text>
                 .{"\n"}
-                FastMatch enforces strict zero tolerance for objectionable content and abusive users.
+                {t("welcome.zeroTolerance")}
               </Text>
             </Pressable>
           </View>

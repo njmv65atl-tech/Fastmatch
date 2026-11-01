@@ -26,6 +26,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { socket } from "../../socket/socket";
 import { BASE_URL, IMAGE_URL } from "../../config/env";
 import { UserAvatar } from "../../components/UserAvatar";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_GAP = 8;
@@ -118,6 +119,7 @@ interface DiscoverViewProps {
 }
 
 export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -263,7 +265,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
           <ArrowLeft color={colors.textPrimary} size={22} />
         </TouchableOpacity>
         <Crown color={colors.gold} size={20} style={{ marginRight: 6 }} />
-        <Text style={styles.headerTitle}>Super Match</Text>
+        <Text style={styles.headerTitle}>{t("home.superMatch")}</Text>
         <View style={{ flex: 1 }} />
       </View>
 
@@ -273,7 +275,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
           <Search color={colors.textPlaceholder} size={16} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search discover matches..."
+            placeholder={t("discovery.searchPlaceholder")}
             placeholderTextColor={colors.textPlaceholder}
             value={searchText}
             onChangeText={setSearchText}
@@ -392,7 +394,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
               />
               <View style={styles.superMatchInner}>
                 <Crown size={18} color="#FFF" />
-                <Text style={styles.superMatchActionBtnText}>Send Super Match</Text>
+                <Text style={styles.superMatchActionBtnText}>{t("discovery.sendSuperMatch")}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -406,7 +408,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
         <View style={styles.filterModalOverlay}>
           <View style={styles.filterModalContent}>
             <View style={styles.filterModalHeader}>
-              <Text style={styles.filterModalTitle}>Filters</Text>
+              <Text style={styles.filterModalTitle}>{t("discovery.filterTitle")}</Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)}>
                 <X color={colors.textPrimary} size={22} />
               </TouchableOpacity>
@@ -414,7 +416,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
               {/* Gender */}
-              <Text style={styles.filterSectionLabel}>Gender</Text>
+              <Text style={styles.filterSectionLabel}>{t("matchFilters.genderTitle")}</Text>
               <View style={styles.filterPillRow}>
                 {([["all", "Everyone"], ["male", "Male"], ["female", "Female"]] as [GenderFilter, string][]).map(([val, label]) => (
                   <FilterPill key={val} label={label} active={tempFilters.gender === val} onPress={() => setTempFilters(f => ({ ...f, gender: val }))} />
@@ -422,7 +424,7 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
               </View>
 
               {/* Age */}
-              <Text style={styles.filterSectionLabel}>Age Range</Text>
+              <Text style={styles.filterSectionLabel}>{t("discovery.ageRange")}</Text>
               <View style={styles.filterPillRow}>
                 {([["all", "Any"], ["18-24", "18-24"], ["25-34", "25-34"], ["35-44", "35-44"], ["45+", "45+"]] as [AgeFilter, string][]).map(([val, label]) => (
                   <FilterPill key={val} label={label} active={tempFilters.age === val} onPress={() => setTempFilters(f => ({ ...f, age: val }))} />
@@ -430,24 +432,24 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
               </View>
 
               {/* Status */}
-              <Text style={styles.filterSectionLabel}>Status</Text>
+              <Text style={styles.filterSectionLabel}>{t("membership.status")}</Text>
               <View style={styles.filterPillRow}>
-                <FilterPill label="All Users" active={tempFilters.online === "all"} onPress={() => setTempFilters(f => ({ ...f, online: "all" }))} />
-                <FilterPill label="Online Only" active={tempFilters.online === "online"} onPress={() => setTempFilters(f => ({ ...f, online: "online" }))} />
+                <FilterPill label={t("discovery.allUsers")} active={tempFilters.online === "all"} onPress={() => setTempFilters(f => ({ ...f, online: "all" }))} />
+                <FilterPill label={t("discovery.onlineOnly")} active={tempFilters.online === "online"} onPress={() => setTempFilters(f => ({ ...f, online: "online" }))} />
               </View>
 
               {/* Country */}
-              <Text style={styles.filterSectionLabel}>Country / Location</Text>
+              <Text style={styles.filterSectionLabel}>{t("discovery.countryLocation")}</Text>
               <TextInput
                 style={styles.filterInput}
-                placeholder="e.g. India, USA..."
+                placeholder={t("discovery.countryPlaceholder")}
                 placeholderTextColor={colors.textPlaceholder}
                 value={tempFilters.country}
                 onChangeText={(t) => setTempFilters(f => ({ ...f, country: t }))}
               />
 
               {/* Sort */}
-              <Text style={styles.filterSectionLabel}>Sort By</Text>
+              <Text style={styles.filterSectionLabel}>{t("discovery.sortBy")}</Text>
               <View style={styles.filterPillRow}>
                 {([["recent", "Recently Active"], ["newest", "Newest Members"], ["alphabetical", "A → Z"]] as [SortBy, string][]).map(([val, label]) => (
                   <FilterPill key={val} label={label} active={tempFilters.sortBy === val} onPress={() => setTempFilters(f => ({ ...f, sortBy: val }))} />
@@ -457,10 +459,10 @@ export const DiscoverView: React.FC<DiscoverViewProps> = ({ setView }) => {
 
             <View style={styles.filterModalFooter}>
               <TouchableOpacity style={styles.resetBtn} onPress={resetFilters}>
-                <Text style={styles.resetBtnText}>Reset</Text>
+                <Text style={styles.resetBtnText}>{t("discovery.resetFilters")}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.applyBtn} onPress={applyFilterModal}>
-                <Text style={styles.applyBtnText}>Apply Filters</Text>
+                <Text style={styles.applyBtnText}>{t("discovery.applyFilters")}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -25,6 +25,7 @@ import { AppView, UserRole } from "../../types";
 import { CheckCircle } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { OTP_TEXT } from "../../utils/commonText";
+import { useTranslation } from "react-i18next";
 import { fontFamily } from "../../assets/fonts/fontFamily";
 import {
   useVerifyOtpMutation,
@@ -47,6 +48,7 @@ interface AuthProps {
 }
 
 export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => {
+  const { t } = useTranslation();
   const [otp, setOtp] = React.useState(["", "", "", ""]);
   const inputRefs = React.useRef<(TextInput | null)[]>([]);
   const dispatch = useDispatch();
@@ -278,8 +280,8 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
               <View style={styles.iconCircle}>
                 <CheckCircle color={colors.primary} size={40} />
               </View>
-              <Text style={styles.pageTitle}>{OTP_TEXT.pageTitle}</Text>
-              <Text style={styles.pageSubtitle}>{OTP_TEXT.pageSubtitle}</Text>
+              <Text style={styles.pageTitle}>{t("auth.verification")}</Text>
+              <Text style={styles.pageSubtitle}>{t("auth.verificationSub")}</Text>
             </Animated.View>
 
             <View style={styles.animationContainer}>
@@ -314,8 +316,8 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
               {/* Success Checkmark & Text overlay */}
               <Animated.View style={[styles.successOverlay, checkmarkContainerStyle]} pointerEvents="none">
                 <CheckCircle color="#22c55e" size={64} />
-                <Text style={styles.successTitle}>Verified Successfully</Text>
-                <Text style={styles.successSubtitle}>Your number has been verified.</Text>
+                <Text style={styles.successTitle}>{t("auth.verifiedSuccess")}</Text>
+                <Text style={styles.successSubtitle}>{t("auth.verifiedSub")}</Text>
               </Animated.View>
             </View>
 
@@ -325,16 +327,16 @@ export const OTPView: React.FC<AuthProps> = ({ setView, user, email, type }) => 
             
             <Animated.View style={[{ width: "100%" }, headerAnimatedStyle]}>
               <Button onClick={handleOtp} fullWidth disabled={status === 'success'}>
-                {OTP_TEXT.verifyButton}
+                {t("auth.verifyBtn")}
               </Button>
               <View style={{ marginTop: 24, alignItems: "center" }}>
                 <Text style={{ color: colors.textMuted, fontSize: 16 }}>
-                  Didn't receive code?{" "}
+                  {t("auth.didntReceive")}{" "}
                   <Text
                     style={{ color: colors.primary, fontWeight: "bold" }}
                     onPress={handleResendOtp}
                   >
-                    Resend OTP
+                    {t("auth.resendOtp")}
                   </Text>
                 </Text>
               </View>

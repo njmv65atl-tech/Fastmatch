@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Zap } from "lucide-react-native";
 import { colors } from "../utils/colors";
+import { useTranslation } from "react-i18next";
 
 interface DailyRewardModalProps {
   visible: boolean;
@@ -10,15 +11,17 @@ interface DailyRewardModalProps {
 }
 
 export const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ visible, message, onClaim }) => {
+  const { t } = useTranslation();
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={styles.rewardModalContainer}>
           <Zap size={48} color={colors.gold} />
-          <Text style={styles.rewardTitle}>Daily Reward!</Text>
-          <Text style={styles.rewardSubtitle}>{message || "You earned 10 coins for logging in today."}</Text>
+          <Text style={styles.rewardTitle}>{t("home.dailyRewardTitle")}</Text>
+          <Text style={styles.rewardSubtitle}>{message || t("home.dailyRewardMessage")}</Text>
           <TouchableOpacity style={styles.claimButton} onPress={onClaim}>
-            <Text style={styles.claimButtonText}>Claim</Text>
+            <Text style={styles.claimButtonText}>{t("home.claim")}</Text>
           </TouchableOpacity>
         </View>
       </View>

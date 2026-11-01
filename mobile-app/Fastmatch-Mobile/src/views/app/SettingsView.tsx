@@ -88,7 +88,7 @@ export const SettingsView: React.FC<SettingsProps> = ({
 
   return (
     <MobileContainer>
-      <Header title="Settings" />
+      <Header title={t("settings.title")} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.cardWrapper}>
           <LinearGradient
@@ -151,12 +151,12 @@ export const SettingsView: React.FC<SettingsProps> = ({
                   >
                     {/* <View style={styles.premiumBadgeInner}> */}
                     <Crown size={10} strokeWidth={3} color="#451A03" />
-                    <Text style={styles.premiumText}>PREMIUM MEMBER</Text>
+                    <Text style={styles.premiumText}>{t("subscription.vipActive")}</Text>
                     {/* </View> */}
                   </View>
                 ) : (
                   <View style={styles.freeBadge}>
-                    <Text style={styles.freeText}>FREE PLAN</Text>
+                    <Text style={styles.freeText}>{t("membership.freePlan").toUpperCase()}</Text>
                   </View>
                 )}
               </View>

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { GoogleSignin, statusCodes } from "@react-native-google-signin/google-signin";
 import { appleAuth } from "@invertase/react-native-apple-authentication";
 import DeviceInfo from "react-native-device-info";
@@ -75,8 +76,10 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
   setView,
   setUser,
   onLoginSuccess,
-  dividerText = "or continue with",
+  dividerText,
 }) => {
+  const { t } = useTranslation();
+  const effectiveDivider = dividerText || t("auth.orContinueWith");
   const dispatch = useDispatch();
   const [socialAuth, { isLoading: isSocialLoading }] = useSocialAuthMutation();
   const [loadingProvider, setLoadingProvider] = useState<"google" | "apple" | null>(null);
@@ -261,7 +264,7 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
       {/* Divider */}
       <View style={styles.dividerRow}>
         <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>{dividerText}</Text>
+        <Text style={styles.dividerText}>{effectiveDivider}</Text>
         <View style={styles.dividerLine} />
       </View>
 

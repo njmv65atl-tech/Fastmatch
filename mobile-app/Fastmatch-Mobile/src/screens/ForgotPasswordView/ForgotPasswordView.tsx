@@ -15,6 +15,7 @@ import { MobileContainer, Button, Input } from "../../components/UIComponents";
 import { AppView } from "../../types";
 import { colors } from "../../utils/colors";
 import { FORGOT_PASSWORD_TEXT } from "../../utils/commonText";
+import { useTranslation } from "react-i18next";
 import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { validateForgotPassword } from "../../utils/validators";
 import { useForgotPasswordMutation } from "../../redux/services/auth";
@@ -30,6 +31,7 @@ export const ForgotPasswordView: React.FC<Props> = ({
   setView,
   onOtpRequested,
 }) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [forgotPass] = useForgotPasswordMutation();
@@ -95,16 +97,16 @@ export const ForgotPasswordView: React.FC<Props> = ({
     <MobileContainer>
       <ScrollView contentContainerStyle={styles.container}>
         <TouchableOpacity onPress={() => setView(AppView.LOGIN)}>
-          <Text style={styles.back}>{FORGOT_PASSWORD_TEXT.backLink}</Text>
+          <Text style={styles.back}>{"← " + t("common.back")}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>{FORGOT_PASSWORD_TEXT.pageTitle}</Text>
+        <Text style={styles.title}>{t("auth.forgotPassword")}</Text>
         {/* <Text style={styles.subtitle}>{FORGOT_PASSWORD_TEXT.pageSubtitle}</Text> */}
 
         <View style={styles.form}>
           <Input
-            label={FORGOT_PASSWORD_TEXT.emailLabel}
-            placeholder={FORGOT_PASSWORD_TEXT.emailPlaceholder}
+            label={t("auth.email")}
+            placeholder={t("auth.emailPlaceholder")}
             value={email}
             maxLength={35}
             onChangeText={(txt) => {
@@ -114,7 +116,7 @@ export const ForgotPasswordView: React.FC<Props> = ({
           />
         </View>
 
-        <Button onClick={handleSend}>{FORGOT_PASSWORD_TEXT.sendButton}</Button>
+        <Button onClick={handleSend}>{t("auth.sendResetOtp")}</Button>
       </ScrollView>
     </MobileContainer>
   );

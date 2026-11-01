@@ -88,9 +88,10 @@ import { useRateMatchMutation, useUpgradePremiumMockMutation, useVerifyPurchaseM
 import { setupIAP, purchaseErrorListener, purchaseUpdatedListener, finishTransaction, closeIAPConnection, subscribeToProduct, restoreActivePurchases } from "./src/utils/iap";
 import "./src/i18n";
 import { initLanguage } from "./src/i18n";
+import { useTranslation } from "react-i18next";
 const { width } = Dimensions.get("window");
 const App: React.FC = () => {
-
+  const { t } = useTranslation();
   const [isConnected, setIsConnected] = useState<boolean | null>(true);
   const token = useSelector(tokenSelector);
   const [upgradePremiumMock] = useUpgradePremiumMockMutation();
@@ -817,9 +818,9 @@ const App: React.FC = () => {
               <View style={styles.matchRequestHeader}>
                 <View style={styles.matchRequestPulseRing} />
                 <Text style={styles.matchRequestTitle}>
-                  {incomingMatchRequest?.isSuperMatch ? "Super Match Request!" : "Incoming Match Request"}
+                  {incomingMatchRequest?.isSuperMatch ? t("appModal.superMatchRequest") : t("appModal.incomingMatchRequest")}
                 </Text>
-                <Text style={styles.matchRequestSubtitle}>Someone wants to start a video chat with you right now</Text>
+                <Text style={styles.matchRequestSubtitle}>{t("appModal.matchRequestSub")}</Text>
               </View>
 
               <View style={styles.matchRequestUserCard}>
@@ -867,7 +868,7 @@ const App: React.FC = () => {
                     dispatch(clearIncomingMatchRequest());
                   }}
                 >
-                  <Text style={styles.matchRequestDeclineText}>Reject</Text>
+                  <Text style={styles.matchRequestDeclineText}>{t("appModal.reject")}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -879,7 +880,7 @@ const App: React.FC = () => {
                     dispatch(clearIncomingMatchRequest());
                   }}
                 >
-                  <Text style={styles.matchRequestAcceptText}>Accept</Text>
+                  <Text style={styles.matchRequestAcceptText}>{t("appModal.accept")}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -895,7 +896,7 @@ const App: React.FC = () => {
         >
           <View style={styles.modalOverlayInt}>
             <View style={styles.interestsModalContainer}>
-              <Text style={styles.interestsModalTitle}>All Interests</Text>
+              <Text style={styles.interestsModalTitle}>{t("appModal.allInterests")}</Text>
               <ScrollView contentContainerStyle={styles.allInterestsScroll}>
                 <View style={styles.interestsContainerModal}>
                   {incomingMatchRequest?.remoteUser?.interests?.map((interest: string, index: number) => (
@@ -909,7 +910,7 @@ const App: React.FC = () => {
                 style={styles.closeInterestsBtn}
                 onPress={() => setShowAllInterestsApp(false)}
               >
-                <Text style={styles.closeInterestsText}>Close</Text>
+                <Text style={styles.closeInterestsText}>{t("appModal.close")}</Text>
               </TouchableOpacity>
             </View>
           </View>

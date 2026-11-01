@@ -153,9 +153,9 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
                   <Coins size={24} color="#F59E0B" />
                 </View>
                 <View>
-                  <Text style={styles.packageAmount}>{pkg.amount} Coins</Text>
+                  <Text style={styles.packageAmount}>{pkg.amount} {t("wallet.coins")}</Text>
                   {pkg.bonus > 0 && (
-                    <Text style={styles.packageBonus}>+{pkg.bonus} Bonus Coins</Text>
+                    <Text style={styles.packageBonus}>+{pkg.bonus} {t("wallet.bonusCoins")}</Text>
                   )}
                 </View>
               </View>
@@ -168,7 +168,7 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
         </View>
 
         <Text style={styles.infoText}>
-          Coins can be used to send Virtual Gifts during video calls and unlock Super Matches. Pull down to refresh your balance at any time.
+          {t("wallet.infoText")}
         </Text>
 
         <View style={styles.historyContainer}>
@@ -189,11 +189,11 @@ export const WalletView: React.FC<WalletViewProps> = ({ setView, onBack }) => {
                 </View>
                 <View style={styles.historyDetails}>
                   <Text style={styles.historyTitle}>
-                    {tx.type === 'daily_reward' ? 'Daily Reward' :
-                     tx.type === 'purchase' || tx.type === 'buy_coin' ? 'Purchased Coins' :
-                     tx.type === 'gift_sent' ? 'Sent Gift' :
-                     tx.type === 'gift_received' ? 'Received Gift' :
-                     tx.type === 'converted_gift' ? 'Converted Gift to Coins' : 'Transaction'}
+                    {tx.type === 'daily_reward' ? t("wallet.txDailyReward") :
+                     tx.type === 'purchase' || tx.type === 'buy_coin' ? t("wallet.txPurchasedCoins") :
+                     tx.type === 'gift_sent' ? t("wallet.txSentGift") :
+                     tx.type === 'gift_received' ? t("wallet.txReceivedGift") :
+                     tx.type === 'converted_gift' ? t("wallet.txConvertedGift") : t("wallet.txTransaction")}
                   </Text>
                   <Text style={styles.historyDesc}>{tx.description || "N/A"}</Text>
                   <Text style={styles.historyDate}>{new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>

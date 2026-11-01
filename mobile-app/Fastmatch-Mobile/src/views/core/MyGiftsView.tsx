@@ -9,6 +9,7 @@ import { Gift, Coins, User as UserIcon } from "lucide-react-native";
 import { IMAGE_URL } from "../../config/env";
 import { setGlobalUser, tokenSelector } from "../../redux/slices/persistedSlice";
 import { useSelector, useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { BASE_URL as API_BASE_URL } from "../../config/env";
 
 const BASE_URL = IMAGE_URL;
@@ -20,6 +21,7 @@ interface CoreProps {
 }
 
 export const MyGiftsView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = React.useState(true);
   const [gifts, setGifts] = React.useState<any[]>([]);
   const dispatch = useDispatch();
@@ -65,7 +67,7 @@ export const MyGiftsView: React.FC<CoreProps> = ({ user, setView, setUser }) => 
       const json = await res.json();
       
       if (json.success) {
-          ShowAlertMessage(`Converted to ${coinValue} coins!`, popTypes.success);
+          ShowAlertMessage(t("myGifts.convertedSuccess", { coins: coinValue }), popTypes.success);
           // Remove gift from list
           setGifts(prev => prev.filter(g => g._id !== giftId));
           // Update user wallet
@@ -85,18 +87,18 @@ export const MyGiftsView: React.FC<CoreProps> = ({ user, setView, setUser }) => 
   return (
     <View style={{ flex: 1 }}>
       <MobileContainer>
-        <Header title="My Gifts" onBack={() => setView(AppView.SETTINGS)} />
+        <Header title={t("myGifts.title")} onBack={() => setView(AppView.SETTINGS)} />
         
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Gift color={colors.primary} size={24} />
-            <Text style={styles.statLabel}>Total Gifts</Text>
+            <Text style={styles.statLabel}>{t("myGifts.totalGifts")}</Text>
             <Text style={styles.statValue}>{gifts.length}</Text>
           </View>
           <View style={styles.statBox}>
             <Coins color="#f59e0b" size={24} />
-            <Text style={styles.statLabel}>Total Value</Text>
-            <Text style={styles.statValue}>{gifts.reduce((sum, g) => sum + g.coinValue, 0)} Coins</Text>
+            <Text style={styles.statLabel}>{t("myGifts.totalValue")}</Text>
+            <Text style={styles.statValue}>{gifts.reduce((sum, g) => sum + g.coinValue, 0)} {t("wallet.coins")}</Text>
           </View>
         </View>
 
@@ -107,8 +109,8 @@ export const MyGiftsView: React.FC<CoreProps> = ({ user, setView, setUser }) => 
         ) : gifts.length === 0 ? (
           <View style={styles.center}>
             <Gift color={colors.textMuted} size={64} style={{ marginBottom: 16, opacity: 0.5 }} />
-            <Text style={styles.emptyText}>You don't have any gifts yet.</Text>
-            <Text style={styles.emptySubtext}>Matches can send you gifts during video calls!</Text>
+            <Text style={styles.emptyText}>{t("myGifts.noGifts")}</Text>
+            <Text style={styles.emptySubtext}>{t("myGifts.noGiftsSub")}</Text>
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.scroll}>
@@ -131,7 +133,7 @@ export const MyGiftsView: React.FC<CoreProps> = ({ user, setView, setUser }) => 
                     <Text style={styles.giftName}>{gift.giftName}</Text>
                     
                     <View style={styles.senderInfo}>
-                      <Text style={styles.senderLabel}>From:</Text>
+                      <Text style={styles.senderLabel}>{t("myGifts.from")}:</Text>
                       <View style={styles.senderRow}>
                         {senderPic ? (
                           <Image source={{ uri: senderPic }} style={styles.senderAvatar} />
@@ -150,7 +152,7 @@ export const MyGiftsView: React.FC<CoreProps> = ({ user, setView, setUser }) => 
                       style={styles.convertBtn} 
                       onPress={() => handleConvert(gift._id, gift.coinValue)}
                     >
-                      <Text style={styles.convertText}>Convert to Coins</Text>
+                      <Text style={styles.convertText}>{t("myGifts.convertToCoins", { coins: gift.coinValue })}</Text>
                     </TouchableOpacity>
                   </View>
                 );

@@ -14,6 +14,7 @@ import { AppView, UserRole, User } from "../../types";
 import { Mail, Lock } from "lucide-react-native";
 import { colors } from "../../utils/colors";
 import { LOGIN_TEXT } from "../../utils/commonText";
+import { useTranslation } from "react-i18next";
 import { fontFamily } from "../../assets/fonts/fontFamily";
 import { useBackHandler } from "../../components/BackHandlerWrapper";
 import { ArrowLeft } from "lucide-react-native";
@@ -41,6 +42,7 @@ interface AuthProps {
 }
 
 export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
+  const { t } = useTranslation();
   const [userSignIn] = useUserSignInMutation();
   const dispatch = useDispatch();
   const [deviceId, setDeviceId] = useState('');
@@ -152,18 +154,18 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
               color={colors.textPlaceholder}
               style={{ marginRight: 6, marginBottom: 20 }}
             />
-            <Text style={styles.backLink}>{LOGIN_TEXT.backLink}</Text>
+            <Text style={styles.backLink}>{t("common.back")}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.pageTitle}>{LOGIN_TEXT.pageTitle}</Text>
-          <Text style={styles.pageSubtitle}>{LOGIN_TEXT.pageSubtitle}</Text>
+          <Text style={styles.pageTitle}>{t("auth.loginTitle")}</Text>
+          <Text style={styles.pageSubtitle}>{t("auth.loginSubtitle")}</Text>
         </View>
 
         <View style={styles.form}>
           <Input
             ref={emailRef}
-            label={LOGIN_TEXT.emailLabel}
-            placeholder={LOGIN_TEXT.emailPlaceholder}
+            label={t("auth.email")}
+            placeholder={t("auth.emailPlaceholder")}
             icon={<Mail color={colors.textPlaceholder} size={18} />}
             value={fields.email}
             returnKeyType="next"
@@ -175,9 +177,9 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
           />
           <Input
             ref={passwordRef}
-            label={LOGIN_TEXT.passwordLabel}
+            label={t("auth.password")}
             secureTextEntry
-            placeholder={LOGIN_TEXT.passwordPlaceholder}
+            placeholder={t("auth.passwordPlaceholder")}
             icon={<Lock color={colors.textPlaceholder} size={18} />}
             value={fields.password}
             maxLength={25}
@@ -189,15 +191,15 @@ export const LoginView: React.FC<AuthProps> = ({ setView, login, setUser }) => {
             onPress={() => setView(AppView.FORGOT_PASSWORD)}
             style={styles.forgotBtn}
           >
-            <Text style={styles.forgotText}>{LOGIN_TEXT.forgotPassword}</Text>
+            <Text style={styles.forgotText}>{t("auth.forgotPassword")}</Text>
           </TouchableOpacity>
           <View style={styles.bottomActions}>
-            <Button onClick={handleLogin}>{LOGIN_TEXT.logInButton}</Button>
+            <Button onClick={handleLogin}>{t("auth.loginBtn")}</Button>
             <SocialAuthButtons setView={setView} setUser={setUser} onLoginSuccess={login} />
             <View style={styles.footerRow}>
-              <Text style={styles.footerText}>{LOGIN_TEXT.noAccount}</Text>
+              <Text style={styles.footerText}>{t("auth.dontHaveAccount")}</Text>
               <TouchableOpacity onPress={() => setView(AppView.SIGNUP)}>
-                <Text style={styles.footerLink}>{LOGIN_TEXT.signUpLink}</Text>
+                <Text style={styles.footerLink}>{t("auth.signupBtn")}</Text>
               </TouchableOpacity>
             </View>
           </View>

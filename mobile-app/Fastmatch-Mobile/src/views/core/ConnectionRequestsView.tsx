@@ -19,10 +19,12 @@ import {
 } from "../../redux/services/auth";
 import { ShowAlertMessage, popTypes } from "../../helpers/commonFunctions";
 import { UserAvatar } from "../../components/UserAvatar";
+import { useTranslation } from "react-i18next";
 
 export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }> = ({
   setView,
 }) => {
+  const { t } = useTranslation();
   const { data, isLoading, refetch } = useFriendRequestsQuery({});
   const [acceptRequest, { isLoading: isAccepting }] = useAcceptFriendRequestMutation();
   const [rejectRequest, { isLoading: isRejecting }] = useRejectFriendRequestMutation();
@@ -36,19 +38,19 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
   const handleAccept = async (requestId: string) => {
     try {
       await acceptRequest({ requestId }).unwrap();
-      ShowAlertMessage("Request accepted! You are now connected.", popTypes.success);
+      ShowAlertMessage(t("requests.acceptedSuccess"), popTypes.success);
       setView(AppView.CHAT_INBOX);
     } catch (error: any) {
-      ShowAlertMessage(error?.data?.message || "Failed to accept request", popTypes.error);
+      ShowAlertMessage(error?.data?.message || t("requests.failedAccept"), popTypes.error);
     }
   };
 
   const handleReject = async (requestId: string) => {
     try {
       await rejectRequest({ requestId }).unwrap();
-      ShowAlertMessage("Request removed.", popTypes.success);
+      ShowAlertMessage(t("requests.removedSuccess"), popTypes.success);
     } catch (error: any) {
-      ShowAlertMessage(error?.data?.message || "Failed to reject request", popTypes.error);
+      ShowAlertMessage(error?.data?.message || t("requests.failedReject"), popTypes.error);
     }
   };
 
@@ -69,7 +71,7 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
           <View style={styles.info}>
             <Text style={styles.name}>{requester.displayName}</Text>
             <Text style={styles.subtext}>
-              {requester.age ? `${requester.age} yrs • ` : ""}{requester.gender || "Any"}
+              {requester.age ? `${requester.age} ${t("discovery.yrs")} • ` : ""}{requester.gender || "Any"}
             </Text>
           </View>
         </View>
@@ -87,7 +89,7 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
             disabled={isRejecting || isAccepting}
           >
             <X color={colors.white} size={20} />
-            <Text style={styles.btnText}>Decline</Text>
+            <Text style={styles.btnText}>{t("requests.decline")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -96,7 +98,7 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
             disabled={isRejecting || isAccepting}
           >
             <Check color={colors.white} size={20} />
-            <Text style={styles.btnText}>Accept</Text>
+            <Text style={styles.btnText}>{t("requests.accept")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -110,11 +112,11 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
           <ArrowLeft color={colors.textPrimary} size={24} />
         </TouchableOpacity>
         <Inbox color={colors.primary} size={24} style={{ marginRight: 8 }} />
-        <Text style={styles.headerTitle}>Requests</Text>
+        <Text style={styles.headerTitle}>{t("requests.title")}</Text>
       </View>
 
       <Text style={styles.subtitle}>
-        People who want to connect with you.
+        {t("requests.subtitle")}
       </Text>
 
       {isLoading ? (
@@ -128,7 +130,7 @@ export const ConnectionRequestsView: React.FC<{ setView: (v: AppView) => void }>
           contentContainerStyle={styles.list}
           renderItem={renderRequest}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>No pending requests right now.</Text>
+            <Text style={styles.emptyText}>{t("requests.empty")}</Text>
           }
         />
       )}
@@ -159,92 +161,85 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   list: {
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: "rgba(30, 41, 59, 0.7)",
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
-  fallbackImage: {
-    backgroundColor: colors.surfaceSecondary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  fallbackText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.textPlaceholder,
   },
   info: {
+    marginLeft: 12,
     flex: 1,
   },
   name: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     color: colors.textPrimary,
-    marginBottom: 4,
   },
   subtext: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textPlaceholder,
+    marginTop: 2,
   },
   messageBox: {
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
+    borderRadius: 12,
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
+    marginTop: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
   },
   messageText: {
-    color: colors.textPrimary,
-    fontStyle: "italic",
+    color: colors.textPlaceholder,
     fontSize: 14,
+    fontStyle: "italic",
+    lineHeight: 20,
   },
   actionsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     gap: 12,
+    marginTop: 16,
   },
   actionBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: 22,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
   },
   rejectBtn: {
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
   },
   acceptBtn: {
     backgroundColor: colors.primary,
   },
   btnText: {
     color: colors.white,
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  emptyText: {
+    color: colors.textPlaceholder,
+    textAlign: "center",
+    marginTop: 40,
     fontSize: 15,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  emptyText: {
-    color: colors.textPlaceholder,
-    textAlign: "center",
-    marginTop: 40,
+    marginTop: 60,
   },
 });

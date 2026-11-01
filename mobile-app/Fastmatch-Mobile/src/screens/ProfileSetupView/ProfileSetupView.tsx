@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import * as React from "react";
 import { useState, useEffect } from "react";
 import {
@@ -63,7 +64,8 @@ const isInvalidOrAppleName = (val?: string | null): boolean => {
   );
 };
 
-export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }) => {  
+export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }) => {
+  const { t } = useTranslation();  
   const interests = PROFILE_SETUP_TEXT.interests;
   const initialDisplayName = isInvalidOrAppleName(user?.displayName) ? "" : (user?.displayName || "");
   const initialFullName = isInvalidOrAppleName(user?.fullName) ? "" : (user?.fullName || "");
@@ -373,9 +375,9 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
         >
           <ChevronLeft color={colors.white} size={28} />
         </TouchableOpacity>
-        <Text style={styles.pageTitle}>{PROFILE_SETUP_TEXT.pageTitle}</Text>
+        <Text style={styles.pageTitle}>{t("auth.completeProfileTitle")}</Text>
         <Text style={styles.pageSubtitle}>
-          {PROFILE_SETUP_TEXT.pageSubtitle}
+          {t("auth.completeProfileSub")}
         </Text>
 
         <View style={styles.avatarWrap}>
@@ -399,8 +401,8 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
         {/* Display Name  */}
 
         <Input
-          label={PROFILE_SETUP_TEXT.displayNameLabel || "Display Name"}
-          placeholder="Enter display name"
+          label={t("auth.displayName")}
+          placeholder={t("auth.enterDisplayName")}
           value={name}
           maxLength={12}
           onChangeText={(txt) => {
@@ -411,8 +413,8 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
 
         {/* Full Name  */}
         <Input
-          label={"Full Name"}
-          placeholder="Enter full name"
+          label={t("auth.fullName")}
+          placeholder={t("auth.enterFullName")}
           value={fullName}
           maxLength={30}
           onChangeText={(txt) => {
@@ -422,8 +424,8 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
 
         {/* ── Age ── */}
                 <Input
-                  label={PROFILE_SETUP_TEXT.age}
-                  placeholder="Enter your age"
+                  label={t("auth.age")}
+                  placeholder={t("auth.enterAge")}
                   value={age}
                   maxLength={3}
                   onChangeText={(txt) => setAge(txt.trimStart())}
@@ -433,8 +435,8 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
         
                 {/* ── Location ── */}
                 <Input
-                  label={PROFILE_SETUP_TEXT.Location}
-                  placeholder="Enter your location"
+                  label={t("auth.location")}
+                  placeholder={t("auth.enterLocation")}
                   value={location}
                   maxLength={100}
                   onChangeText={(txt) => setLocation(txt.trimStart())}
@@ -442,7 +444,7 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
                 />
 
                 <Dropdown
-                  label={PROFILE_SETUP_TEXT.languageLabel}
+                  label={t("settings.language")}
                   options={PROFILE_SETUP_TEXT.languages}
                   selectedValue={language}
                   onSelect={(val) => setLanguage(val)}
@@ -453,7 +455,7 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
 
 
         <View style={styles.section}>
-          <Text style={styles.label}>{PROFILE_SETUP_TEXT.interestsLabel}</Text>
+          <Text style={styles.label}>{t("profile.interestsLabel")}</Text>
           <View style={styles.tagGrid}>
             {interests.map((interest) => (
               <TouchableOpacity
@@ -478,7 +480,7 @@ export const ProfileSetupView: React.FC<AuthProps> = ({ setView, setUser, user }
         </View>
 
         <Button onClick={handleComplete}>
-          {PROFILE_SETUP_TEXT.finishSetup}
+          {t("auth.finishSetup")}
         </Button>
       </ScrollView>
     </MobileContainer>

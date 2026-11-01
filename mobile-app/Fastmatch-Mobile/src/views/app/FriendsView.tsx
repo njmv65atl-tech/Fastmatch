@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import {
   View,
   Text,
@@ -26,12 +25,14 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
 import { IMG_URL } from "../../redux/services";
 import { UserAvatar } from "../../components/UserAvatar";
+import { useTranslation } from "react-i18next";
 
 interface FriendsViewProps {
   setView: (view: AppView, params?: any) => void;
 }
 
 export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"friends" | "requests">("friends");
   const user = useSelector((state: RootState) => state.persist.user);
 
@@ -70,7 +71,6 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
   };
 
   const renderFriendItem = (item: any) => {
-    // Determine friend object by checking who the current user is
     const currentUserId = (user as any)?.id || (user as any)?._id;
     const friendObj = item.requester?._id === currentUserId ? item.recipient : item.requester;
     if (!friendObj) return null;
@@ -98,7 +98,9 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{friendObj.displayName || friendObj.fullName || friendObj.name || "Unknown"}</Text>
-          <Text style={styles.userStatus}>Friends since {new Date(item.createdAt).toLocaleDateString()}</Text>
+          <Text style={styles.userStatus}>
+            {t("friends.friendsSince", { date: new Date(item.createdAt).toLocaleDateString() })}
+          </Text>
         </View>
         <View style={styles.actionBtn}>
           <UserCheck color={colors.primary} size={20} />
@@ -122,7 +124,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{requester.displayName || requester.fullName || requester.name || "Unknown"}</Text>
-          <Text style={styles.userStatus}>Wants to be friends</Text>
+          <Text style={styles.userStatus}>{t("friends.wantsToBeFriends")}</Text>
         </View>
         <View style={{ flexDirection: 'column', gap: 5 }}>
           <TouchableOpacity
@@ -131,7 +133,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
             disabled={isAccepting}
           >
             <UserPlus color={colors.white} size={14} />
-            <Text style={styles.acceptBtnText}>Accept</Text>
+            <Text style={styles.acceptBtnText}>{t("friends.accept")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.acceptBtn, { backgroundColor: colors.surfaceAlt }]}
@@ -139,7 +141,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
             disabled={isRemoving}
           >
             <X color={colors.textMuted} size={14} />
-            <Text style={[styles.acceptBtnText, { color: colors.textMuted }]}>Decline</Text>
+            <Text style={[styles.acceptBtnText, { color: colors.textMuted }]}>{t("friends.decline")}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -161,7 +163,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         />
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{recipient.displayName || recipient.fullName || recipient.name || "Unknown"}</Text>
-          <Text style={styles.userStatus}>Request Sent</Text>
+          <Text style={styles.userStatus}>{t("friends.requestSent")}</Text>
         </View>
         <TouchableOpacity
           style={[styles.acceptBtn, { backgroundColor: colors.surfaceAlt }]}
@@ -169,7 +171,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           disabled={isRemoving}
         >
           <UserMinus color={colors.danger} size={14} />
-          <Text style={[styles.acceptBtnText, { color: colors.danger }]}>Cancel</Text>
+          <Text style={[styles.acceptBtnText, { color: colors.danger }]}>{t("friends.cancel")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -181,7 +183,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
         <TouchableOpacity onPress={() => setView(AppView.HOME)} style={styles.backBtn}>
           <ChevronLeft color={colors.white} size={moderateScale(28)} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Friends</Text>
+        <Text style={styles.headerTitle}>{t("friends.title")}</Text>
         <View style={{ width: moderateScale(40) }} />
       </View>
 
@@ -191,7 +193,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           onPress={() => setActiveTab("friends")}
         >
           <Text style={[styles.tabText, activeTab === "friends" && styles.activeTabText]}>
-            My Friends
+            {t("friends.myFriends")}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -199,7 +201,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           onPress={() => setActiveTab("requests")}
         >
           <Text style={[styles.tabText, activeTab === "requests" && styles.activeTabText]}>
-            Requests {((requestsData?.data?.length || 0) + (sentReqsData?.data?.length || 0)) > 0 ? `(${((requestsData?.data?.length || 0) + (sentReqsData?.data?.length || 0))})` : null}
+            {t("friends.requests")} {((requestsData?.data?.length || 0) + (sentReqsData?.data?.length || 0)) > 0 ? `(${((requestsData?.data?.length || 0) + (sentReqsData?.data?.length || 0))})` : null}
           </Text>
         </TouchableOpacity>
       </View>
@@ -229,12 +231,14 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
           ) : (
             <View style={styles.emptyContainer}>
               <UserCheck color={colors.textMuted} size={48} />
-              <Text style={styles.emptyText}>You have no friends yet.</Text>
+              <Text style={styles.emptyText}>{t("friends.noFriends")}</Text>
             </View>
           )
         ) : (
           <View style={{ paddingBottom: 20 }}>
-            <Text style={{ color: colors.white, fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 5 }}>Incoming Requests</Text>
+            <Text style={{ color: colors.white, fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 5 }}>
+              {t("friends.incomingRequests")}
+            </Text>
             {isLoadingReqs ? (
               <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
             ) : requestsData?.data?.length > 0 ? (
@@ -242,11 +246,13 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
             ) : (
               <View style={[styles.emptyContainer, { marginTop: 20, marginBottom: 20 }]}>
                 <Clock color={colors.textMuted} size={32} />
-                <Text style={styles.emptyText}>No pending friend requests.</Text>
+                <Text style={styles.emptyText}>{t("friends.noPendingRequests")}</Text>
               </View>
             )}
 
-            <Text style={{ color: colors.white, fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 20 }}>Sent Requests</Text>
+            <Text style={{ color: colors.white, fontSize: 16, fontWeight: 'bold', marginBottom: 10, marginTop: 20 }}>
+              {t("friends.sentRequests")}
+            </Text>
             {isLoadingSentReqs ? (
               <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
             ) : sentReqsData?.data?.length > 0 ? (
@@ -254,7 +260,7 @@ export const FriendsView: React.FC<FriendsViewProps> = ({ setView }) => {
             ) : (
               <View style={[styles.emptyContainer, { marginTop: 20 }]}>
                 <Clock color={colors.textMuted} size={32} />
-                <Text style={styles.emptyText}>No sent friend requests.</Text>
+                <Text style={styles.emptyText}>{t("friends.noSentRequests")}</Text>
               </View>
             )}
           </View>
@@ -270,61 +276,54 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: scale(15),
-    paddingTop: verticalScale(15),
-    paddingBottom: verticalScale(10),
+    paddingVertical: verticalScale(10),
   },
   backBtn: {
-    padding: scale(5),
+    padding: moderateScale(5),
   },
   headerTitle: {
-    color: colors.white,
     fontSize: moderateScale(20),
     fontWeight: "bold",
+    color: colors.white,
   },
   tabContainer: {
     flexDirection: "row",
-    paddingHorizontal: scale(15),
-    marginBottom: verticalScale(15),
+    marginHorizontal: scale(15),
+    marginVertical: verticalScale(10),
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: moderateScale(10),
+    padding: moderateScale(4),
   },
   tab: {
     flex: 1,
-    paddingVertical: verticalScale(10),
+    paddingVertical: verticalScale(8),
     alignItems: "center",
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
+    borderRadius: moderateScale(8),
   },
   activeTab: {
-    borderBottomColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   tabText: {
     color: colors.textMuted,
-    fontSize: moderateScale(15),
+    fontSize: moderateScale(14),
     fontWeight: "600",
   },
   activeTabText: {
     color: colors.white,
   },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: scale(15),
-    paddingBottom: 100,
-  },
   userCard: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.surface,
-    padding: scale(15),
-    borderRadius: moderateScale(15),
+    padding: moderateScale(12),
+    borderRadius: moderateScale(12),
     marginBottom: verticalScale(10),
-  },
-  avatar: {
-    width: moderateScale(50),
-    height: moderateScale(50),
-    borderRadius: moderateScale(25),
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
   },
   userInfo: {
     flex: 1,
-    marginLeft: scale(15),
+    marginLeft: scale(12),
   },
   userName: {
     color: colors.white,
@@ -337,35 +336,32 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(2),
   },
   actionBtn: {
-    width: moderateScale(40),
-    height: moderateScale(40),
+    padding: moderateScale(8),
     borderRadius: moderateScale(20),
     backgroundColor: colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
   },
   acceptBtn: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.primary,
-    paddingHorizontal: scale(15),
-    paddingVertical: verticalScale(8),
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(6),
     borderRadius: moderateScale(20),
-    gap: scale(5),
+    gap: scale(4),
   },
   acceptBtnText: {
     color: colors.white,
+    fontSize: moderateScale(12),
     fontWeight: "bold",
-    fontSize: moderateScale(14),
   },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: verticalScale(50),
-    gap: verticalScale(15),
+    paddingVertical: verticalScale(40),
   },
   emptyText: {
     color: colors.textMuted,
-    fontSize: moderateScale(16),
+    fontSize: moderateScale(14),
+    marginTop: verticalScale(10),
   },
 });

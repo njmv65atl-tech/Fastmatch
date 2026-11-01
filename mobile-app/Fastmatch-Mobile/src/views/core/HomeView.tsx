@@ -48,6 +48,7 @@ interface CoreProps {
 }
 
 const OnlineCounter = ({ count }: { count: number }) => {
+  const { t } = useTranslation();
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
@@ -88,7 +89,7 @@ const OnlineCounter = ({ count }: { count: number }) => {
       </View>
       <Text style={styles.onlineText}>
         <Text style={styles.onlineCountBold}>{count.toLocaleString()}</Text>
-        {' People Online Now'}
+        {' ' + t("home.peopleOnlineNow")}
       </Text>
     </View>
   );
@@ -202,11 +203,11 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
             </View>
 
             <Text style={styles.heroTitle}>
-              {HOME_TEXT.greeting}, {user?.displayName}
+              {t("home.title")}, {user?.displayName}
             </Text>
             
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-              <Text style={styles.heroSubtitle}>{HOME_TEXT.readyQuestion}</Text>
+              <Text style={styles.heroSubtitle}>{t("home.subtitle")}</Text>
             </View>
           </View>
 
@@ -221,10 +222,10 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               </View>
               <View style={styles.actionDesc}>
                 <Text style={styles.actionTitle}>
-                  {HOME_TEXT.randomVideoChat}
+                  {t("home.title")}
                 </Text>
                 <Text style={styles.actionSubtitle}>
-                  {HOME_TEXT.connectInstantly}
+                  {t("home.subtitle")}
                 </Text>
               </View>
               <View style={{ width: "100%" }}>
@@ -239,7 +240,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                     }
                   }}
                 >
-                  {HOME_TEXT.startMatching}
+                  {t("home.startMatching")}
                 </Button>
               </View>
 
@@ -273,7 +274,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                     <Crown color={colors.gold} size={28} />
                   </View>
                   <Text style={styles.gridTitle}>{t("home.superMatch")}</Text>
-                  <Text style={styles.gridSubtitle}>Find who's online</Text>
+                  <Text style={styles.gridSubtitle}>{t("home.findWhosOnline")}</Text>
                 </TouchableOpacity>
 
                 {/* Global Network Card */}
@@ -293,7 +294,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                     <Globe color="#3b82f6" size={28} />
                   </View>
                   <Text style={styles.gridTitle}>{t("discovery.title")}</Text>
-                  <Text style={styles.gridSubtitle}>Browse all users</Text>
+                  <Text style={styles.gridSubtitle}>{t("home.browseAllUsers")}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -314,8 +315,8 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                   <Inbox color="#10b981" size={28} />
                 </View>
                 <View style={{ marginLeft: 16, flex: 1 }}>
-                  <Text style={[styles.gridTitle, { textAlign: 'left' }]}>Connection Requests</Text>
-                  <Text style={[styles.gridSubtitle, { textAlign: 'left' }]}>View & manage your invites</Text>
+                  <Text style={[styles.gridTitle, { textAlign: 'left' }]}>{t("home.connectionRequests")}</Text>
+                  <Text style={[styles.gridSubtitle, { textAlign: 'left' }]}>{t("home.manageInvites")}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -325,10 +326,10 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               <TouchableOpacity style={styles.upgradeCard} activeOpacity={0.9}>
                 <View style={styles.upgradeInfo}>
                   <Text style={styles.upgradeTitle}>
-                    {HOME_TEXT.upgradeTooltip}
+                    {t("subscription.upgradeNow")}
                   </Text>
                   <Text style={styles.upgradeSubtitle}>
-                    {HOME_TEXT.upgradeSubtitle}
+                    {t("subscription.subtitle")}
                   </Text>
 
                   <TouchableOpacity
@@ -336,7 +337,7 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
                     style={[styles.button, styles.disabledButton]}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.buttonText}>View Plans</Text>
+                    <Text style={styles.buttonText}>{t("home.viewPlans")}</Text>
                   </TouchableOpacity>
                 </View>
                 <Crown
@@ -364,16 +365,16 @@ export const HomeView: React.FC<CoreProps> = ({ user, setView, setUser }) => {
               <View style={{ alignItems: "center", marginBottom: 16 }}>
                 <AlertTriangle color="#f59e0b" size={48} />
               </View>
-              <Text style={styles.interestsModalTitle}>Safety First</Text>
+              <Text style={styles.interestsModalTitle}>{t("home.safetyFirst")}</Text>
               <Text style={{ color: "rgba(255,255,255,0.8)", textAlign: "center", marginBottom: 24, fontSize: 16, lineHeight: 24 }}>
-                For your safety, please do not share personal information (like your address, financial details, or phone number) during chats or calls. FastMatch is not responsible for any issues arising from sharing personal information. Stay safe and enjoy!
+                {t("home.safetyDisclaimer")}
               </Text>
               
               <TouchableOpacity
                 style={[styles.actionBtnInt, { backgroundColor: colors.primary, width: "100%", height: 50 }]}
                 onPress={acknowledgeSafetyDisclaimer}
               >
-                <Text style={styles.acceptTextInt}>I Understand</Text>
+                <Text style={styles.acceptTextInt}>{t("home.iUnderstand")}</Text>
               </TouchableOpacity>
             </View>
           </View>

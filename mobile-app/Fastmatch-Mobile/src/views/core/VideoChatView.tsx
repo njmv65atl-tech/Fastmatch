@@ -61,6 +61,7 @@ import { useUserReportMutation } from "../../redux/services/auth";
 import { getUser } from "../../utils/storage";
 import { popTypes, ShowAlertMessage } from "../../helpers/commonFunctions";
 import { AppView, User } from "../../types";
+import { useTranslation } from "react-i18next";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -1178,6 +1179,7 @@ interface ReportModalProps {
 }
 
 const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit }) => {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -1215,7 +1217,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
         <View style={modalStyles.handle} />
 
         <View style={modalStyles.header}>
-          <Text style={modalStyles.title}>Report Participant</Text>
+          <Text style={modalStyles.title}>{t("discovery.reportModalTitle")}</Text>
           <Text style={modalStyles.subtitle}>Help keep our community safe and respectful.</Text>
         </View>
 
@@ -1236,7 +1238,11 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
                 >
                   <Text style={modalStyles.reasonIcon}>{reason.icon}</Text>
                   <Text style={[modalStyles.reasonLabel, isActive && modalStyles.reasonLabelActive]}>
-                    {reason.label}
+                    {reason.id === 'inappropriate' ? t("chat.reasonInappropriate") :
+                     reason.id === 'harassment' ? t("chat.reasonHarassment") :
+                     reason.id === 'spam' ? t("chat.reasonSpam") :
+                     reason.id === 'hate_speech' ? t("chat.reasonHateSpeech") :
+                     reason.id === 'nudity' ? t("chat.reasonNudity") : reason.label}
                   </Text>
                   {isActive && (
                     <View style={modalStyles.checkBadge}>
@@ -1270,7 +1276,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
 
         <View style={modalStyles.actions}>
           <TouchableOpacity style={modalStyles.cancelBtn} onPress={handleClose} activeOpacity={0.8}>
-            <Text style={modalStyles.cancelText}>Cancel</Text>
+            <Text style={modalStyles.cancelText}>{t("common.cancel")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1280,7 +1286,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ visible, onClose, onSubmit })
             activeOpacity={0.85}
           >
             <Text style={[modalStyles.submitText, !canSubmit && modalStyles.submitTextDisabled]}>
-              Submit & Leave
+              {t("chat.submitReport")}
             </Text>
           </TouchableOpacity>
         </View>

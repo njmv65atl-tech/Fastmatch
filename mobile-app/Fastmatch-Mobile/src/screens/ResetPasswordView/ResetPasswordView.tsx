@@ -10,6 +10,7 @@ import { managerApiCall } from "../../helpers/managerApiCallFn";
 import { useResetPasswordMutation } from "../../redux/services/auth";
 import { useSelector } from "react-redux";
 import { userSelector } from "../../redux/slices/persistedSlice";
+import { useTranslation } from "react-i18next";
 import { DataManager } from "../../helpers/dataManager";
 
 interface ResetProps {
@@ -17,6 +18,7 @@ interface ResetProps {
 }
 
 export const ResetPasswordView: React.FC<ResetProps> = ({ setView }) => {
+  const { t } = useTranslation();
   const [resetPasswordApi] = useResetPasswordMutation();
   const currentUser = useSelector(userSelector);
 
@@ -95,14 +97,14 @@ export const ResetPasswordView: React.FC<ResetProps> = ({ setView }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Reset Password</Text>
-          <Text style={styles.subtitle}>Enter your new password below.</Text>
+          <Text style={styles.title}>{t("auth.resetPasswordTitle")}</Text>
+          <Text style={styles.subtitle}>{t("auth.resetPasswordSub")}</Text>
         </View>
 
         <View style={styles.form}>
           <Input
-            label="New Password"
-            placeholder="Enter new password"
+            label={t("auth.newPassword")}
+            placeholder={t("auth.newPasswordPlaceholder")}
             secureTextEntry
             icon={<Lock color={colors.textPlaceholder} size={18} />}
             value={fields.password}
@@ -111,8 +113,8 @@ export const ResetPasswordView: React.FC<ResetProps> = ({ setView }) => {
           />
 
           <Input
-            label="Confirm New Password"
-            placeholder="Confirm new password"
+            label={t("auth.confirmPassword")}
+            placeholder={t("auth.confirmPasswordPlaceholder")}
             secureTextEntry
             icon={<Lock color={colors.textPlaceholder} size={18} />}
             value={fields.confirmPassword}
@@ -121,7 +123,7 @@ export const ResetPasswordView: React.FC<ResetProps> = ({ setView }) => {
           />
 
           <View style={styles.bottomActions}>
-            <Button onClick={handleReset}>Reset Password</Button>
+            <Button onClick={handleReset}>{t("auth.resetPasswordBtn")}</Button>
           </View>
         </View>
       </ScrollView>

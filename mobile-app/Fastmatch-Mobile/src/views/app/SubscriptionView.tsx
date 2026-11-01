@@ -66,11 +66,11 @@ export const SubscriptionView: React.FC<{
   }, [refetchPricing]);
 
   const features = [
-    "Unlimited Video Calls",
-    "Filter matches by Gender, Age & Location",
-    "Unlimited Skips & Rewinds",
-    "Global Network Access",
-    "Priority VIP Matching",
+    t("subscription.featureUnlimitedCalls"),
+    t("subscription.featureFilters"),
+    t("subscription.featureSkips"),
+    t("subscription.featureGlobalNetwork"),
+    t("subscription.featurePriority"),
   ];
 
   React.useEffect(() => {
@@ -266,8 +266,8 @@ export const SubscriptionView: React.FC<{
           >
             <Crown size={20} color="#F59E0B" />
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.alreadyActiveTitle}>Active VIP Member</Text>
-              <Text style={styles.alreadyActiveSubtitle}>Tap here to manage membership & renewal details →</Text>
+              <Text style={styles.alreadyActiveTitle}>{t("subscription.activeVipMember")}</Text>
+              <Text style={styles.alreadyActiveSubtitle}>{t("membership.activeSubtitle")}</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -313,15 +313,15 @@ export const SubscriptionView: React.FC<{
               </View>
             ) : disabledPlan === "YEARLY" ? (
               <View style={[styles.planCard, styles.planCardDisabled]}>
-                <Text style={styles.planNameDisabled}>YEARLY</Text>
+                <Text style={styles.planNameDisabled}>{t("subscription.yearly")}</Text>
                 <Text style={styles.planPriceDisabled}>{getPriceForPlan("YEARLY")}</Text>
-                <Text style={styles.planPeriodDisabled}>/year</Text>
+                <Text style={styles.planPeriodDisabled}>{t("subscription.perYear")}</Text>
               </View>
             ) : (
               <View style={styles.planCard}>
-                <Text style={styles.planName}>YEARLY</Text>
+                <Text style={styles.planName}>{t("subscription.yearly")}</Text>
                 <Text style={styles.planPrice}>{getPriceForPlan("YEARLY")}</Text>
-                <Text style={styles.planPeriod}>/year</Text>
+                <Text style={styles.planPeriod}>{t("subscription.perYear")}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -342,7 +342,7 @@ export const SubscriptionView: React.FC<{
               >
                 <View style={styles.planCardInner}>
                   <Text style={[styles.planName, styles.planNameActive]}>
-                    MONTHLY
+                    {t("subscription.monthly")}
                   </Text>
                   <Text style={styles.planPrice}>{getPriceForPlan("MONTHLY")}</Text>
                   <Text style={styles.planPeriod}>{t("subscription.perMonth")}</Text>
@@ -350,15 +350,15 @@ export const SubscriptionView: React.FC<{
               </LinearGradient>
             ) : disabledPlan === "MONTHLY" ? (
               <View style={[styles.planCard, styles.planCardDisabled]}>
-                <Text style={styles.planNameDisabled}>MONTHLY</Text>
+                <Text style={styles.planNameDisabled}>{t("subscription.monthly")}</Text>
                 <Text style={styles.planPriceDisabled}>{getPriceForPlan("MONTHLY")}</Text>
-                <Text style={styles.planPeriodDisabled}>/month</Text>
+                <Text style={styles.planPeriodDisabled}>{t("subscription.perMonth")}</Text>
               </View>
             ) : (
               <View style={styles.planCard}>
-                <Text style={styles.planName}>MONTHLY</Text>
+                <Text style={styles.planName}>{t("subscription.monthly")}</Text>
                 <Text style={styles.planPrice}>{getPriceForPlan("MONTHLY")}</Text>
-                <Text style={styles.planPeriod}>/month</Text>
+                <Text style={styles.planPeriod}>{t("subscription.perMonth")}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -368,12 +368,12 @@ export const SubscriptionView: React.FC<{
         <View style={styles.couponContainer}>
           <View style={styles.couponHeader}>
             <Tag size={16} color="#F59E0B" />
-            <Text style={styles.couponTitle}>Have a Promo Code?</Text>
+            <Text style={styles.couponTitle}>{t("subscription.havePromo")}</Text>
           </View>
           <View style={styles.couponInputRow}>
             <TextInput
               style={styles.couponInput}
-              placeholder="ENTER CODE"
+              placeholder={t("subscription.enterCode")}
               placeholderTextColor="#64748B"
               value={couponCode}
               onChangeText={(t) => setCouponCode(t.toUpperCase())}
@@ -389,7 +389,7 @@ export const SubscriptionView: React.FC<{
                   setCouponCode("");
                 }}
               >
-                <Text style={styles.couponRemoveText}>Remove</Text>
+                <Text style={styles.couponRemoveText}>{t("subscription.remove")}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -400,7 +400,7 @@ export const SubscriptionView: React.FC<{
                 {isApplyingCoupon ? (
                   <ActivityIndicator size="small" color="#0F172A" />
                 ) : (
-                  <Text style={styles.couponApplyText}>Apply</Text>
+                  <Text style={styles.couponApplyText}>{t("subscription.apply")}</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -411,15 +411,18 @@ export const SubscriptionView: React.FC<{
                 <Sparkles size={14} color="#10B981" />
                 <Text style={styles.appliedText}>
                   {appliedCoupon.discountPercent === 100
-                    ? `100% OFF Free VIP Access with code ${appliedCoupon.code}`
-                    : `${appliedCoupon.discountPercent}% promo applied with code ${appliedCoupon.code}`}
+                    ? t("subscription.freeVipCode", { code: appliedCoupon.code })
+                    : t("subscription.promoApplied", { percent: appliedCoupon.discountPercent, code: appliedCoupon.code })}
                 </Text>
               </View>
               {appliedCoupon.discountPercent < 100 && (
                 <View style={[styles.appliedBadge, { backgroundColor: "rgba(245, 158, 11, 0.15)", borderColor: "rgba(245, 158, 11, 0.35)", marginTop: 8 }]}>
                   <AlertCircle size={14} color="#F59E0B" />
                   <Text style={[styles.appliedText, { color: "#FDE68A", fontSize: 11 }]}>
-                    Store subscriptions are billed by {Platform.OS === 'ios' ? 'Apple' : 'Google Play'}. To apply discounts on {Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay'}, redeem an official store promo code in {Platform.OS === 'ios' ? 'App Store' : 'Google Play'} during checkout.
+                    {t("subscription.storeNotice", {
+                      store: Platform.OS === 'ios' ? 'Apple' : 'Google Play',
+                      pay: Platform.OS === 'ios' ? 'Apple Pay' : 'Google Pay'
+                    })}
                   </Text>
                 </View>
               )}
@@ -443,7 +446,7 @@ export const SubscriptionView: React.FC<{
               <View style={styles.unlockBtnInner}>
                 <Text style={styles.unlockText}>
                   {appliedCoupon?.discountPercent === 100
-                    ? (isRedeemingCoupon ? "Activating VIP..." : "🎁 Activate 100% Free VIP Access")
+                    ? (isRedeemingCoupon ? t("subscription.activating") : t("subscription.activateFree"))
                     : `${Platform.OS === 'ios' ? ' Pay' : 'G Pay'} • ${getStorePriceForPlan(selectedPlan)} (${selectedPlan === "YEARLY" ? "Yearly" : "Monthly"})`}
                 </Text>
               </View>

@@ -79,19 +79,19 @@ export const WelcomeView: React.FC<AuthProps> = ({ setView, setUser }) => {
           {/* EULA & Privacy Policy Agreement (Apple Review Guideline 1.2.0) */}
           <View style={styles.legalContainer}>
             <Text style={styles.legalText}>
-              By continuing, you agree to our{" "}
+              {t("welcome.byContinuing")}{" "}
               <Text
                 style={styles.legalHighlight}
                 onPress={() => setView(AppView.TERMS)}
               >
-                Terms of Use (EULA)
+                {t("welcome.termsOfUse")}
               </Text>{" "}
-              and{" "}
+              {t("welcome.and")}{" "}
               <Text
                 style={styles.legalHighlight}
                 onPress={() => setView(AppView.PRIVACY)}
               >
-                Privacy Policy
+                {t("welcome.privacyPolicy")}
               </Text>.
             </Text>
             <Text style={styles.zeroToleranceText}>

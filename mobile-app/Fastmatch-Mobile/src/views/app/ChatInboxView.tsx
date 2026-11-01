@@ -19,6 +19,7 @@ import { IMG_URL } from "../../redux/services";
 import { socket } from "../../socket/socket";
 import { useDispatch } from "react-redux";
 import { setHasUnread } from "../../redux/slices/globalSlice";
+import { useTranslation } from "react-i18next";
 import { UserAvatar } from "../../components/UserAvatar";
 
 const { width, height } = Dimensions.get("window");
@@ -40,6 +41,7 @@ export const ChatInboxView: React.FC<{
   setView: (v: AppView) => void;
   onSelectUser: (id: string, name: string, avatarUrl?: string, unreadCount?: number , item?: any) => void;
 }> = ({ setView, onSelectUser }) => {
+  const { t } = useTranslation();
   const { data, isLoading, error, refetch } = useConversationHistoryQuery({}, {
     refetchOnMountOrArgChange: true
   });
@@ -171,12 +173,12 @@ export const ChatInboxView: React.FC<{
 
   const handleDeleteChat = (item: any) => {
     Alert.alert(
-      "Delete Chat",
-      `Are you sure you want to delete your chat with ${item.displayName || item.fullName || "this user"}?`,
+      t("chat.deleteChatTitle"),
+      t("chat.deleteChatConfirm", { name: item.displayName || item.fullName || "this user" }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         { 
-          text: "Delete", 
+          text: t("common.delete"), 
           style: "destructive",
           onPress: async () => {
             try {
@@ -193,7 +195,7 @@ export const ChatInboxView: React.FC<{
 
   return (
     <MobileContainer>
-      <Header title="Chats" />
+      <Header title={t("chat.title")} />
       <ScrollView
         contentContainerStyle={styles.inboxContent}
         refreshControl={
@@ -206,12 +208,12 @@ export const ChatInboxView: React.FC<{
         }
       >
         {isLoading && !refreshing && (
-          <View style={styles.loadingContainer}><Text style={styles.loadingText}>Loading...</Text></View>
+          <View style={styles.loadingContainer}><Text style={styles.loadingText}>{t("chat.loading")}</Text></View>
         )}
 
 
         {!isLoading && uniqueMatchList.length === 0 && (
-          <View style={styles.emptyContainer}><Text style={styles.emptyText}>No chats found</Text></View>
+          <View style={styles.emptyContainer}><Text style={styles.emptyText}>{t("chat.noChats")}</Text></View>
         )}
 
         {uniqueMatchList.map((item: any) => {
@@ -255,10 +257,10 @@ export const ChatInboxView: React.FC<{
                 </View>
                 <View style={styles.chatPreviewRow}>
                   <Text style={styles.chatPreview} numberOfLines={1}>
-                    {item.isBlockedByMe ? "Blocked" : item.amIBlocked ? "Blocked You" : item.isCallsBlockedByMe ? "Calls Blocked" : item.amICallBlocked ? "Your Calls Blocked" : (item.lastMessage?.message || "Start a conversation")}
+                    {item.isBlockedByMe ? t("chat.blocked") : item.amIBlocked ? t("chat.blockedYou") : item.isCallsBlockedByMe ? t("chat.callsBlocked") : item.amICallBlocked ? t("chat.yourCallsBlocked") : (item.lastMessage?.message || t("chat.startConversation"))}
                   </Text>
-                  {item.isBlockedByMe && <View style={styles.blockedBadge}><Text style={styles.blockedBadgeText}>Blocked</Text></View>}
-                  {!item.isBlockedByMe && item.isCallsBlockedByMe && <View style={styles.callsBlockedBadge}><Text style={styles.callsBlockedBadgeText}>Calls Off</Text></View>}
+                  {item.isBlockedByMe && <View style={styles.blockedBadge}><Text style={styles.blockedBadgeText}>{t("chat.blocked")}</Text></View>}
+                  {!item.isBlockedByMe && item.isCallsBlockedByMe && <View style={styles.callsBlockedBadge}><Text style={styles.callsBlockedBadgeText}>{t("chat.callsOff")}</Text></View>}
                 </View>
               </View>
             </TouchableOpacity>
