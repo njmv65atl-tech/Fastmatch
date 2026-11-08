@@ -71,7 +71,6 @@ import CustomFlash from "./src/components/CustomFlash";
 import { DataManager } from "./src/helpers/dataManager";
 import FlashMessage from "react-native-flash-message";
 import Loader from "./src/components/Loader";
-import Orientation from "react-native-orientation-locker";
 
 import SocketConnection from "./src/socket/socketConnection";
 import { colors } from "./src/utils/colors";
@@ -140,26 +139,40 @@ const App: React.FC = () => {
   const [rateMatch] = useRateMatchMutation();
 
   const dispatch = useDispatch();
-  const [showAllInterestsApp, setShowAllInterestsApp] = useState(false); React.useEffect(() => {
-  const unsubscribe = NetInfo.addEventListener(state => {
-    setIsConnected(state.isConnected);
-
-    if (state.isConnected === false) {
-      // User just went offline
-      wasOffline.current = true; 
-      ShowAlertMessage("Please check your internet connection", popTypes.error);
-    } 
-    else if (state.isConnected === true && wasOffline.current === true) {
-      // User was offline, but is now back online
-      wasOffline.current = false;
-      ShowAlertMessage("Internet is connected", popTypes.info); // Using success type for green color
-    }
-  });
-
-  return () => unsubscribe();
-}, []); // Empty array so it sets up the listener once for the whole app session
+  const [showAllInterestsApp, setShowAllInterestsApp] = useState(false);
+  
   React.useEffect(() => {
-    initLanguage();
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = NetInfo.addEventListener(state => {
+        setIsConnected(state.isConnected);
+
+        if (state.isConnected === false) {
+          // User just went offline
+          wasOffline.current = true; 
+          ShowAlertMessage("Please check your internet connection", popTypes.error);
+        } 
+        else if (state.isConnected === true && wasOffline.current === true) {
+          // User was offline, but is now back online
+          wasOffline.current = false;
+          ShowAlertMessage("Internet is connected", popTypes.info);
+        }
+      });
+    } catch (netErr) {
+      console.warn("NetInfo listener registration error:", netErr);
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      initLanguage();
+    } catch (langErr) {
+      console.warn("initLanguage error:", langErr);
+    }
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 2000); // 2000ms = 2 seconds
@@ -301,8 +314,12 @@ const App: React.FC = () => {
 
   React.useEffect(() => {
     setDispatch(dispatch);
-    notificationService.requestUserPermission();
-    notificationService.createNotificationListeners();
+    try {
+      notificationService.requestUserPermission().catch(e => console.warn('requestUserPermission error:', e));
+      notificationService.createNotificationListeners().catch(e => console.warn('createNotificationListeners error:', e));
+    } catch (notifErr) {
+      console.warn('notificationService init error:', notifErr);
+    }
   }, []);
 
   const processingPurchasesRef = React.useRef<Set<string>>(new Set());
@@ -461,10 +478,6 @@ const App: React.FC = () => {
       setOtpContext({});
     }
   }, [currentView, otpContext.type, otpContext.email]);
-
-  // React.useEffect(() => {
-  //   Orientation.lockToPortrait();
-  // }, []);
 
   const handleSetView = React.useCallback((view: AppView, params?: any) => {
     if (currentView === AppView.VIDEO_CHAT && view === AppView.HOME) {

@@ -1,3 +1,5 @@
+ENV['RCT_NEW_ARCH_ENABLED'] = '0'
+
 def node_require(script)
   require Pod::Executable.execute_command('node', ['-p',
     "require.resolve(
@@ -36,7 +38,8 @@ target 'FastMatch' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :new_arch_enabled => false
   )
 
   target 'FastMatchTests' do
